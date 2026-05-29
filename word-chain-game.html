@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Word Chain — Weather & Emotions</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,400&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0F1923;--surface:#172333;--surface2:#1E2E42;
+  --border:rgba(255,255,255,0.1);--border2:rgba(255,255,255,0.18);
+  --text:#E8E0D0;--muted:#7A8FA8;
+  --gold:#D4A843;--gold-dim:#8A6C28;--gold-bg:rgba(212,168,67,0.1);
+  --blue:#4A9FD4;--blue-bg:rgba(74,159,212,0.12);
+  --green:#5BAD72;--green-bg:rgba(91,173,114,0.15);
+  --red:#C85F5F;--red-bg:rgba(200,95,95,0.12);
+}
+body{font-family:'Source Serif 4',serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
+.app{width:100%;max-width:640px;}
+.header{text-align:center;margin-bottom:24px;}
+.header h1{font-family:'Playfair Display',serif;font-size:48px;font-weight:900;color:var(--gold);letter-spacing:-1px;line-height:1;margin-bottom:4px;}
+.header p{font-size:13px;color:var(--muted);letter-spacing:0.5px;}
+.chain-track{display:flex;align-items:center;justify-content:center;gap:0;margin-bottom:20px;}
+.chain-node{display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0;}
+.chain-bubble{width:38px;height:38px;border-radius:50%;border:1.5px solid var(--border2);background:var(--surface);display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:14px;font-weight:700;color:var(--muted);transition:all 0.3s ease;}
+.chain-bubble.vocab-node{border-color:var(--gold-dim);background:var(--gold-bg);color:var(--gold);}
+.chain-bubble.done-node{border-color:var(--green);background:var(--green-bg);color:var(--green);}
+.chain-bubble.active-node{border-color:var(--blue);background:var(--blue-bg);color:var(--blue);box-shadow:0 0 14px rgba(74,159,212,0.35);animation:pulse 2s ease infinite;}
+.chain-bubble.fail-node{border-color:var(--red);background:var(--red-bg);color:var(--red);}
+.chain-node-lbl{font-size:9px;letter-spacing:1px;color:var(--muted);text-transform:uppercase;}
+.chain-arrow{width:20px;height:2px;background:var(--border2);flex-shrink:0;position:relative;margin-bottom:14px;}
+.chain-arrow::after{content:'';position:absolute;right:-1px;top:-3px;border:4px solid transparent;border-left:6px solid var(--border2);}
+@keyframes pulse{0%,100%{box-shadow:0 0 8px rgba(74,159,212,0.3);}50%{box-shadow:0 0 20px rgba(74,159,212,0.5);}}
+.card{background:var(--surface);border:0.5px solid var(--border2);border-radius:16px;padding:28px 24px 22px;}
+.card-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;}
+.step-lbl{font-family:'Playfair Display',serif;font-size:14px;color:var(--gold);}
+.vocab-badge{font-size:10px;letter-spacing:1.5px;padding:3px 10px;border-radius:20px;text-transform:uppercase;}
+.badge-vocab{background:var(--gold-bg);color:var(--gold);border:0.5px solid var(--gold-dim);}
+.badge-bridge{background:var(--blue-bg);color:var(--blue);border:0.5px solid rgba(74,159,212,0.3);}
+.starts-with{font-size:13px;color:var(--muted);margin-bottom:14px;min-height:18px;}
+.starts-with strong{color:var(--blue);font-family:'Playfair Display',serif;font-size:18px;}
+.clue-box{background:var(--surface2);border:0.5px solid var(--border);border-radius:10px;padding:14px 18px;margin-bottom:22px;}
+.clue-lbl{font-size:10px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:5px;}
+.clue-txt{font-size:17px;font-weight:400;color:var(--text);line-height:1.5;font-style:italic;}
+.dash-row{display:flex;gap:5px;justify-content:center;flex-wrap:wrap;margin-bottom:20px;min-height:60px;align-items:flex-end;}
+.dash-tile{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:default;}
+.tile-char{width:32px;height:36px;display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--text);border-radius:5px;background:transparent;transition:all 0.12s;position:relative;}
+.tile-char.cursor-on::after{content:'';position:absolute;bottom:2px;left:50%;transform:translateX(-50%);width:14px;height:2px;background:var(--blue);border-radius:1px;animation:blink 1s step-end infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0;}}
+.tile-char.filled{color:var(--blue);}
+.tile-char.correct-char{color:var(--green);animation:charPop 0.2s ease;}
+.tile-char.wrong-char{color:var(--red);}
+@keyframes charPop{from{transform:scale(0.6) translateY(4px);opacity:0;}to{transform:scale(1) translateY(0);opacity:1;}}
+.tile-line{width:28px;height:1.5px;background:var(--border2);border-radius:1px;transition:background 0.2s;}
+.tile-line.active-line{background:var(--blue);}
+.tile-line.filled-line{background:var(--gold);}
+.tile-line.correct-line{background:var(--green);}
+.tile-line.wrong-line{background:var(--red);}
+.lives-row{display:flex;justify-content:center;gap:8px;margin-bottom:18px;align-items:center;}
+.lives-lbl{font-size:12px;color:var(--muted);letter-spacing:0.5px;margin-right:4px;}
+.heart{font-size:18px;transition:transform 0.2s,opacity 0.2s;}
+.heart.lost{opacity:0.2;transform:scale(0.8);}
+@keyframes heartBoom{0%{transform:scale(1.5);}100%{transform:scale(0.8);opacity:0.2;}}
+.heart.losing{animation:heartBoom 0.4s ease forwards;}
+.msg-row{display:flex;justify-content:center;align-items:center;gap:12px;min-height:22px;margin-bottom:4px;}
+.msg{font-size:13px;color:var(--muted);transition:color 0.2s;}
+.msg.ok{color:var(--green);}.msg.bad{color:var(--red);}
+.del-btn{font-size:12px;color:var(--muted);background:none;border:none;cursor:pointer;padding:2px 8px;border-radius:4px;}
+.del-btn:hover{color:var(--text);background:var(--surface2);}
+.hidden-input{position:absolute;opacity:0;pointer-events:none;width:1px;height:1px;}
+.screen{background:var(--surface);border:0.5px solid var(--border2);border-radius:16px;padding:40px 28px;text-align:center;}
+.screen h2{font-family:'Playfair Display',serif;font-size:32px;font-weight:900;color:var(--gold);margin-bottom:12px;}
+.screen p{font-size:14px;color:var(--muted);line-height:1.8;margin-bottom:16px;}
+.example-chain{background:var(--surface2);border-radius:10px;padding:14px 20px;margin:0 auto 20px;font-size:13px;color:var(--muted);text-align:left;max-width:380px;}
+.example-chain .ev{color:var(--gold);font-weight:600;}.example-chain .eb{color:var(--blue);}
+.chain-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px;}
+.chain-opt{background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:12px 14px;cursor:pointer;text-align:left;transition:border-color 0.15s,background 0.15s;}
+.chain-opt:hover{border-color:var(--gold-dim);background:var(--gold-bg);}
+.chain-opt .co-num{font-family:'Playfair Display',serif;font-size:18px;color:var(--gold);font-weight:700;margin-bottom:4px;}
+.chain-opt .co-words{font-size:11px;color:var(--muted);letter-spacing:0.3px;line-height:1.6;}
+.chain-opt .co-words .cv{color:var(--gold);}.chain-opt .co-words .cb{color:var(--blue);}
+button.primary{font-family:'Source Serif 4',serif;font-size:15px;font-weight:600;padding:12px 36px;background:var(--gold);color:#0F1923;border:none;border-radius:8px;cursor:pointer;transition:background 0.12s,transform 0.05s;}
+button.primary:hover{background:#c49030;}button.primary:active{transform:scale(0.97);}
+.big-result{font-family:'Playfair Display',serif;font-size:72px;font-weight:900;color:var(--gold);margin:6px 0;}
+.revealed-word{font-family:'Playfair Display',serif;font-size:28px;color:var(--red);letter-spacing:2px;margin:8px 0;}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <h1>Word Chain</h1>
+    <p>Weather &amp; Emotions · type directly on the dashes</p>
+  </div>
+
+  <div id="setupScreen" class="screen">
+    <h2>How to play</h2>
+    <p>Each chain has 5 words. Every word starts with the last letter of the one before.<br>Gold = vocabulary &nbsp;·&nbsp; Blue = bridge word.</p>
+    <div class="example-chain">
+      <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;">Example</div>
+      <div>① <span class="ev">foggy</span> → ends <strong style="color:var(--text)">Y</strong></div>
+      <div>② <span class="eb">yell</span> → ends <strong style="color:var(--text)">L</strong></div>
+      <div>③ <span class="ev">lightning</span> → ends <strong style="color:var(--text)">G</strong></div>
+      <div>④ <span class="eb">grab</span> → ends <strong style="color:var(--text)">B</strong></div>
+      <div>⑤ <span class="ev">bored</span></div>
+    </div>
+    <p style="font-size:12px;margin-bottom:20px;">5 wrong guesses per word ends the game. Just start typing — letters appear on the dashes.</p>
+    <button class="primary" onclick="startRandom()">Start</button>
+  </div>
+
+  <div id="gameScreen" style="display:none">
+    <div class="chain-track" id="chainTrack"></div>
+    <div class="card">
+      <div class="card-top">
+        <span class="step-lbl" id="stepLbl">Word 1 of 5</span>
+        <span class="vocab-badge" id="vocabBadge"></span>
+      </div>
+      <div class="starts-with" id="startsWithLbl"></div>
+      <div class="clue-box">
+        <div class="clue-lbl">Clue</div>
+        <div class="clue-txt" id="clueTxt"></div>
+      </div>
+      <div class="dash-row" id="dashRow"></div>
+      <div class="lives-row">
+        <span class="lives-lbl">Lives</span>
+        <span class="heart" id="h1">♥</span><span class="heart" id="h2">♥</span>
+        <span class="heart" id="h3">♥</span><span class="heart" id="h4">♥</span>
+        <span class="heart" id="h5">♥</span>
+      </div>
+      <div class="msg-row">
+        <span class="msg" id="msgBox"></span>
+        <button class="del-btn" id="delBtn">⌫ delete</button>
+      </div>
+    </div>
+    <input class="hidden-input" id="hiddenInput" autocomplete="off" autocorrect="off" spellcheck="false" />
+  </div>
+
+  <div id="failScreen" class="screen" style="display:none">
+    <h2>Chain broken!</h2>
+    <p>The answer was:</p>
+    <div class="revealed-word" id="revealedWord"></div>
+    <p id="failMsg"></p>
+    <button class="primary" onclick="startRandom()">Try another chain</button>
+  </div>
+
+  <div id="winScreen" class="screen" style="display:none">
+    <h2>Chain complete!</h2>
+    <div class="big-result" id="winScore"></div>
+    <p id="winMsg"></p>
+    <button class="primary" onclick="startRandom()">Play again</button>
+  </div>
+</div>
+
+<script>
+const CHAINS=[
+  {label:"bored → warm",words:[
+    {word:"bored",isVocab:true,clue:"Emotion: feeling restless and uninterested — nothing seems exciting or fun"},
+    {word:"dare",isVocab:false,clue:"To challenge someone to do something risky or difficult"},
+    {word:"energetic",isVocab:true,clue:"Emotion: full of energy, enthusiasm, and the drive to be active"},
+    {word:"crow",isVocab:false,clue:"A large black bird with a loud caw — or to boast proudly about something"},
+    {word:"warm",isVocab:true,clue:"Weather/feeling: comfortably hot; a cozy, pleasant temperature"}
+  ]},
+  {label:"frustrated → lightning",words:[
+    {word:"frustrated",isVocab:true,clue:"Emotion: feeling annoyed and stuck because something just won't work out"},
+    {word:"dash",isVocab:false,clue:"To move very quickly; also a short horizontal punctuation mark —"},
+    {word:"humid",isVocab:true,clue:"Weather: hot and sticky with a lot of moisture in the air"},
+    {word:"deal",isVocab:false,clue:"An agreement between two people; or to hand out cards in a game"},
+    {word:"lightning",isVocab:true,clue:"Weather: a bright electric flash that streaks across the sky during a storm"}
+  ]},
+  {label:"upset → thunderstorm",words:[
+    {word:"upset",isVocab:true,clue:"Emotion: feeling sad, hurt, or disturbed about something that happened"},
+    {word:"toss",isVocab:false,clue:"To throw something lightly upward; to flip a coin to decide something"},
+    {word:"surprised",isVocab:true,clue:"Emotion: feeling shocked or startled by something you did not expect at all"},
+    {word:"dent",isVocab:false,clue:"A small hollow pushed into a surface — like a dent in a car door"},
+    {word:"thunderstorm",isVocab:true,clue:"Weather: a powerful storm with heavy rain, rumbling thunder, and lightning"}
+  ]},
+  {label:"sleepy → foggy",words:[
+    {word:"sleepy",isVocab:true,clue:"Emotion: feeling like you need to sleep; heavy-eyed and drowsy"},
+    {word:"yell",isVocab:false,clue:"To shout very loudly, often out of excitement, anger, or surprise"},
+    {word:"lightning",isVocab:true,clue:"Weather: a bright electric flash that streaks across the sky during a storm"},
+    {word:"golf",isVocab:false,clue:"An outdoor sport where players use clubs to hit a small ball into holes"},
+    {word:"foggy",isVocab:true,clue:"Weather: filled with thick mist so it's hard to see very far ahead"}
+  ]},
+  {label:"cool → energetic",words:[
+    {word:"cool",isVocab:true,clue:"Weather/feeling: slightly cold in a nice way — or impressively calm and unfazed"},
+    {word:"lens",isVocab:false,clue:"A curved piece of glass that focuses light — found in glasses and cameras"},
+    {word:"snowstorm",isVocab:true,clue:"Weather: a heavy fall of snow combined with strong, biting winds"},
+    {word:"made",isVocab:false,clue:"Past tense of make — something was created or produced"},
+    {word:"energetic",isVocab:true,clue:"Emotion: full of energy, enthusiasm, and the drive to be active"}
+  ]},
+  {label:"freezing → humid",words:[
+    {word:"freezing",isVocab:true,clue:"Weather/feeling: extremely cold — cold enough for water to turn to ice"},
+    {word:"grab",isVocab:false,clue:"To quickly take hold of something with your hand"},
+    {word:"bored",isVocab:true,clue:"Emotion: feeling restless and uninterested — nothing seems exciting or fun"},
+    {word:"dash",isVocab:false,clue:"To move very quickly; also a short horizontal punctuation mark —"},
+    {word:"humid",isVocab:true,clue:"Weather: hot and sticky with a lot of moisture in the air"}
+  ]},
+  {label:"upset → snowstorm",words:[
+    {word:"upset",isVocab:true,clue:"Emotion: feeling sad, hurt, or disturbed about something that happened"},
+    {word:"toss",isVocab:false,clue:"To throw something lightly upward; to flip a coin to decide something"},
+    {word:"snowstorm",isVocab:true,clue:"Weather: a heavy fall of snow combined with strong, biting winds"},
+    {word:"mast",isVocab:false,clue:"A tall pole on a ship that holds up the sails"},
+    {word:"thunderstorm",isVocab:true,clue:"Weather: a powerful storm with heavy rain, rumbling thunder, and lightning"}
+  ]},
+  {label:"icy → warm",words:[
+    {word:"icy",isVocab:true,clue:"Weather: covered in ice; dangerously slippery and bitterly cold"},
+    {word:"yoke",isVocab:false,clue:"A wooden frame that joins two animals such as oxen together to pull a load"},
+    {word:"energetic",isVocab:true,clue:"Emotion: full of energy, enthusiasm, and the drive to be active"},
+    {word:"crow",isVocab:false,clue:"A large black bird with a loud caw — or to boast proudly about something"},
+    {word:"warm",isVocab:true,clue:"Weather/feeling: comfortably hot; a cozy, pleasant temperature"}
+  ]},
+  {label:"frustrated → sleepy",words:[
+    {word:"frustrated",isVocab:true,clue:"Emotion: feeling annoyed and stuck because something just won't work out"},
+    {word:"deal",isVocab:false,clue:"An agreement between two people; or to hand out cards in a game"},
+    {word:"lightning",isVocab:true,clue:"Weather: a bright electric flash that streaks across the sky during a storm"},
+    {word:"goes",isVocab:false,clue:"Third person singular of 'go' — moves or travels from one place to another"},
+    {word:"sleepy",isVocab:true,clue:"Emotion: feeling like you need to sleep; heavy-eyed and drowsy"}
+  ]},
+  {label:"cool → humid",words:[
+    {word:"cool",isVocab:true,clue:"Weather/feeling: slightly cold in a nice way — or impressively calm and unfazed"},
+    {word:"lens",isVocab:false,clue:"A curved piece of glass that focuses light — found in glasses and cameras"},
+    {word:"surprised",isVocab:true,clue:"Emotion: feeling shocked or startled by something you did not expect at all"},
+    {word:"dash",isVocab:false,clue:"To move very quickly; also a short horizontal punctuation mark —"},
+    {word:"humid",isVocab:true,clue:"Weather: hot and sticky with a lot of moisture in the air"}
+  ]},
+  {label:"foggy → freezing",words:[
+    {word:"foggy",isVocab:true,clue:"Weather: filled with thick mist so it's hard to see very far ahead"},
+    {word:"yell",isVocab:false,clue:"To shout very loudly, often out of excitement, anger, or surprise"},
+    {word:"lightning",isVocab:true,clue:"Weather: a bright electric flash that streaks across the sky during a storm"},
+    {word:"golf",isVocab:false,clue:"An outdoor sport where players use clubs to hit a small ball into holes"},
+    {word:"freezing",isVocab:true,clue:"Weather/feeling: extremely cold — cold enough for water to turn to ice"}
+  ]},
+  {label:"upset → bored",words:[
+    {word:"upset",isVocab:true,clue:"Emotion: feeling sad, hurt, or disturbed about something that happened"},
+    {word:"tomb",isVocab:false,clue:"A stone chamber or underground grave where someone is buried"},
+    {word:"bored",isVocab:true,clue:"Emotion: feeling restless and uninterested — nothing seems exciting or fun"},
+    {word:"dent",isVocab:false,clue:"A small hollow pushed into a surface — like a dent in a car door"},
+    {word:"thunderstorm",isVocab:true,clue:"Weather: a powerful storm with heavy rain, rumbling thunder, and lightning"}
+  ]}
+];
+
+let currentChain=null,stepIdx=0,livesLeft=5,typed="";
+
+let shuffledOrder=[];let shufflePos=0;
+
+function shuffleChains(){
+  shuffledOrder=CHAINS.map((_,i)=>i);
+  for(let i=shuffledOrder.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [shuffledOrder[i],shuffledOrder[j]]=[shuffledOrder[j],shuffledOrder[i]];
+  }
+  shufflePos=0;
+}
+
+function startRandom(){
+  if(shufflePos>=shuffledOrder.length)shuffleChains();
+  startChain(shuffledOrder[shufflePos++]);
+}
+
+function showSetup(){
+  ['gameScreen','failScreen','winScreen'].forEach(id=>document.getElementById(id).style.display='none');
+  document.getElementById('setupScreen').style.display='block';
+}
+
+function startChain(i){
+  currentChain=CHAINS[i];stepIdx=0;livesLeft=5;typed="";
+  document.getElementById('setupScreen').style.display='none';
+  document.getElementById('gameScreen').style.display='block';
+  buildTrack();renderStep();focusHidden();
+}
+
+function buildTrack(){
+  const track=document.getElementById('chainTrack');
+  track.innerHTML='';
+  currentChain.words.forEach((w,i)=>{
+    const node=document.createElement('div');
+    node.className='chain-node';node.id='node-'+i;
+    const bub=document.createElement('div');
+    bub.className='chain-bubble';bub.textContent=(i+1).toString();
+    const lbl=document.createElement('div');
+    lbl.className='chain-node-lbl';lbl.textContent=w.isVocab?'vocab':'bridge';
+    node.appendChild(bub);node.appendChild(lbl);
+    track.appendChild(node);
+    if(i<4){const arr=document.createElement('div');arr.className='chain-arrow';track.appendChild(arr);}
+  });
+}
+
+function updateTrack(failAt){
+  currentChain.words.forEach((w,i)=>{
+    const bub=document.getElementById('node-'+i).querySelector('.chain-bubble');
+    bub.className='chain-bubble';
+    if(failAt!==undefined&&i===failAt){bub.classList.add('fail-node');bub.textContent='✕';}
+    else if(i<stepIdx){bub.classList.add('done-node');bub.textContent='✓';}
+    else if(i===stepIdx){bub.classList.add('active-node');bub.textContent=(i+1).toString();}
+    else{bub.textContent=(i+1).toString();}
+  });
+}
+
+function renderStep(){
+  typed="";
+  const step=currentChain.words[stepIdx];
+  updateTrack();
+  document.getElementById('stepLbl').textContent=`Word ${stepIdx+1} of 5`;
+  const badge=document.getElementById('vocabBadge');
+  badge.textContent=step.isVocab?'★ Vocabulary':'⟡ Bridge word';
+  badge.className='vocab-badge '+(step.isVocab?'badge-vocab':'badge-bridge');
+  const swl=document.getElementById('startsWithLbl');
+  if(stepIdx===0){swl.innerHTML='First word — no starting letter required';}
+  else{
+    const prev=currentChain.words[stepIdx-1].word;
+    swl.innerHTML=`Must start with: <strong>${prev[prev.length-1].toUpperCase()}</strong>`;
+  }
+  document.getElementById('clueTxt').textContent=step.clue;
+  renderTiles('','normal');
+  renderLives();
+  setMsg('','');
+}
+
+function renderTiles(guess,state){
+  const word=currentChain.words[stepIdx].word;
+  const row=document.getElementById('dashRow');
+  row.innerHTML='';
+  for(let i=0;i<word.length;i++){
+    const tile=document.createElement('div');tile.className='dash-tile';
+    const ch=document.createElement('div');ch.className='tile-char';
+    const line=document.createElement('div');line.className='tile-line';
+    if(state==='correct'){
+      ch.textContent=word[i].toUpperCase();ch.classList.add('correct-char');line.classList.add('correct-line');
+    }else if(state==='wrong'){
+      ch.textContent=(guess[i]||'').toUpperCase();
+      if(guess[i])ch.classList.add('wrong-char');
+      line.classList.add('wrong-line');
+    }else{
+      if(i<guess.length){ch.textContent=guess[i].toUpperCase();ch.classList.add('filled');line.classList.add('filled-line');}
+      else if(i===guess.length){ch.classList.add('cursor-on');line.classList.add('active-line');}
+    }
+    tile.appendChild(ch);tile.appendChild(line);
+    row.appendChild(tile);
+  }
+}
+
+function renderLives(){
+  for(let i=1;i<=5;i++){
+    const h=document.getElementById('h'+i);
+    h.className='heart'+(i>livesLeft?' lost':'');
+  }
+}
+function setMsg(t,type){const el=document.getElementById('msgBox');el.textContent=t;el.className='msg'+(type?' '+type:'');}
+function focusHidden(){const inp=document.getElementById('hiddenInput');inp.value='';inp.focus();}
+
+function deleteLast(){
+  if(typed.length>0){typed=typed.slice(0,-1);renderTiles(typed,'normal');setMsg('','');}
+  focusHidden();
+}
+
+function handleKey(key){
+  const word=currentChain.words[stepIdx].word;
+  if(key==='Backspace'){deleteLast();return;}
+  if(key==='Enter'){submitGuess();return;}
+  if(!/^[a-zA-Z]$/.test(key))return;
+  if(typed.length>=word.length)return;
+  typed+=key.toLowerCase();
+  renderTiles(typed,'normal');
+  if(typed.length===word.length)setTimeout(submitGuess,120);
+}
+
+function submitGuess(){
+  const word=currentChain.words[stepIdx].word;
+  if(!typed)return;
+  if(typed===word){
+    renderTiles(typed,'correct');setMsg('Correct! ✓','ok');updateTrack();
+    setTimeout(()=>{
+      stepIdx++;
+      if(stepIdx>=currentChain.words.length)showWin();
+      else{renderStep();focusHidden();}
+    },850);
+  }else{
+    livesLeft--;
+    const lh=document.getElementById('h'+(livesLeft+1));
+    if(lh){lh.classList.add('losing');}
+    setTimeout(renderLives,400);
+    renderTiles(typed,'wrong');
+    if(livesLeft<=0){
+      setMsg('No lives left!','bad');
+      setTimeout(()=>showFail(word),950);
+    }else{
+      setMsg(`Wrong — ${livesLeft} ${livesLeft===1?'life':'lives'} left`,'bad');
+      setTimeout(()=>{typed="";renderTiles('','normal');setMsg('','');focusHidden();},700);
+    }
+  }
+}
+
+function showFail(word){
+  updateTrack(stepIdx);
+  document.getElementById('gameScreen').style.display='none';
+  document.getElementById('failScreen').style.display='block';
+  document.getElementById('revealedWord').textContent=word.toUpperCase();
+  const done=stepIdx;
+  document.getElementById('failMsg').textContent=
+    done===0?"Couldn't get the first word. Keep studying!":
+    `You got ${done} out of 5 words. Keep practicing!`;
+}
+
+function showWin(){
+  document.getElementById('gameScreen').style.display='none';
+  document.getElementById('winScreen').style.display='block';
+  document.getElementById('winScore').textContent=livesLeft+'♥';
+  const msgs=["Squeaked through with one life!","Close call — but you made it!","Nice work, chain complete!","Great job — barely a mistake!","Perfect run — full hearts! 🌟"];
+  document.getElementById('winMsg').textContent=msgs[livesLeft-1]||"Chain complete!";
+}
+
+document.addEventListener('DOMContentLoaded',function(){
+  const inp=document.getElementById('hiddenInput');
+  inp.addEventListener('keydown',function(e){
+    if(document.getElementById('gameScreen').style.display!=='none'){
+      e.preventDefault();handleKey(e.key);
+    }
+  });
+  document.getElementById('delBtn').addEventListener('click',deleteLast);
+  document.addEventListener('click',function(){
+    if(document.getElementById('gameScreen').style.display!=='none')focusHidden();
+  });
+  shuffleChains();showSetup();
+});
+</script>
+</body>
+</html>

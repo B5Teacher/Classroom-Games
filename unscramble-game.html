@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Word Unscramble — Weather & Emotions</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --cream: #F7F3EC;
+    --ink: #1A1814;
+    --muted: #7A756C;
+    --border: rgba(26,24,20,0.15);
+    --blue: #185FA5;
+    --blue-light: #E6F1FB;
+    --green: #3B6D11;
+    --green-light: #EAF3DE;
+    --red: #A32D2D;
+    --red-light: #FCEBEB;
+    --amber: #BA7517;
+    --amber-light: #FAEEDA;
+  }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .app { width: 100%; max-width: 580px; }
+
+  /* HEADER */
+  .header { text-align: center; margin-bottom: 32px; }
+  .header h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: 42px;
+    font-weight: 800;
+    letter-spacing: -1px;
+    line-height: 1;
+    color: var(--ink);
+  }
+  .header h1 span { color: var(--blue); }
+  .header p { font-size: 14px; color: var(--muted); margin-top: 6px; }
+
+  /* SCORE BAR */
+  .scorebar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: white;
+    border: 0.5px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 20px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .scorebar strong { font-size: 18px; font-weight: 700; color: var(--ink); font-family: 'Syne', sans-serif; }
+  .progress-bar-bg {
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+  .progress-bar { height: 100%; background: var(--blue); border-radius: 2px; transition: width 0.4s ease; }
+
+  /* CARD */
+  .card {
+    background: white;
+    border: 0.5px solid var(--border);
+    border-radius: 16px;
+    padding: 36px 28px 28px;
+    text-align: center;
+    min-height: 340px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+  }
+  .round-badge {
+    font-size: 11px;
+    letter-spacing: 1.8px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+  .scrambled-word {
+    font-family: 'Syne', sans-serif;
+    font-size: 52px;
+    font-weight: 800;
+    letter-spacing: 6px;
+    color: var(--ink);
+    word-break: break-all;
+    margin-bottom: 8px;
+    transition: opacity 0.2s;
+  }
+  .hint-text { font-size: 13px; color: var(--muted); margin-bottom: 24px; min-height: 18px; }
+
+  /* LETTER TILES input area */
+  .answer-row {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+  .tile {
+    width: 44px;
+    height: 52px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Syne', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--ink);
+    background: var(--cream);
+    transition: all 0.15s;
+  }
+  .tile.filled { background: white; border-color: var(--blue); color: var(--blue); }
+  .tile.correct { background: var(--green-light); border-color: var(--green); color: var(--green); }
+  .tile.wrong { background: var(--red-light); border-color: var(--red); color: var(--red); animation: shake 0.3s ease; }
+
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    25% { transform: translateX(-4px); }
+    75% { transform: translateX(4px); }
+  }
+  @keyframes popIn {
+    0% { transform: scale(0.85); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  .tile.pop { animation: popIn 0.2s ease; }
+
+  /* TEXT INPUT */
+  .input-wrap { width: 100%; margin-bottom: 16px; }
+  .text-input {
+    width: 100%;
+    padding: 12px 16px;
+    font-family: 'Syne', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 4px;
+    text-transform: lowercase;
+    text-align: center;
+    background: var(--cream);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    outline: none;
+    color: var(--ink);
+    transition: border-color 0.15s;
+  }
+  .text-input:focus { border-color: var(--blue); background: white; }
+  .text-input.correct { border-color: var(--green); background: var(--green-light); color: var(--green); }
+  .text-input.wrong { border-color: var(--red); background: var(--red-light); color: var(--red); animation: shake 0.3s ease; }
+
+  /* BUTTONS */
+  .btn-row { display: flex; gap: 8px; width: 100%; justify-content: center; }
+  button {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    padding: 10px 20px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: white;
+    color: var(--ink);
+    cursor: pointer;
+    transition: background 0.12s, transform 0.05s;
+  }
+  button:hover { background: var(--cream); }
+  button:active { transform: scale(0.97); }
+  button.primary {
+    background: var(--ink);
+    color: var(--cream);
+    border-color: var(--ink);
+    font-weight: 500;
+    padding: 10px 28px;
+  }
+  button.primary:hover { background: #333; }
+
+  /* FEEDBACK BADGE */
+  .feedback {
+    position: absolute;
+    top: 16px; right: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 4px 12px;
+    border-radius: 20px;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .feedback.show { opacity: 1; }
+  .feedback.correct-fb { background: var(--green-light); color: var(--green); }
+  .feedback.wrong-fb { background: var(--red-light); color: var(--red); }
+
+  /* SETUP / END SCREENS */
+  .screen {
+    background: white;
+    border: 0.5px solid var(--border);
+    border-radius: 16px;
+    padding: 40px 32px;
+    text-align: center;
+  }
+  .screen h2 { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800; margin-bottom: 12px; }
+  .screen p { font-size: 14px; color: var(--muted); line-height: 1.7; margin-bottom: 20px; }
+  .word-chip {
+    display: inline-block;
+    background: var(--blue-light);
+    color: var(--blue);
+    font-size: 12px;
+    font-weight: 500;
+    padding: 3px 10px;
+    border-radius: 20px;
+    margin: 3px;
+  }
+  .final-score {
+    font-family: 'Syne', sans-serif;
+    font-size: 64px;
+    font-weight: 800;
+    color: var(--ink);
+    margin: 12px 0;
+  }
+  .final-score span { font-size: 24px; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <h1>UN<span>SCRAM</span>BLE</h1>
+    <p>Weather &amp; Emotions Vocabulary</p>
+  </div>
+
+  <!-- SETUP -->
+  <div id="setupScreen" class="screen">
+    <h2>How to play</h2>
+    <p>Each round, you'll see a scrambled word from the vocabulary list. Type the correct spelling and press Enter — or hit Skip to move on.</p>
+    <p>
+      <strong>15 words:</strong><br>
+      <span class="word-chip">bored</span><span class="word-chip">frustrated</span><span class="word-chip">sleepy</span><span class="word-chip">surprised</span><span class="word-chip">energetic</span>
+      <span class="word-chip">upset</span><span class="word-chip">cool</span><span class="word-chip">foggy</span><span class="word-chip">freezing</span><span class="word-chip">warm</span>
+      <span class="word-chip">humid</span><span class="word-chip">icy</span><span class="word-chip">lightning</span><span class="word-chip">snowstorm</span><span class="word-chip">thunderstorm</span>
+    </p>
+    <button class="primary" onclick="startGame()">Start game</button>
+  </div>
+
+  <!-- GAME -->
+  <div id="gameArea" style="display:none">
+    <div class="scorebar">
+      <div>Card <strong id="cardNum">1</strong> of 15</div>
+      <div>Score <strong id="scoreNum">0</strong></div>
+      <div>Skipped <strong id="skipNum">0</strong></div>
+    </div>
+    <div class="progress-bar-bg"><div class="progress-bar" id="progressBar" style="width:0%"></div></div>
+
+    <div class="card" id="gameCard">
+      <div id="feedback" class="feedback"></div>
+      <div>
+        <p class="round-badge" id="roundBadge">SCRAMBLED WORD</p>
+        <div class="scrambled-word" id="scrambledDisplay">LOADING</div>
+        <p class="hint-text" id="hintText"></p>
+      </div>
+      <div style="width:100%">
+        <div class="input-wrap">
+          <input class="text-input" id="answerInput" type="text" placeholder="type your answer…" autocomplete="off" autocorrect="off" spellcheck="false" />
+        </div>
+        <div class="btn-row">
+          <button onclick="skipWord()">Skip</button>
+          <button class="primary" onclick="checkAnswer()">Check →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- END -->
+  <div id="endScreen" class="screen" style="display:none">
+    <h2>Nice work! 🎉</h2>
+    <div class="final-score" id="finalScore">0 <span>/ 15</span></div>
+    <p id="endMsg"></p>
+    <button class="primary" onclick="startGame()">Play again</button>
+  </div>
+</div>
+
+<script>
+const words = ["bored","frustrated","sleepy","surprised","energetic","upset","cool","foggy","freezing","warm","humid","icy","lightning","snowstorm","thunderstorm"];
+
+const hints = {
+  "bored": "feeling uninterested or restless",
+  "frustrated": "feeling annoyed or stuck",
+  "sleepy": "feeling like you need to sleep",
+  "surprised": "feeling shocked by something unexpected",
+  "energetic": "feeling full of energy and activity",
+  "upset": "feeling sad or disturbed",
+  "cool": "slightly cold temperature or also trendy",
+  "foggy": "weather: misty, hard to see far",
+  "freezing": "extremely cold temperature",
+  "warm": "comfortably hot temperature",
+  "humid": "weather: hot and sticky with moisture",
+  "icy": "covered in ice; slippery",
+  "lightning": "weather: bright electric flash in the sky",
+  "snowstorm": "weather: heavy snow with strong winds",
+  "thunderstorm": "weather: storm with thunder and lightning"
+};
+
+function scramble(word) {
+  const a = word.split('');
+  let tries = 0;
+  do {
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    tries++;
+  } while (a.join('') === word && tries < 10);
+  return a.join('').toUpperCase();
+}
+
+let deck = [], idx = 0, score = 0, skipped = 0;
+
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function startGame() {
+  deck = shuffle(words);
+  idx = 0; score = 0; skipped = 0;
+  document.getElementById('setupScreen').style.display = 'none';
+  document.getElementById('endScreen').style.display = 'none';
+  document.getElementById('gameArea').style.display = 'block';
+  renderCard();
+}
+
+function renderCard() {
+  const word = deck[idx];
+  document.getElementById('cardNum').textContent = idx + 1;
+  document.getElementById('scoreNum').textContent = score;
+  document.getElementById('skipNum').textContent = skipped;
+  document.getElementById('progressBar').style.width = (idx / 15 * 100) + '%';
+  document.getElementById('scrambledDisplay').textContent = scramble(word);
+  document.getElementById('hintText').textContent = hints[word] || '';
+  const inp = document.getElementById('answerInput');
+  inp.value = '';
+  inp.className = 'text-input';
+  inp.focus();
+  hideFeedback();
+}
+
+function showFeedback(correct) {
+  const fb = document.getElementById('feedback');
+  fb.textContent = correct ? '✓ Correct!' : '✗ Try again';
+  fb.className = 'feedback show ' + (correct ? 'correct-fb' : 'wrong-fb');
+  if (!correct) setTimeout(hideFeedback, 1200);
+}
+
+function hideFeedback() {
+  document.getElementById('feedback').className = 'feedback';
+}
+
+function checkAnswer() {
+  const inp = document.getElementById('answerInput');
+  const val = inp.value.trim().toLowerCase();
+  const word = deck[idx];
+  if (!val) return;
+  if (val === word) {
+    inp.className = 'text-input correct';
+    showFeedback(true);
+    score++;
+    document.getElementById('scoreNum').textContent = score;
+    setTimeout(advance, 700);
+  } else {
+    inp.className = 'text-input wrong';
+    showFeedback(false);
+    setTimeout(() => { inp.className = 'text-input'; inp.select(); }, 600);
+  }
+}
+
+function skipWord() {
+  skipped++;
+  document.getElementById('skipNum').textContent = skipped;
+  advance();
+}
+
+function advance() {
+  idx++;
+  if (idx >= deck.length) {
+    endGame();
+  } else {
+    renderCard();
+  }
+}
+
+function endGame() {
+  document.getElementById('gameArea').style.display = 'none';
+  document.getElementById('endScreen').style.display = 'block';
+  document.getElementById('finalScore').innerHTML = score + ' <span>/ 15</span>';
+  const msgs = ['Keep practicing!', 'Getting there!', 'Good effort!', 'Well done!', 'Excellent work!', 'Perfect score! 🌟'];
+  const msgIdx = score <= 5 ? 0 : score <= 8 ? 1 : score <= 10 ? 2 : score <= 12 ? 3 : score <= 14 ? 4 : 5;
+  document.getElementById('endMsg').textContent = msgs[msgIdx];
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('answerInput').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') checkAnswer();
+  });
+});
+</script>
+</body>
+</html>

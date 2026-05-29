@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Taboo — Weather & Emotions Vocabulary</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #f5f5f0;
+    color: #2c2c2a;
+    min-height: 100vh;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .container {
+    width: 100%;
+    max-width: 600px;
+  }
+  h1 {
+    font-size: 28px;
+    font-weight: 500;
+    text-align: center;
+    margin-bottom: 8px;
+  }
+  .subtitle {
+    text-align: center;
+    color: #5f5e5a;
+    font-size: 14px;
+    margin-bottom: 24px;
+  }
+  .setup {
+    background: white;
+    border: 0.5px solid rgba(0,0,0,0.15);
+    border-radius: 12px;
+    padding: 32px 24px;
+    text-align: center;
+  }
+  .setup p {
+    font-size: 14px;
+    color: #5f5e5a;
+    margin-bottom: 16px;
+    line-height: 1.6;
+  }
+  .play { display: none; }
+  .meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    font-size: 13px;
+    color: #5f5e5a;
+  }
+  .card {
+    background: white;
+    border: 0.5px solid rgba(0,0,0,0.15);
+    border-radius: 12px;
+    padding: 32px 24px;
+    text-align: center;
+    min-height: 380px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .label {
+    font-size: 12px;
+    color: #5f5e5a;
+    letter-spacing: 1.5px;
+    margin-bottom: 8px;
+  }
+  .word {
+    font-size: 48px;
+    font-weight: 500;
+    color: #2c2c2a;
+    margin-bottom: 20px;
+    word-break: break-word;
+  }
+  .divider {
+    height: 0.5px;
+    background: rgba(0,0,0,0.15);
+    margin: 0 auto 16px;
+    width: 60%;
+  }
+  .taboo-label {
+    font-size: 12px;
+    color: #A32D2D;
+    letter-spacing: 1.5px;
+    margin-bottom: 12px;
+  }
+  .taboo-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+  .taboo-list li {
+    font-size: 18px;
+    font-weight: 500;
+    color: #A32D2D;
+    padding: 6px 16px;
+    background: #FCEBEB;
+    border-radius: 8px;
+  }
+  .no-taboo {
+    font-size: 14px;
+    color: #5f5e5a;
+    font-style: italic;
+    margin-bottom: 16px;
+  }
+  .timer-wrap { margin-top: 16px; }
+  .timer {
+    font-size: 36px;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    color: #2c2c2a;
+  }
+  .timer-bar-bg {
+    height: 6px;
+    background: #e8e6df;
+    border-radius: 3px;
+    margin-top: 10px;
+    overflow: hidden;
+  }
+  .timer-bar {
+    height: 100%;
+    width: 100%;
+    background: #185FA5;
+    transition: width 1s linear, background 0.3s;
+  }
+  .controls {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  button {
+    font-family: inherit;
+    font-size: 14px;
+    padding: 10px 18px;
+    background: white;
+    color: #2c2c2a;
+    border: 0.5px solid rgba(0,0,0,0.3);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.05s;
+  }
+  button:hover { background: #f0eee7; }
+  button:active { transform: scale(0.98); }
+  button.primary {
+    background: #2c2c2a;
+    color: white;
+    border-color: #2c2c2a;
+    font-size: 16px;
+    padding: 12px 28px;
+  }
+  button.primary:hover { background: #444441; }
+  .round-1 .timer-bar { background: #185FA5; }
+  .round-2 .timer-bar { background: #BA7517; }
+  .round-3 .timer-bar { background: #A32D2D; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Taboo</h1>
+  <p class="subtitle">Weather &amp; Emotions Vocabulary</p>
+
+  <div id="setup" class="setup">
+    <p>15 vocabulary words across 3 rounds:</p>
+    <p><strong>Round 1:</strong> just the word (warm-up — say anything)<br>
+    <strong>Round 2:</strong> word + 2 taboo words<br>
+    <strong>Round 3:</strong> word + 4 taboo words</p>
+    <p>45 cards total · 2-minute timer per card</p>
+    <button id="startBtn" class="primary">Start game</button>
+  </div>
+
+  <div id="play" class="play">
+    <div class="meta">
+      <span id="progress">Card 1 of 45</span>
+      <span id="round">Round 1</span>
+    </div>
+
+    <div id="card" class="card round-1">
+      <div>
+        <p class="label">DESCRIBE THIS WORD</p>
+        <p id="word" class="word">—</p>
+        <div id="tabooSection">
+          <div class="divider"></div>
+          <p class="taboo-label">DO NOT SAY</p>
+          <ul id="taboo" class="taboo-list"></ul>
+        </div>
+      </div>
+
+      <div class="timer-wrap">
+        <div id="timer" class="timer">2:00</div>
+        <div class="timer-bar-bg">
+          <div id="timerBar" class="timer-bar"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button id="pauseBtn">Pause</button>
+      <button id="resetTimerBtn">Reset timer</button>
+      <button id="nextBtn">Next card →</button>
+      <button id="restartBtn">Restart</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  // Base word list
+  const words = [
+    "bored", "frustrated", "sleepy", "surprised", "energetic",
+    "upset", "cool", "foggy", "freezing", "warm",
+    "humid", "icy", "lightning", "snowstorm", "thunderstorm"
+  ];
+
+  // Taboo words added per round (cumulative)
+  // Round 2 adds first 2, Round 3 adds 2 more (total 4)
+  const tabooMap = {
+    "bored":         ["tired", "nothing", "fun", "interesting"],
+    "frustrated":    ["angry", "mad", "upset", "can't"],
+    "sleepy":        ["tired", "bed", "yawn", "nap"],
+    "surprised":     ["shock", "wow", "unexpected", "didn't expect"],
+    "energetic":     ["energy", "active", "run", "tired"],
+    "upset":         ["sad", "cry", "angry", "mad"],
+    "cool":          ["cold", "warm", "chilly", "awesome"],
+    "foggy":         ["fog", "cloud", "see", "thick"],
+    "freezing":      ["cold", "ice", "winter", "frozen"],
+    "warm":          ["hot", "cold", "sun", "cozy"],
+    "humid":         ["wet", "sticky", "hot", "summer"],
+    "icy":           ["ice", "cold", "slip", "frozen"],
+    "lightning":     ["thunder", "storm", "flash", "bolt"],
+    "snowstorm":     ["snow", "winter", "blizzard", "cold"],
+    "thunderstorm":  ["thunder", "lightning", "rain", "loud"]
+  };
+
+  let deck = [];
+  let currentIndex = 0;
+  let timerInterval = null;
+  let timeLeft = 120;
+  let isPaused = false;
+  const TOTAL_TIME = 120;
+
+  function shuffle(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function buildDeck() {
+    deck = [];
+    // 3 rounds, each round is a fresh shuffle of all 15 words
+    for (let round = 1; round <= 3; round++) {
+      const shuffled = shuffle(words);
+      shuffled.forEach(function(w) {
+        deck.push({ word: w, round: round });
+      });
+    }
+    currentIndex = 0;
+  }
+
+  function renderCard() {
+    const card = deck[currentIndex];
+    document.getElementById("word").textContent = card.word;
+
+    const cardEl = document.getElementById("card");
+    cardEl.classList.remove("round-1", "round-2", "round-3");
+    cardEl.classList.add("round-" + card.round);
+
+    const tabooSection = document.getElementById("tabooSection");
+    const tabooList = document.getElementById("taboo");
+    tabooList.innerHTML = "";
+
+    if (card.round === 1) {
+      tabooSection.style.display = "none";
+    } else {
+      tabooSection.style.display = "block";
+      const count = card.round === 2 ? 2 : 4;
+      const tabooWords = tabooMap[card.word].slice(0, count);
+      tabooWords.forEach(function(t) {
+        const li = document.createElement("li");
+        li.textContent = t;
+        tabooList.appendChild(li);
+      });
+    }
+
+    document.getElementById("progress").textContent = "Card " + (currentIndex + 1) + " of " + deck.length;
+    const roundLabels = {
+      1: "Round 1 · no taboo words",
+      2: "Round 2 · 2 taboo words",
+      3: "Round 3 · 4 taboo words"
+    };
+    document.getElementById("round").textContent = roundLabels[card.round];
+    resetTimer();
+    startTimer();
+  }
+
+  function updateTimerDisplay() {
+    const m = Math.floor(timeLeft / 60);
+    const s = timeLeft % 60;
+    document.getElementById("timer").textContent = m + ":" + (s < 10 ? "0" : "") + s;
+    const pct = (timeLeft / TOTAL_TIME) * 100;
+    const bar = document.getElementById("timerBar");
+    bar.style.width = pct + "%";
+    if (timeLeft <= 20) {
+      bar.style.background = "#A32D2D";
+      document.getElementById("timer").style.color = "#A32D2D";
+    } else if (timeLeft <= 45) {
+      bar.style.background = "#BA7517";
+      document.getElementById("timer").style.color = "#2c2c2a";
+    } else {
+      bar.style.background = "";
+      document.getElementById("timer").style.color = "#2c2c2a";
+    }
+  }
+
+  function startTimer() {
+    if (timerInterval) clearInterval(timerInterval);
+    isPaused = false;
+    document.getElementById("pauseBtn").textContent = "Pause";
+    timerInterval = setInterval(function() {
+      if (!isPaused && timeLeft > 0) {
+        timeLeft--;
+        updateTimerDisplay();
+        if (timeLeft === 0) {
+          clearInterval(timerInterval);
+          document.getElementById("timer").textContent = "TIME'S UP";
+        }
+      }
+    }, 1000);
+  }
+
+  function resetTimer() {
+    timeLeft = TOTAL_TIME;
+    updateTimerDisplay();
+  }
+
+  document.getElementById("startBtn").addEventListener("click", function() {
+    buildDeck();
+    document.getElementById("setup").style.display = "none";
+    document.getElementById("play").style.display = "block";
+    renderCard();
+  });
+
+  document.getElementById("nextBtn").addEventListener("click", function() {
+    if (currentIndex < deck.length - 1) {
+      currentIndex++;
+      renderCard();
+    } else {
+      document.getElementById("word").textContent = "Game over!";
+      document.getElementById("tabooSection").style.display = "none";
+      if (timerInterval) clearInterval(timerInterval);
+      document.getElementById("timer").textContent = "—";
+    }
+  });
+
+  document.getElementById("pauseBtn").addEventListener("click", function() {
+    isPaused = !isPaused;
+    this.textContent = isPaused ? "Resume" : "Pause";
+  });
+
+  document.getElementById("resetTimerBtn").addEventListener("click", function() {
+    resetTimer();
+    startTimer();
+  });
+
+  document.getElementById("restartBtn").addEventListener("click", function() {
+    if (timerInterval) clearInterval(timerInterval);
+    document.getElementById("setup").style.display = "block";
+    document.getElementById("play").style.display = "none";
+  });
+})();
+</script>
+</body>
+</html>
