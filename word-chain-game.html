@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Word Chain — Weather & Emotions</title>
+<title>Word Chain</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,400&display=swap');
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -46,6 +46,7 @@ body{font-family:'Source Serif 4',serif;background:var(--bg);color:var(--text);m
 .dash-row{display:flex;gap:5px;justify-content:center;flex-wrap:wrap;margin-bottom:20px;min-height:60px;align-items:flex-end;}
 .dash-tile{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:default;}
 .tile-char{width:32px;height:36px;display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--text);border-radius:5px;background:transparent;transition:all 0.12s;position:relative;}
+.tile-char.given-letter{color:var(--gold);opacity:0.9;}
 .tile-char.cursor-on::after{content:'';position:absolute;bottom:2px;left:50%;transform:translateX(-50%);width:14px;height:2px;background:var(--blue);border-radius:1px;animation:blink 1s step-end infinite;}
 @keyframes blink{0%,100%{opacity:1;}50%{opacity:0;}}
 .tile-char.filled{color:var(--blue);}
@@ -53,6 +54,7 @@ body{font-family:'Source Serif 4',serif;background:var(--bg);color:var(--text);m
 .tile-char.wrong-char{color:var(--red);}
 @keyframes charPop{from{transform:scale(0.6) translateY(4px);opacity:0;}to{transform:scale(1) translateY(0);opacity:1;}}
 .tile-line{width:28px;height:1.5px;background:var(--border2);border-radius:1px;transition:background 0.2s;}
+.tile-line.given-line{background:var(--gold-dim);}
 .tile-line.active-line{background:var(--blue);}
 .tile-line.filled-line{background:var(--gold);}
 .tile-line.correct-line{background:var(--green);}
@@ -74,38 +76,56 @@ body{font-family:'Source Serif 4',serif;background:var(--bg);color:var(--text);m
 .screen p{font-size:14px;color:var(--muted);line-height:1.8;margin-bottom:16px;}
 .example-chain{background:var(--surface2);border-radius:10px;padding:14px 20px;margin:0 auto 20px;font-size:13px;color:var(--muted);text-align:left;max-width:380px;}
 .example-chain .ev{color:var(--gold);font-weight:600;}.example-chain .eb{color:var(--blue);}
-.chain-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px;}
-.chain-opt{background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:12px 14px;cursor:pointer;text-align:left;transition:border-color 0.15s,background 0.15s;}
-.chain-opt:hover{border-color:var(--gold-dim);background:var(--gold-bg);}
-.chain-opt .co-num{font-family:'Playfair Display',serif;font-size:18px;color:var(--gold);font-weight:700;margin-bottom:4px;}
-.chain-opt .co-words{font-size:11px;color:var(--muted);letter-spacing:0.3px;line-height:1.6;}
-.chain-opt .co-words .cv{color:var(--gold);}.chain-opt .co-words .cb{color:var(--blue);}
 button.primary{font-family:'Source Serif 4',serif;font-size:15px;font-weight:600;padding:12px 36px;background:var(--gold);color:#0F1923;border:none;border-radius:8px;cursor:pointer;transition:background 0.12s,transform 0.05s;}
 button.primary:hover{background:#c49030;}button.primary:active{transform:scale(0.97);}
 .big-result{font-family:'Playfair Display',serif;font-size:72px;font-weight:900;color:var(--gold);margin:6px 0;}
 .revealed-word{font-family:'Playfair Display',serif;font-size:28px;color:var(--red);letter-spacing:2px;margin:8px 0;}
+
+/* WORD LIST EDITOR */
+.editor-toggle{font-size:13px;color:var(--blue);background:none;border:none;cursor:pointer;padding:4px 0;text-decoration:underline;display:block;margin:0 auto 16px;font-family:'Source Serif 4',serif;}
+.word-editor{background:var(--surface2);border:0.5px solid var(--border2);border-radius:10px;padding:16px;margin-bottom:16px;text-align:left;}
+.word-editor label{font-size:12px;color:var(--muted);letter-spacing:0.5px;display:block;margin-bottom:8px;}
+.word-editor textarea{width:100%;font-family:'Source Serif 4',serif;font-size:14px;border:0.5px solid var(--border2);border-radius:6px;padding:8px 10px;resize:vertical;min-height:80px;background:var(--bg);color:var(--text);outline:none;}
+.word-editor textarea:focus{border-color:var(--blue);}
+.word-editor .hint-note{font-size:11px;color:var(--muted);margin-top:6px;}
+.word-editor-btns{display:flex;gap:8px;margin-top:8px;}
+.word-editor-btns button{font-family:'Source Serif 4',serif;font-size:13px;padding:7px 16px;background:var(--surface);color:var(--text);border:0.5px solid var(--border2);border-radius:6px;cursor:pointer;}
+.word-editor-btns button:hover{background:var(--border2);}
+.generating{font-size:13px;color:var(--muted);text-align:center;padding:12px;font-style:italic;}
 </style>
 </head>
 <body>
 <div class="app">
   <div class="header">
     <h1>Word Chain</h1>
-    <p>Weather &amp; Emotions · type directly on the dashes</p>
+    <p>Every word starts with the last letter of the one before</p>
   </div>
 
   <div id="setupScreen" class="screen">
     <h2>How to play</h2>
-    <p>Each chain has 5 words. Every word starts with the last letter of the one before.<br>Gold = vocabulary &nbsp;·&nbsp; Blue = bridge word.</p>
+    <p>Each chain has 5 words. Words 1, 3, 5 are vocabulary; words 2 and 4 are bridge words.<br>The first letter of each word is always given. 5 wrong guesses ends the game.</p>
     <div class="example-chain">
       <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;">Example</div>
-      <div>① <span class="ev">foggy</span> → ends <strong style="color:var(--text)">Y</strong></div>
-      <div>② <span class="eb">yell</span> → ends <strong style="color:var(--text)">L</strong></div>
-      <div>③ <span class="ev">lightning</span> → ends <strong style="color:var(--text)">G</strong></div>
-      <div>④ <span class="eb">grab</span> → ends <strong style="color:var(--text)">B</strong></div>
-      <div>⑤ <span class="ev">bored</span></div>
+      <div>① <span class="ev">f<span style="opacity:0.4">oggy</span></span> → ends <strong style="color:var(--text)">Y</strong></div>
+      <div>② <span class="eb">y<span style="opacity:0.4">ell</span></span> → ends <strong style="color:var(--text)">L</strong></div>
+      <div>③ <span class="ev">l<span style="opacity:0.4">ightning</span></span> → ends <strong style="color:var(--text)">G</strong></div>
+      <div>④ <span class="eb">g<span style="opacity:0.4">rab</span></span> → ends <strong style="color:var(--text)">B</strong></div>
+      <div>⑤ <span class="ev">b<span style="opacity:0.4">ored</span></span></div>
+      <div style="margin-top:8px;font-size:11px;"><span style="color:var(--gold)">■ vocab</span> &nbsp; <span style="color:var(--blue)">■ bridge</span> &nbsp; first letter always shown</div>
     </div>
-    <p style="font-size:12px;margin-bottom:20px;">5 wrong guesses per word ends the game. Just start typing — letters appear on the dashes.</p>
-    <button class="primary" onclick="startRandom()">Start</button>
+    <button class="editor-toggle" onclick="toggleEditor()">✎ Edit word list</button>
+    <div id="wordEditor" class="word-editor" style="display:none">
+      <label>VOCABULARY WORDS — one per line</label>
+      <textarea id="wordListInput"></textarea>
+      <div class="hint-note">Needs at least 3 words. Chains are generated automatically each game.</div>
+      <div class="word-editor-btns">
+        <button onclick="applyWordList()">Apply</button>
+        <button onclick="resetWordList()">Reset to default</button>
+      </div>
+    </div>
+    <p id="wordCountMsg" style="font-size:13px;margin-bottom:20px;color:var(--muted);"></p>
+    <div id="genStatus" class="generating" style="display:none">Building chain…</div>
+    <button class="primary" id="startBtn" onclick="startGame()">Start</button>
   </div>
 
   <div id="gameScreen" style="display:none">
@@ -132,7 +152,7 @@ button.primary:hover{background:#c49030;}button.primary:active{transform:scale(0
         <button class="del-btn" id="delBtn">⌫ delete</button>
       </div>
     </div>
-    <input class="hidden-input" id="hiddenInput" autocomplete="off" autocorrect="off" spellcheck="false" />
+    <input class="hidden-input" id="hiddenInput" autocomplete="off" autocorrect="off" spellcheck="false"/>
   </div>
 
   <div id="failScreen" class="screen" style="display:none">
@@ -140,287 +160,545 @@ button.primary:hover{background:#c49030;}button.primary:active{transform:scale(0
     <p>The answer was:</p>
     <div class="revealed-word" id="revealedWord"></div>
     <p id="failMsg"></p>
-    <button class="primary" onclick="startRandom()">Try another chain</button>
+    <button class="primary" onclick="startGame()">Try again</button>
+    <br><br>
+    <button class="editor-toggle" onclick="goSetup()">← Back to word list</button>
   </div>
 
   <div id="winScreen" class="screen" style="display:none">
     <h2>Chain complete!</h2>
     <div class="big-result" id="winScore"></div>
     <p id="winMsg"></p>
-    <button class="primary" onclick="startRandom()">Play again</button>
+    <button class="primary" onclick="startGame()">Play again</button>
+    <br><br>
+    <button class="editor-toggle" onclick="goSetup()">← Back to word list</button>
   </div>
 </div>
 
 <script>
-const CHAINS=[
-  {label:"bored → warm",words:[
-    {word:"bored",isVocab:true,clue:"Emotion: feeling restless and uninterested — nothing seems exciting or fun"},
-    {word:"dare",isVocab:false,clue:"To challenge someone to do something risky or difficult"},
-    {word:"energetic",isVocab:true,clue:"Emotion: full of energy, enthusiasm, and the drive to be active"},
-    {word:"crow",isVocab:false,clue:"A large black bird with a loud caw — or to boast proudly about something"},
-    {word:"warm",isVocab:true,clue:"Weather/feeling: comfortably hot; a cozy, pleasant temperature"}
-  ]},
-  {label:"frustrated → lightning",words:[
-    {word:"frustrated",isVocab:true,clue:"Emotion: feeling annoyed and stuck because something just won't work out"},
-    {word:"dash",isVocab:false,clue:"To move very quickly; also a short horizontal punctuation mark —"},
-    {word:"humid",isVocab:true,clue:"Weather: hot and sticky with a lot of moisture in the air"},
-    {word:"deal",isVocab:false,clue:"An agreement between two people; or to hand out cards in a game"},
-    {word:"lightning",isVocab:true,clue:"Weather: a bright electric flash that streaks across the sky during a storm"}
-  ]},
-  {label:"upset → thunderstorm",words:[
-    {word:"upset",isVocab:true,clue:"Emotion: feeling sad, hurt, or disturbed about something that happened"},
-    {word:"toss",isVocab:false,clue:"To throw something lightly upward; to flip a coin to decide something"},
-    {word:"surprised",isVocab:true,clue:"Emotion: feeling shocked or startled by something you did not expect at all"},
-    {word:"dent",isVocab:false,clue:"A small hollow pushed into a surface — like a dent in a car door"},
-    {word:"thunderstorm",isVocab:true,clue:"Weather: a powerful storm with heavy rain, rumbling thunder, and lightning"}
-  ]},
-  {label:"sleepy → foggy",words:[
-    {word:"sleepy",isVocab:true,clue:"Emotion: feeling like you need to sleep; heavy-eyed and drowsy"},
-    {word:"yell",isVocab:false,clue:"To shout very loudly, often out of excitement, anger, or surprise"},
-    {word:"lightning",isVocab:true,clue:"Weather: a bright electric flash that streaks across the sky during a storm"},
-    {word:"golf",isVocab:false,clue:"An outdoor sport where players use clubs to hit a small ball into holes"},
-    {word:"foggy",isVocab:true,clue:"Weather: filled with thick mist so it's hard to see very far ahead"}
-  ]},
-  {label:"cool → energetic",words:[
-    {word:"cool",isVocab:true,clue:"Weather/feeling: slightly cold in a nice way — or impressively calm and unfazed"},
-    {word:"lens",isVocab:false,clue:"A curved piece of glass that focuses light — found in glasses and cameras"},
-    {word:"snowstorm",isVocab:true,clue:"Weather: a heavy fall of snow combined with strong, biting winds"},
-    {word:"made",isVocab:false,clue:"Past tense of make — something was created or produced"},
-    {word:"energetic",isVocab:true,clue:"Emotion: full of energy, enthusiasm, and the drive to be active"}
-  ]},
-  {label:"freezing → humid",words:[
-    {word:"freezing",isVocab:true,clue:"Weather/feeling: extremely cold — cold enough for water to turn to ice"},
-    {word:"grab",isVocab:false,clue:"To quickly take hold of something with your hand"},
-    {word:"bored",isVocab:true,clue:"Emotion: feeling restless and uninterested — nothing seems exciting or fun"},
-    {word:"dash",isVocab:false,clue:"To move very quickly; also a short horizontal punctuation mark —"},
-    {word:"humid",isVocab:true,clue:"Weather: hot and sticky with a lot of moisture in the air"}
-  ]},
-  {label:"upset → snowstorm",words:[
-    {word:"upset",isVocab:true,clue:"Emotion: feeling sad, hurt, or disturbed about something that happened"},
-    {word:"toss",isVocab:false,clue:"To throw something lightly upward; to flip a coin to decide something"},
-    {word:"snowstorm",isVocab:true,clue:"Weather: a heavy fall of snow combined with strong, biting winds"},
-    {word:"mast",isVocab:false,clue:"A tall pole on a ship that holds up the sails"},
-    {word:"thunderstorm",isVocab:true,clue:"Weather: a powerful storm with heavy rain, rumbling thunder, and lightning"}
-  ]},
-  {label:"icy → warm",words:[
-    {word:"icy",isVocab:true,clue:"Weather: covered in ice; dangerously slippery and bitterly cold"},
-    {word:"yoke",isVocab:false,clue:"A wooden frame that joins two animals such as oxen together to pull a load"},
-    {word:"energetic",isVocab:true,clue:"Emotion: full of energy, enthusiasm, and the drive to be active"},
-    {word:"crow",isVocab:false,clue:"A large black bird with a loud caw — or to boast proudly about something"},
-    {word:"warm",isVocab:true,clue:"Weather/feeling: comfortably hot; a cozy, pleasant temperature"}
-  ]},
-  {label:"frustrated → sleepy",words:[
-    {word:"frustrated",isVocab:true,clue:"Emotion: feeling annoyed and stuck because something just won't work out"},
-    {word:"deal",isVocab:false,clue:"An agreement between two people; or to hand out cards in a game"},
-    {word:"lightning",isVocab:true,clue:"Weather: a bright electric flash that streaks across the sky during a storm"},
-    {word:"goes",isVocab:false,clue:"Third person singular of 'go' — moves or travels from one place to another"},
-    {word:"sleepy",isVocab:true,clue:"Emotion: feeling like you need to sleep; heavy-eyed and drowsy"}
-  ]},
-  {label:"cool → humid",words:[
-    {word:"cool",isVocab:true,clue:"Weather/feeling: slightly cold in a nice way — or impressively calm and unfazed"},
-    {word:"lens",isVocab:false,clue:"A curved piece of glass that focuses light — found in glasses and cameras"},
-    {word:"surprised",isVocab:true,clue:"Emotion: feeling shocked or startled by something you did not expect at all"},
-    {word:"dash",isVocab:false,clue:"To move very quickly; also a short horizontal punctuation mark —"},
-    {word:"humid",isVocab:true,clue:"Weather: hot and sticky with a lot of moisture in the air"}
-  ]},
-  {label:"foggy → freezing",words:[
-    {word:"foggy",isVocab:true,clue:"Weather: filled with thick mist so it's hard to see very far ahead"},
-    {word:"yell",isVocab:false,clue:"To shout very loudly, often out of excitement, anger, or surprise"},
-    {word:"lightning",isVocab:true,clue:"Weather: a bright electric flash that streaks across the sky during a storm"},
-    {word:"golf",isVocab:false,clue:"An outdoor sport where players use clubs to hit a small ball into holes"},
-    {word:"freezing",isVocab:true,clue:"Weather/feeling: extremely cold — cold enough for water to turn to ice"}
-  ]},
-  {label:"upset → bored",words:[
-    {word:"upset",isVocab:true,clue:"Emotion: feeling sad, hurt, or disturbed about something that happened"},
-    {word:"tomb",isVocab:false,clue:"A stone chamber or underground grave where someone is buried"},
-    {word:"bored",isVocab:true,clue:"Emotion: feeling restless and uninterested — nothing seems exciting or fun"},
-    {word:"dent",isVocab:false,clue:"A small hollow pushed into a surface — like a dent in a car door"},
-    {word:"thunderstorm",isVocab:true,clue:"Weather: a powerful storm with heavy rain, rumbling thunder, and lightning"}
-  ]}
-];
+// ---- WORD DATA ----
+const DEFAULT_WORDS = ["bored","frustrated","sleepy","surprised","energetic","upset","cool","foggy","freezing","warm","humid","icy","lightning","snowstorm","thunderstorm"];
+const CLUES = {
+  "bored":"Emotion: feeling restless and uninterested — nothing seems exciting",
+  "frustrated":"Emotion: feeling annoyed and stuck because something won't work out",
+  "sleepy":"Emotion: feeling heavy-eyed and drowsy; really need sleep",
+  "surprised":"Emotion: feeling shocked by something completely unexpected",
+  "energetic":"Emotion: full of energy, drive, and enthusiasm to be active",
+  "upset":"Emotion: feeling sad, hurt, or disturbed about something",
+  "cool":"Weather/feeling: pleasantly cold — or impressively calm under pressure",
+  "foggy":"Weather: filled with thick mist; hard to see far ahead",
+  "freezing":"Weather/feeling: extremely cold — cold enough for water to ice over",
+  "warm":"Weather/feeling: comfortably hot; a cozy, pleasant temperature",
+  "humid":"Weather: hot and sticky with a lot of moisture in the air",
+  "icy":"Weather: covered in ice; dangerously slippery and very cold",
+  "lightning":"Weather: a bright electric flash streaking across the sky in a storm",
+  "snowstorm":"Weather: heavy snow combined with strong, biting winds",
+  "thunderstorm":"Weather: a powerful storm with heavy rain, thunder, and lightning"
+};
 
-let currentChain=null,stepIdx=0,livesLeft=5,typed="";
+// Large bridge-word dictionary keyed by starting letter
+// Values are arrays of common words with their last letter encoded as [word, endLetter]
+const BRIDGE = {
+  a:["able","ache","add","aim","arc","arm","art","ask","aye"],
+  b:["back","ball","band","bare","barn","beam","bell","bolt","bond","bone","book","boot","brow","burn","bush"],
+  c:["cage","call","calm","card","care","cart","cash","cast","cave","cell","chat","chin","clay","clip","club","coal","coat","cord","corn","crow","curl"],
+  d:["damp","dare","dark","dash","dawn","deal","dean","deck","deep","dent","desk","dish","dive","dock","dome","door","drag","drop","drum","dusk","dust"],
+  e:["earn","east","easy","edge","emit","even","exit"],
+  f:["face","fail","fall","fame","farm","fast","feed","felt","fill","find","flat","flow","foam","fold","form","free","frog","full","fund","fuse"],
+  g:["gale","game","gate","gear","gift","give","glad","glow","goal","goes","gold","golf","gone","gown","grab","grew","grin","grow","gust"],
+  h:["hail","half","hall","hand","harm","hate","haul","heap","heat","heel","helm","help","hide","hill","hint","hold","hole","hook","horn","howl","hull","hunt","hurt"],
+  i:["icon","idea","inch","iron","itch"],
+  j:["jack","jail","jolt","jump","just"],
+  k:["keen","keep","kick","kind","knot"],
+  l:["lace","lamp","land","lane","lash","last","late","lawn","lead","leap","left","lift","limb","line","link","list","load","lock","long","loop","lost","loud","luck","lung"],
+  m:["made","mail","make","mane","mark","mast","mate","melt","mild","mill","mind","mint","mode","move","much","must"],
+  n:["nail","name","neck","need","nest","next","nick","noon","norm","nose","note","null","numb"],
+  o:["open","oval","oven","over"],
+  p:["pace","pack","pale","palm","park","part","past","path","peak","pest","pick","pile","pine","plan","play","plot","plug","pool","pour","prod","pull","pump","push"],
+  q:["quit"],
+  r:["race","rack","rail","rain","rake","rank","rash","read","real","rest","rich","ride","ring","rise","risk","roam","rock","role","roll","roof","room","root","ruin","rule","rush"],
+  s:["safe","sail","salt","seal","seat","seed","send","shed","ship","show","shut","silk","sink","skip","slam","slim","slow","snap","soak","soft","soil","song","sort","soul","spin","spot","star","stay","stem","step","stop","swim"],
+  t:["tail","tall","tame","tank","task","tell","test","thin","tick","tide","tile","time","toad","toll","tone","tool","toss","town","trap","trek","trim","trip","true","tuck","tomb"],
+  u:["unit","upon","used"],
+  v:["vane","veil","vent","vine","volt"],
+  w:["wade","wait","walk","wall","wand","ward","wave","well","went","west","wide","wind","wine","wing","wise","wish","wolf","worm","wrap"],
+  x:[],
+  y:["yawn","year","yell","yoga","yoke","your"],
+  z:["zero","zone","zoom"]
+};
 
-let shuffledOrder=[];let shufflePos=0;
+let wordList = DEFAULT_WORDS.slice();
+let currentChain = null, stepIdx = 0, livesLeft = 5, typed = "", lockedChain = {};
 
-function shuffleChains(){
-  shuffledOrder=CHAINS.map((_,i)=>i);
-  for(let i=shuffledOrder.length-1;i>0;i--){
-    const j=Math.floor(Math.random()*(i+1));
-    [shuffledOrder[i],shuffledOrder[j]]=[shuffledOrder[j],shuffledOrder[i]];
-  }
-  shufflePos=0;
+// ---- WORD LIST EDITOR ----
+function toggleEditor(){
+  const ed=document.getElementById('wordEditor');
+  ed.style.display=ed.style.display==='none'?'block':'none';
+  if(ed.style.display==='block') document.getElementById('wordListInput').value=wordList.join('\n');
 }
-
-function startRandom(){
-  if(shufflePos>=shuffledOrder.length)shuffleChains();
-  startChain(shuffledOrder[shufflePos++]);
+function applyWordList(){
+  const raw=document.getElementById('wordListInput').value;
+  const parsed=raw.split('\n').map(w=>w.trim().toLowerCase()).filter(w=>w.length>1);
+  const unique=[...new Set(parsed)];
+  if(unique.length<3){alert('Please enter at least 3 vocabulary words.');return;}
+  wordList=unique;
+  document.getElementById('wordEditor').style.display='none';
+  updateWordCountMsg();
 }
-
-function showSetup(){
+function resetWordList(){
+  wordList=DEFAULT_WORDS.slice();
+  document.getElementById('wordListInput').value=wordList.join('\n');
+  updateWordCountMsg();
+}
+function updateWordCountMsg(){
+  document.getElementById('wordCountMsg').textContent=wordList.length+' vocabulary word'+(wordList.length===1?'':'s');
+}
+function goSetup(){
   ['gameScreen','failScreen','winScreen'].forEach(id=>document.getElementById(id).style.display='none');
   document.getElementById('setupScreen').style.display='block';
 }
 
-function startChain(i){
-  currentChain=CHAINS[i];stepIdx=0;livesLeft=5;typed="";
-  document.getElementById('setupScreen').style.display='none';
-  document.getElementById('gameScreen').style.display='block';
-  buildTrack();renderStep();focusHidden();
+// ---- CHAIN GENERATION ----
+// Pick 3 vocab words, find bridge words that connect them, return chain of 5
+function generateChain(vocabList){
+  const vocabSet=new Set(vocabList);
+  // shuffle vocab
+  const shuffled=vocabList.slice().sort(()=>Math.random()-0.5);
+
+  for(let attempt=0;attempt<200;attempt++){
+    // pick random 3 vocab words
+    const ri=()=>Math.floor(Math.random()*shuffled.length);
+    let v1,v3,v5,tries=0;
+    do{
+      const i1=ri(),i3=ri(),i5=ri();
+      if(i1===i3||i3===i5||i1===i5)continue;
+      v1=shuffled[i1];v3=shuffled[i3];v5=shuffled[i5];
+      tries++;
+    }while(tries<50&&(!v1||v1===v3||v3===v5||v1===v5));
+    if(!v1)continue;
+
+    // find b2: starts with v1[-1], ends with v3[0]
+    const b2pool=(BRIDGE[v1[v1.length-1]]||[]).filter(w=>w[w.length-1]===v3[0]&&!vocabSet.has(w));
+    if(!b2pool.length)continue;
+    const b2=b2pool[Math.floor(Math.random()*b2pool.length)];
+
+    // find b4: starts with v3[-1], ends with v5[0]
+    const b4pool=(BRIDGE[v3[v3.length-1]]||[]).filter(w=>w[w.length-1]===v5[0]&&!vocabSet.has(w));
+    if(!b4pool.length)continue;
+    const b4=b4pool[Math.floor(Math.random()*b4pool.length)];
+
+    // success!
+    return [
+      {word:v1, isVocab:true,  clue:CLUES[v1]||('Vocabulary word: '+v1)},
+      {word:b2, isVocab:false, clue:makeBridgeClue(b2)},
+      {word:v3, isVocab:true,  clue:CLUES[v3]||('Vocabulary word: '+v3)},
+      {word:b4, isVocab:false, clue:makeBridgeClue(b4)},
+      {word:v5, isVocab:true,  clue:CLUES[v5]||('Vocabulary word: '+v5)}
+    ];
+  }
+  return null; // failed
 }
 
+// Simple bridge clues based on word
+const BRIDGE_CLUES = {
+  "cage":"A structure with bars used to enclose animals","call":"To speak to someone; to give a name to something",
+  "calm":"Peaceful and free from strong emotion","care":"To feel concern or interest; to look after someone",
+  "cart":"A small vehicle for carrying goods; a shopping trolley",
+  "cash":"Money in the form of notes and coins","cast":"To throw something; or the actors in a play",
+  "dare":"To challenge someone to do something risky","dark":"Without light; the time after sunset",
+  "dash":"To move very fast; also a short punctuation mark —","dawn":"The first light of day; sunrise",
+  "deal":"An agreement; to hand out cards in a game","dent":"A small hollow pushed into a surface",
+  "dome":"A rounded roof shaped like half a sphere","door":"A hinged panel used to enter or close a room",
+  "drag":"To pull something heavy along the ground","drop":"To let something fall; a small amount of liquid",
+  "dust":"Fine dry powder that settles on surfaces","dusk":"The time just after sunset; twilight",
+  "gale":"A very strong wind","game":"An activity done for fun with rules; wildlife animals",
+  "gate":"A hinged barrier in a fence or wall","gear":"Equipment; or the cogs in a machine",
+  "gift":"Something given to someone; a natural talent","give":"To hand something to another person",
+  "glad":"Feeling pleased and happy","glow":"To give off a steady, soft light",
+  "goal":"What you aim for; the target in a sport","goes":"Third person of 'go'; moves from place to place",
+  "gold":"A precious yellow metal; the colour yellow-orange","golf":"A sport where players hit a ball into holes with clubs",
+  "gone":"Past tense of 'go'; no longer present","gown":"A long formal dress; a robe worn at graduation",
+  "grab":"To quickly take hold of something with your hand","grew":"Past tense of 'grow'; increased in size",
+  "grin":"A wide, happy smile","grow":"To increase in size or develop over time",
+  "gust":"A sudden strong burst of wind",
+  "hail":"Frozen rain; or to call out to someone","half":"One of two equal parts of something",
+  "hall":"A corridor; a large room for public events","hand":"The part of the body at the end of your arm",
+  "harm":"To hurt or damage something or someone","hate":"To feel strong dislike or hostility toward something",
+  "heap":"A disordered pile of things; a large amount","heat":"The quality of being warm or hot",
+  "heel":"The back part of the foot; the back of a shoe","helm":"The wheel used to steer a ship",
+  "help":"To make something easier for someone; to assist","hill":"A raised area of land, smaller than a mountain",
+  "hint":"A small clue or indirect suggestion","hold":"To keep something in your hands; a grip",
+  "hole":"An opening or hollow space in something","hook":"A curved piece of metal for hanging things",
+  "horn":"A hard growth on an animal's head; a musical instrument","hull":"The main body or frame of a ship",
+  "hunt":"To search carefully for something; to chase animals",
+  "idea":"A thought or plan formed in your mind","iron":"A heavy metal; a tool for smoothing clothes",
+  "land":"The solid ground; to arrive somewhere","lane":"A narrow road or path; a division of a road",
+  "lash":"To strike forcefully; to tie something tightly","last":"To continue; the final one in a series",
+  "late":"After the expected or usual time","lawn":"An area of short, cut grass",
+  "lead":"To guide; a heavy grey metal","leap":"To jump a long distance",
+  "left":"The direction opposite to right; past tense of leave","lift":"To raise something upward; an elevator",
+  "limb":"An arm or leg; a large branch of a tree","line":"A long thin mark; a row of people or things",
+  "link":"A connection between things; one ring in a chain","list":"A series of written items; to lean to one side",
+  "load":"A heavy thing carried; to put things into a vehicle","lock":"A device to fasten a door; to secure with a key",
+  "long":"Having great length; to wish strongly for something","loop":"A circular shape made by a curve crossing itself",
+  "lost":"Unable to find your way; past tense of lose","loud":"Making a lot of noise; easy to hear clearly",
+  "luck":"Good fortune that happens by chance","lung":"One of the two organs used for breathing",
+  "made":"Past tense of make; created or produced","mail":"Letters and packages sent by post",
+  "make":"To create or produce something","mane":"The long hair on a horse's or lion's neck",
+  "mark":"A small spot or sign; to put a symbol on something","mast":"A tall pole on a ship that holds the sails",
+  "mate":"A friend; a partner; to join together as a pair","melt":"To turn from solid to liquid when heated",
+  "mild":"Not too strong or extreme; gentle and moderate","mill":"A building where grain is ground; a factory",
+  "mind":"The part of us that thinks and feels","mint":"A plant with a cool fresh taste; to make coins",
+  "mode":"A particular way of doing or being something","move":"To change position; a planned action in a game",
+  "much":"A large amount of something","must":"Something that is necessary or required",
+  "nail":"A thin metal spike; the hard covering on a fingertip","name":"A word used to identify a person or thing",
+  "neck":"The part of the body joining the head to the shoulders","need":"To require something that is necessary",
+  "nest":"A structure birds build to lay eggs in","next":"Coming immediately after; nearest to something",
+  "nick":"A small cut or notch; to steal informally","noon":"Twelve o'clock in the middle of the day",
+  "norm":"Something that is usual or standard","nose":"The part of the face used for smelling and breathing",
+  "note":"A short written message; a musical sound","null":"Having no value or legal force; empty",
+  "numb":"Unable to feel sensation, often from cold",
+  "open":"Not closed; to move something so it's no longer shut","over":"Above; finished; across to the other side",
+  "pace":"The speed of movement; one step forward","pack":"To put things into a bag; a group of animals",
+  "pale":"Light in colour; lacking brightness","palm":"The inner part of the hand; a tropical tree",
+  "park":"An open green area for recreation; to leave a car","part":"A piece or section of something",
+  "past":"The time before now; beyond a point","path":"A way or track for walking along",
+  "peak":"The top of a mountain; the highest point","pest":"An insect or animal that causes damage",
+  "pick":"To choose; to use a finger to pluck something","pile":"A heap of things; a large wooden post in ground",
+  "pine":"A type of evergreen tree; to yearn deeply for something","plan":"An organized way to do something",
+  "play":"To take part in a game; a stage performance","plot":"A secret plan; an area of land; a story's events",
+  "plug":"A stopper for a drain; a device to connect electricity","pool":"A body of still water; a collection of shared resources",
+  "pour":"To flow rapidly downward; to tip liquid from a container","prod":"To poke something; to encourage someone to act",
+  "pull":"To drag something toward you; to remove from a socket","pump":"A device to move liquid or air; to fill with air",
+  "push":"To press something away from you","quit":"To stop doing something; to leave a job",
+  "race":"A competition of speed; a group of people sharing ancestry",
+  "rack":"A frame for storing things; to cause great pain","rail":"A metal bar; the railway system",
+  "rain":"Water falling from clouds in droplets","rake":"A garden tool with teeth; to gather leaves",
+  "rank":"A position in a hierarchy; to place in order","rash":"A skin irritation; acting too quickly without thinking",
+  "read":"To look at written words and understand them","real":"Actually existing; not imaginary",
+  "rest":"To relax and stop working; what remains after use","rich":"Having a lot of money; full of flavour",
+  "ride":"To sit on and travel by horse, bike, or vehicle","ring":"A circular band; the sound a bell makes",
+  "rise":"To move upward; to increase","risk":"The chance of something bad happening",
+  "roam":"To wander freely without a fixed route","rock":"A hard natural mineral mass; to move back and forth",
+  "role":"The part played by someone in a situation","roll":"To turn over and over; a small round bread",
+  "roof":"The top covering of a building","room":"A part of a building enclosed by walls",
+  "root":"The underground part of a plant; an origin","ruin":"To destroy or damage beyond repair; destroyed remains",
+  "rule":"A statement of what must or should be done","rush":"To move with great speed; a sudden burst of activity",
+  "safe":"Free from danger or harm; a locked metal box",
+  "sail":"A large sheet on a boat that catches wind; to travel by boat",
+  "salt":"A white mineral used to flavour food","seal":"An aquatic mammal; to close something tightly",
+  "seat":"Something to sit on; a place in an audience","seed":"A small object from which a plant grows",
+  "send":"To cause something to go somewhere","shed":"A small wooden outbuilding; to lose or cast off",
+  "ship":"A large vessel for travelling on water","show":"To display or demonstrate; a performance",
+  "shut":"To close; not open","silk":"A soft, smooth, lustrous natural fabric",
+  "sink":"A basin for washing; to go below a surface","skip":"To jump lightly; to miss out on something",
+  "slam":"To shut something loudly and forcefully","slim":"Thin; having little extra weight",
+  "slow":"Not fast; moving at low speed","snap":"To break suddenly with a sharp sound",
+  "soak":"To make thoroughly wet; to stay in water","soft":"Not hard; gentle; quiet",
+  "soil":"The top layer of earth where plants grow","song":"A piece of music with words",
+  "sort":"To arrange into groups; a type or kind","soul":"The spiritual or moral part of a person",
+  "spin":"To turn rapidly around a central point; to make thread","spot":"A particular place; a small round mark",
+  "star":"A bright ball of gas in the night sky; a famous person","stay":"To remain in one place",
+  "stem":"The main stalk of a plant; to stop the flow of something","step":"A single movement of the foot; a level of stairs",
+  "stop":"To come to an end; to prevent something happening","swim":"To move through water using the body",
+  "tail":"The rear end of an animal; to follow someone",
+  "tall":"Of greater than average height","tame":"Not wild; trained to live with people",
+  "tank":"A large container for liquid; an armoured military vehicle","task":"A piece of work to be done",
+  "tell":"To communicate information in speech or writing","test":"A procedure to check something; an exam",
+  "thin":"Of small width; not thick; lean","tick":"A small mark; the sound of a clock",
+  "tide":"The rise and fall of the sea","tile":"A flat piece used to cover floors or roofs",
+  "time":"The ongoing sequence of events; a measured period","toad":"A frog-like amphibian with dry warty skin",
+  "toll":"A charge paid to use a road or bridge; the number lost","tone":"The quality of a sound; a shade of a colour",
+  "tool":"A device used to do a task","toss":"To throw lightly upward; to flip a coin",
+  "town":"A place with houses and shops, smaller than a city","trap":"A device for catching animals; to catch someone",
+  "trek":"A long, difficult journey on foot","trim":"To cut away small amounts to neaten; slim and neat",
+  "trip":"A journey; to catch your foot and stumble","true":"In accordance with fact; loyal",
+  "tuck":"To push something into a tight space; food","tomb":"A stone chamber or vault where the dead are buried",
+  "unit":"A single thing; a group forming part of a whole","used":"Past tense of use; already used before",
+  "upon":"On top of; at the time of","vane":"A device that shows wind direction; a weather vane",
+  "veil":"A thin covering, especially over the face","vent":"An opening that lets air or gas in or out",
+  "vine":"A climbing or trailing plant","volt":"The unit of electrical force",
+  "wade":"To walk through water or something difficult","wait":"To stay in a place until something happens",
+  "walk":"To move on foot at a regular pace","wall":"A vertical structure that divides or surrounds",
+  "wand":"A thin stick used in magic; a conductor's baton","ward":"A room in a hospital; to guard and protect",
+  "wave":"A ridge of water; to move your hand in greeting","well":"In good health; a shaft sunk to reach water",
+  "went":"Past tense of go; moved from one place to another","west":"The direction where the sun sets",
+  "wide":"Having a large measurement from side to side","wind":"Moving air; to wrap around something",
+  "wine":"An alcoholic drink made from fermented grapes","wing":"A limb used for flying; the side of a building",
+  "wise":"Having good knowledge and judgement","wish":"A desire for something; to want something to happen",
+  "wolf":"A large wild dog-like animal that lives in packs","worm":"A small, soft, tube-shaped creature living in soil",
+  "wrap":"To cover or enclose something in paper or cloth","yawn":"To open the mouth wide when tired or bored",
+  "year":"A period of 365 days","yell":"To shout loudly, often from excitement or anger",
+  "yoga":"A practice of physical postures and breathing exercises","yoke":"A wooden frame joining animals to pull together",
+  "zero":"The number 0; nothing; no amount","zone":"An area with a particular use or characteristic",
+  "zoom":"To move very fast; to increase the size of an image",
+  "able":"Having the skill or means to do something","ache":"A continuous dull pain","arc":"A curved line; a segment of a circle",
+  "arm":"The upper limb of the body; a weapon; to supply weapons","art":"Creative work; the expression of skill and imagination",
+  "ask":"To request information or a favour","icon":"A symbol or image representing something",
+  "inch":"A unit of length equal to 2.54 centimetres","jump":"To push yourself off the ground into the air",
+  "keen":"Eager and enthusiastic; having a sharp edge","knot":"A fastening made by tying; a unit of speed at sea",
+  "over":"Above something; finished; across the other side",
+  "edit":"To make changes to a piece of writing or film",
+  "back":"The rear side of something; to return","ball":"A round object used in games; a formal dance",
+  "band":"A strip of material; a group of musicians","bare":"Not covered; plain and simple",
+  "barn":"A large farm building for storing grain or animals","beam":"A ray of light; a long structural piece of wood or steel",
+  "bell":"A hollow metal object that makes a ringing sound","bolt","A metal pin for fastening; a bolt of lightning",
+  "bond":"A close connection; a type of financial certificate","bone":"A hard piece of the skeleton inside the body",
+  "book":"A written or printed work bound in covers","boot":"A sturdy shoe covering the ankle; to start a computer",
+  "brow":"The forehead; the top of a hill","burn":"To be on fire; to cause injury with heat",
+  "bush":"A dense shrub; the wild open land","cell":"A small room; the basic unit of a living organism",
+  "chat":"An informal conversation","chin":"The lower part of the face below the mouth",
+  "clay":"A stiff, sticky natural material used for making pottery","clip":"A small fastener; to cut something neatly",
+  "club":"A heavy stick; a group that meets for a shared interest; a nightclub","coal":"A black fossil fuel burned for energy",
+  "coat":"An outer garment; a layer of paint or fur","cord":"A thin rope; an electrical cable",
+  "corn":"A cereal plant; hard skin on a toe","crow":"A large black bird; to boast proudly",
+  "curl":"To form into a curved or spiral shape",
+  "deck":"A floor of a ship; a pack of playing cards","dean":"A senior university official",
+  "disk":"A flat, circular storage medium","dive":"To jump head-first into water; to plunge downward",
+  "dock":"A platform for loading ships; to cut short","dome":"A rounded roof or ceiling shaped like half a sphere",
+  "even":"Equal; smooth; not odd in number","exit":"A way out; to leave a place",
+  "face":"The front of the head; to confront something","fail":"To not succeed; to stop working",
+  "fame":"The state of being very well known","farm":"Land used for growing crops or raising animals",
+  "fast":"Moving quickly; not eating for a period","feed":"To give food to; to supply something with material",
+  "felt":"Past tense of feel; a type of soft fabric","fill":"To put enough in to make full",
+  "find":"To discover or locate something","flat":"Level and smooth; a self-contained apartment",
+  "flow":"To move smoothly and steadily like water","foam":"A mass of small bubbles; a light spongy material",
+  "fold":"To bend something over on itself; a pen for sheep","form":"Shape; to create or establish something",
+  "free":"Not costing anything; not restricted","frog":"A small amphibian that jumps and lives near water",
+  "full":"Containing as much as possible","fund":"Money for a particular purpose; to provide money for",
+  "fuse":"A safety wire in an electrical circuit; to join together",
+  "earn":"To receive money for work done","east":"The direction where the sun rises","edge":"The boundary of something; the cutting side of a blade",
+  "emit":"To send out light, sound, or gas"
+};
+
+function makeBridgeClue(word){
+  return BRIDGE_CLUES[word] || ('A common English word: ' + word);
+}
+
+// ---- SETUP ----
+function updateWordCountMsg(){
+  document.getElementById('wordCountMsg').textContent = wordList.length + ' vocabulary word' + (wordList.length===1?'':'s');
+}
+
+function startGame(){
+  const status = document.getElementById('genStatus');
+  const btn = document.getElementById('startBtn');
+  status.style.display = 'block';
+  btn.disabled = true;
+  // small delay so UI can update
+  setTimeout(()=>{
+    const chain = generateChain(wordList);
+    status.style.display = 'none';
+    btn.disabled = false;
+    if(!chain){
+      alert("Couldn't build a chain with the current word list. Try adding more words with different starting/ending letters.");
+      return;
+    }
+    currentChain = chain;
+    stepIdx = 0; livesLeft = 5; typed = "";
+    document.getElementById('setupScreen').style.display = 'none';
+    document.getElementById('gameScreen').style.display = 'block';
+    buildTrack();
+    renderStep();
+    focusHidden();
+  }, 60);
+}
+
+// ---- TRACK ----
 function buildTrack(){
-  const track=document.getElementById('chainTrack');
-  track.innerHTML='';
-  currentChain.words.forEach((w,i)=>{
-    const node=document.createElement('div');
-    node.className='chain-node';node.id='node-'+i;
-    const bub=document.createElement('div');
-    bub.className='chain-bubble';bub.textContent=(i+1).toString();
-    const lbl=document.createElement('div');
-    lbl.className='chain-node-lbl';lbl.textContent=w.isVocab?'vocab':'bridge';
-    node.appendChild(bub);node.appendChild(lbl);
+  const track = document.getElementById('chainTrack');
+  track.innerHTML = '';
+  currentChain.forEach((w, i) => {
+    const node = document.createElement('div');
+    node.className = 'chain-node'; node.id = 'node-'+i;
+    const bub = document.createElement('div');
+    bub.className = 'chain-bubble'; bub.textContent = (i+1).toString();
+    const lbl = document.createElement('div');
+    lbl.className = 'chain-node-lbl'; lbl.textContent = w.isVocab ? 'vocab' : 'bridge';
+    node.appendChild(bub); node.appendChild(lbl);
     track.appendChild(node);
-    if(i<4){const arr=document.createElement('div');arr.className='chain-arrow';track.appendChild(arr);}
+    if(i < 4){const arr = document.createElement('div'); arr.className = 'chain-arrow'; track.appendChild(arr);}
   });
 }
 
 function updateTrack(failAt){
-  currentChain.words.forEach((w,i)=>{
-    const bub=document.getElementById('node-'+i).querySelector('.chain-bubble');
-    bub.className='chain-bubble';
-    if(failAt!==undefined&&i===failAt){bub.classList.add('fail-node');bub.textContent='✕';}
-    else if(i<stepIdx){bub.classList.add('done-node');bub.textContent='✓';}
-    else if(i===stepIdx){bub.classList.add('active-node');bub.textContent=(i+1).toString();}
-    else{bub.textContent=(i+1).toString();}
+  currentChain.forEach((w, i) => {
+    const bub = document.getElementById('node-'+i).querySelector('.chain-bubble');
+    bub.className = 'chain-bubble';
+    if(failAt !== undefined && i === failAt){ bub.classList.add('fail-node'); bub.textContent = '✕'; }
+    else if(i < stepIdx){ bub.classList.add('done-node'); bub.textContent = '✓'; }
+    else if(i === stepIdx){ bub.classList.add('active-node'); bub.textContent = (i+1).toString(); }
+    else { bub.textContent = (i+1).toString(); }
   });
 }
 
+// ---- RENDER STEP ----
 function renderStep(){
-  typed="";
-  const step=currentChain.words[stepIdx];
+  typed = ""; lockedChain = {};
+  const step = currentChain[stepIdx];
   updateTrack();
-  document.getElementById('stepLbl').textContent=`Word ${stepIdx+1} of 5`;
-  const badge=document.getElementById('vocabBadge');
-  badge.textContent=step.isVocab?'★ Vocabulary':'⟡ Bridge word';
-  badge.className='vocab-badge '+(step.isVocab?'badge-vocab':'badge-bridge');
-  const swl=document.getElementById('startsWithLbl');
-  if(stepIdx===0){swl.innerHTML='First word — no starting letter required';}
-  else{
-    const prev=currentChain.words[stepIdx-1].word;
-    swl.innerHTML=`Must start with: <strong>${prev[prev.length-1].toUpperCase()}</strong>`;
+  document.getElementById('stepLbl').textContent = `Word ${stepIdx+1} of 5`;
+  const badge = document.getElementById('vocabBadge');
+  badge.textContent = step.isVocab ? '★ Vocabulary' : '⟡ Bridge word';
+  badge.className = 'vocab-badge ' + (step.isVocab ? 'badge-vocab' : 'badge-bridge');
+  const swl = document.getElementById('startsWithLbl');
+  if(stepIdx === 0){
+    swl.innerHTML = 'First word — first letter given';
+  } else {
+    const prev = currentChain[stepIdx-1].word;
+    swl.innerHTML = `Starts with last letter of previous: <strong>${prev[prev.length-1].toUpperCase()}</strong>`;
   }
-  document.getElementById('clueTxt').textContent=step.clue;
-  renderTiles('','normal');
+  document.getElementById('clueTxt').textContent = step.clue;
+  renderTiles('', 'normal');
   renderLives();
   setMsg('','');
 }
 
-function renderTiles(guess,state){
-  const word=currentChain.words[stepIdx].word;
-  const row=document.getElementById('dashRow');
-  row.innerHTML='';
-  for(let i=0;i<word.length;i++){
-    const tile=document.createElement('div');tile.className='dash-tile';
-    const ch=document.createElement('div');ch.className='tile-char';
-    const line=document.createElement('div');line.className='tile-line';
-    if(state==='correct'){
-      ch.textContent=word[i].toUpperCase();ch.classList.add('correct-char');line.classList.add('correct-line');
-    }else if(state==='wrong'){
-      ch.textContent=(guess[i]||'').toUpperCase();
-      if(guess[i])ch.classList.add('wrong-char');
-      line.classList.add('wrong-line');
-    }else{
-      if(i<guess.length){ch.textContent=guess[i].toUpperCase();ch.classList.add('filled');line.classList.add('filled-line');}
-      else if(i===guess.length){ch.classList.add('cursor-on');line.classList.add('active-line');}
+// Tiles: position 0 is always the given letter (shown in gold, not typed)
+// lockedChain keys are typed-array indices (0 = word[1], 1 = word[2], etc.)
+function renderTiles(guess, state){
+  const word = currentChain[stepIdx].word;
+  const row = document.getElementById('dashRow');
+  row.innerHTML = '';
+  for(let i = 0; i < word.length; i++){
+    const tile = document.createElement('div'); tile.className = 'dash-tile';
+    const ch = document.createElement('div'); ch.className = 'tile-char';
+    const line = document.createElement('div'); line.className = 'tile-line';
+    const gi = i - 1; // index into typed (covers word[1..end])
+
+    if(i === 0){
+      ch.textContent = word[0].toUpperCase();
+      ch.classList.add('given-letter');
+      line.classList.add('given-line');
+    } else if(state === 'correct'){
+      ch.textContent = word[i].toUpperCase();
+      ch.classList.add('correct-char');
+      line.classList.add('correct-line');
+    } else if(state === 'wrong'){
+      if(lockedChain[gi] !== undefined){
+        ch.textContent = lockedChain[gi].toUpperCase();
+        ch.classList.add('correct-char'); line.classList.add('correct-line');
+      } else {
+        ch.textContent = (guess[gi] || '').toUpperCase();
+        if(guess[gi]) ch.classList.add('wrong-char');
+        line.classList.add('wrong-line');
+      }
+    } else {
+      if(lockedChain[gi] !== undefined){
+        ch.textContent = lockedChain[gi].toUpperCase();
+        ch.classList.add('correct-char'); line.classList.add('correct-line');
+      } else if(gi < guess.length){
+        ch.textContent = guess[gi].toUpperCase();
+        ch.classList.add('filled'); line.classList.add('filled-line');
+      } else if(gi === guess.length){
+        ch.classList.add('cursor-on'); line.classList.add('active-line');
+      }
     }
-    tile.appendChild(ch);tile.appendChild(line);
-    row.appendChild(tile);
+    tile.appendChild(ch); tile.appendChild(line); row.appendChild(tile);
   }
 }
 
 function renderLives(){
   for(let i=1;i<=5;i++){
-    const h=document.getElementById('h'+i);
-    h.className='heart'+(i>livesLeft?' lost':'');
+    document.getElementById('h'+i).className = 'heart' + (i > livesLeft ? ' lost' : '');
   }
 }
-function setMsg(t,type){const el=document.getElementById('msgBox');el.textContent=t;el.className='msg'+(type?' '+type:'');}
-function focusHidden(){const inp=document.getElementById('hiddenInput');inp.value='';inp.focus();}
+function setMsg(t, type){ const el=document.getElementById('msgBox'); el.textContent=t; el.className='msg'+(type?' '+type:''); }
+function focusHidden(){ document.getElementById('hiddenInput').focus(); }
 
 function deleteLast(){
-  if(typed.length>0){typed=typed.slice(0,-1);renderTiles(typed,'normal');setMsg('','');}
+  let pos = typed.length - 1;
+  while(pos >= 0 && lockedChain[pos] !== undefined) pos--;
+  if(pos >= 0){ typed = typed.slice(0, pos); renderTiles(typed,'normal'); setMsg('',''); }
   focusHidden();
 }
 
 function handleKey(key){
-  const word=currentChain.words[stepIdx].word;
-  if(key==='Backspace'){deleteLast();return;}
-  if(key==='Enter'){submitGuess();return;}
-  if(!/^[a-zA-Z]$/.test(key))return;
-  if(typed.length>=word.length)return;
-  typed+=key.toLowerCase();
-  renderTiles(typed,'normal');
-  if(typed.length===word.length)setTimeout(submitGuess,120);
+  const word = currentChain[stepIdx].word;
+  const remaining = word.length - 1;
+  if(key === 'Backspace'){ deleteLast(); return; }
+  if(key === 'Enter'){ submitGuess(); return; }
+  if(!/^[a-zA-Z]$/.test(key)) return;
+  if(typed.length >= remaining) return;
+  typed += key.toLowerCase();
+  // skip ahead past any locked positions
+  while(typed.length < remaining && lockedChain[typed.length] !== undefined){
+    typed += lockedChain[typed.length];
+  }
+  renderTiles(typed, 'normal');
+  if(typed.length === remaining) setTimeout(submitGuess, 120);
 }
 
 function submitGuess(){
-  const word=currentChain.words[stepIdx].word;
-  if(!typed)return;
-  if(typed===word){
-    renderTiles(typed,'correct');setMsg('Correct! ✓','ok');updateTrack();
+  const word = currentChain[stepIdx].word;
+  const fullGuess = word[0] + typed;
+  if(!typed) return;
+  if(fullGuess === word){
+    renderTiles(typed, 'correct');
+    setMsg('Correct! ✓', 'ok');
+    updateTrack();
     setTimeout(()=>{
       stepIdx++;
-      if(stepIdx>=currentChain.words.length)showWin();
-      else{renderStep();focusHidden();}
-    },850);
-  }else{
+      if(stepIdx >= currentChain.length) showWin();
+      else { renderStep(); focusHidden(); }
+    }, 850);
+  } else {
     livesLeft--;
-    const lh=document.getElementById('h'+(livesLeft+1));
-    if(lh){lh.classList.add('losing');}
-    setTimeout(renderLives,400);
-    renderTiles(typed,'wrong');
-    if(livesLeft<=0){
-      setMsg('No lives left!','bad');
-      setTimeout(()=>showFail(word),950);
-    }else{
-      setMsg(`Wrong — ${livesLeft} ${livesLeft===1?'life':'lives'} left`,'bad');
-      setTimeout(()=>{typed="";renderTiles('','normal');setMsg('','');focusHidden();},700);
+    const lh = document.getElementById('h'+(livesLeft+1));
+    if(lh){ lh.classList.add('losing'); }
+    setTimeout(renderLives, 400);
+    // lock letters correct in position (typed covers word[1..end])
+    for(let i = 0; i < typed.length; i++){
+      if(typed[i] === word[i+1]) lockedChain[i] = typed[i];
+    }
+    renderTiles(typed, 'wrong');
+    if(livesLeft <= 0){
+      setMsg('No lives left!', 'bad');
+      setTimeout(()=>showFail(word), 950);
+    } else {
+      setMsg(`Wrong — ${livesLeft} ${livesLeft===1?'life':'lives'} left`, 'bad');
+      setTimeout(()=>{
+        // rebuild typed as contiguous prefix of locked chars
+        let newTyped = '';
+        for(let i = 0; i < word.length - 1; i++){
+          if(lockedChain[i] !== undefined) newTyped += lockedChain[i];
+          else break;
+        }
+        typed = newTyped;
+        renderTiles(typed, 'normal'); setMsg('',''); focusHidden();
+      }, 700);
     }
   }
 }
 
 function showFail(word){
   updateTrack(stepIdx);
-  document.getElementById('gameScreen').style.display='none';
-  document.getElementById('failScreen').style.display='block';
-  document.getElementById('revealedWord').textContent=word.toUpperCase();
-  const done=stepIdx;
-  document.getElementById('failMsg').textContent=
-    done===0?"Couldn't get the first word. Keep studying!":
-    `You got ${done} out of 5 words. Keep practicing!`;
+  document.getElementById('gameScreen').style.display = 'none';
+  document.getElementById('failScreen').style.display = 'block';
+  document.getElementById('revealedWord').textContent = word.toUpperCase();
+  document.getElementById('failMsg').textContent =
+    stepIdx === 0 ? "Couldn't get the first word. Keep studying!" :
+    `You got ${stepIdx} out of 5 words. Keep practicing!`;
 }
 
 function showWin(){
-  document.getElementById('gameScreen').style.display='none';
-  document.getElementById('winScreen').style.display='block';
-  document.getElementById('winScore').textContent=livesLeft+'♥';
-  const msgs=["Squeaked through with one life!","Close call — but you made it!","Nice work, chain complete!","Great job — barely a mistake!","Perfect run — full hearts! 🌟"];
-  document.getElementById('winMsg').textContent=msgs[livesLeft-1]||"Chain complete!";
+  document.getElementById('gameScreen').style.display = 'none';
+  document.getElementById('winScreen').style.display = 'block';
+  document.getElementById('winScore').textContent = livesLeft + '♥';
+  const msgs=["Squeaked through with one life!","Close call — chain complete!","Nice work!","Great job — barely a mistake!","Perfect — full hearts! 🌟"];
+  document.getElementById('winMsg').textContent = msgs[livesLeft-1] || "Chain complete!";
 }
 
-document.addEventListener('DOMContentLoaded',function(){
-  const inp=document.getElementById('hiddenInput');
-  inp.addEventListener('keydown',function(e){
-    if(document.getElementById('gameScreen').style.display!=='none'){
-      e.preventDefault();handleKey(e.key);
-    }
+document.addEventListener('DOMContentLoaded', function(){
+  updateWordCountMsg();
+  const inp = document.getElementById('hiddenInput');
+  inp.addEventListener('keydown', function(e){
+    if(document.getElementById('gameScreen').style.display !== 'none'){ e.preventDefault(); handleKey(e.key); }
   });
-  document.getElementById('delBtn').addEventListener('click',deleteLast);
-  document.addEventListener('click',function(){
-    if(document.getElementById('gameScreen').style.display!=='none')focusHidden();
+  document.getElementById('delBtn').addEventListener('click', deleteLast);
+  document.addEventListener('click', function(){
+    if(document.getElementById('gameScreen').style.display !== 'none') focusHidden();
   });
-  shuffleChains();showSetup();
 });
 </script>
 </body>
