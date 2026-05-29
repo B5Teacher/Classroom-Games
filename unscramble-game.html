@@ -3,416 +3,414 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Word Unscramble — Weather & Emotions</title>
+<title>Word Unscramble</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap');
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  :root {
-    --cream: #F7F3EC;
-    --ink: #1A1814;
-    --muted: #7A756C;
-    --border: rgba(26,24,20,0.15);
-    --blue: #185FA5;
-    --blue-light: #E6F1FB;
-    --green: #3B6D11;
-    --green-light: #EAF3DE;
-    --red: #A32D2D;
-    --red-light: #FCEBEB;
-    --amber: #BA7517;
-    --amber-light: #FAEEDA;
-  }
-  body {
-    font-family: 'DM Sans', sans-serif;
-    background: var(--cream);
-    color: var(--ink);
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 24px;
-  }
-  .app { width: 100%; max-width: 580px; }
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --cream:#F7F3EC;--ink:#1A1814;--muted:#7A756C;--border:rgba(26,24,20,0.15);
+  --blue:#185FA5;--blue-light:#E6F1FB;--green:#3B6D11;--green-light:#EAF3DE;
+  --red:#A32D2D;--red-light:#FCEBEB;--amber:#BA7517;--amber-light:#FAEEDA;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--ink);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
+.app{width:100%;max-width:580px;}
+.header{text-align:center;margin-bottom:28px;}
+.header h1{font-family:'Syne',sans-serif;font-size:42px;font-weight:800;letter-spacing:-1px;line-height:1;color:var(--ink);}
+.header h1 span{color:var(--blue);}
+.header p{font-size:14px;color:var(--muted);margin-top:6px;}
+.scorebar{display:flex;justify-content:space-between;align-items:center;background:white;border:0.5px solid var(--border);border-radius:12px;padding:12px 20px;margin-bottom:16px;font-size:13px;color:var(--muted);}
+.scorebar strong{font-size:18px;font-weight:700;color:var(--ink);font-family:'Syne',sans-serif;}
+.progress-bar-bg{height:4px;background:var(--border);border-radius:2px;margin-bottom:20px;overflow:hidden;}
+.progress-bar{height:100%;background:var(--blue);border-radius:2px;transition:width 0.4s ease;}
+.card{background:white;border:0.5px solid var(--border);border-radius:16px;padding:32px 24px 28px;text-align:center;min-height:360px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;position:relative;}
+.round-badge{font-size:12px;color:var(--muted);letter-spacing:1.5px;margin-bottom:10px;}
 
-  /* HEADER */
-  .header { text-align: center; margin-bottom: 32px; }
-  .header h1 {
-    font-family: 'Syne', sans-serif;
-    font-size: 42px;
-    font-weight: 800;
-    letter-spacing: -1px;
-    line-height: 1;
-    color: var(--ink);
-  }
-  .header h1 span { color: var(--blue); }
-  .header p { font-size: 14px; color: var(--muted); margin-top: 6px; }
+/* SCRAMBLED LETTERS ROW */
+.scramble-tiles{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-bottom:8px;min-height:56px;align-items:center;}
+.s-tile{
+  width:42px;height:50px;border-radius:8px;
+  background:var(--blue-light);border:1.5px solid var(--blue);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Syne',sans-serif;font-size:22px;font-weight:800;
+  color:var(--blue);
+  transition:all 0.2s;
+  position:relative;
+}
+.s-tile.used{
+  background:var(--cream);border-color:var(--border);color:var(--muted);
+  text-decoration:line-through;text-decoration-color:var(--red);
+  text-decoration-thickness:2.5px;
+  opacity:0.55;
+}
+.hint-text{font-size:13px;color:var(--muted);margin-bottom:20px;min-height:18px;font-style:italic;}
 
-  /* SCORE BAR */
-  .scorebar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: white;
-    border: 0.5px solid var(--border);
-    border-radius: 12px;
-    padding: 12px 20px;
-    margin-bottom: 16px;
-    font-size: 13px;
-    color: var(--muted);
-  }
-  .scorebar strong { font-size: 18px; font-weight: 700; color: var(--ink); font-family: 'Syne', sans-serif; }
-  .progress-bar-bg {
-    height: 4px;
-    background: var(--border);
-    border-radius: 2px;
-    margin-bottom: 20px;
-    overflow: hidden;
-  }
-  .progress-bar { height: 100%; background: var(--blue); border-radius: 2px; transition: width 0.4s ease; }
+/* TYPED DASHES */
+.typed-row{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-bottom:20px;min-height:52px;align-items:flex-end;}
+.t-tile{display:flex;flex-direction:column;align-items:center;gap:4px;}
+.t-char{
+  width:34px;height:38px;display:flex;align-items:center;justify-content:center;
+  font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--ink);
+  border-radius:5px;background:transparent;position:relative;transition:all 0.15s;
+}
+.t-char.filled{color:var(--blue);}
+.t-char.cursor-on::after{content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:14px;height:2px;background:var(--blue);border-radius:1px;animation:blink 1s step-end infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0;}}
+.t-char.correct-char{color:var(--green);animation:cpop 0.2s ease;}
+.t-char.wrong-char{color:var(--red);}
+@keyframes cpop{from{transform:scale(0.6);opacity:0;}to{transform:scale(1);opacity:1;}}
+.t-line{width:28px;height:1.5px;background:var(--border);border-radius:1px;}
+.t-line.active-line{background:var(--blue);}
+.t-line.filled-line{background:var(--amber);}
+.t-line.correct-line{background:var(--green);}
+.t-line.wrong-line{background:var(--red);}
 
-  /* CARD */
-  .card {
-    background: white;
-    border: 0.5px solid var(--border);
-    border-radius: 16px;
-    padding: 36px 28px 28px;
-    text-align: center;
-    min-height: 340px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: space-between;
-    position: relative;
-  }
-  .round-badge {
-    font-size: 11px;
-    letter-spacing: 1.8px;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 12px;
-  }
-  .scrambled-word {
-    font-family: 'Syne', sans-serif;
-    font-size: 52px;
-    font-weight: 800;
-    letter-spacing: 6px;
-    color: var(--ink);
-    word-break: break-all;
-    margin-bottom: 8px;
-    transition: opacity 0.2s;
-  }
-  .hint-text { font-size: 13px; color: var(--muted); margin-bottom: 24px; min-height: 18px; }
+.feedback{position:absolute;top:14px;right:14px;font-size:13px;font-weight:500;padding:4px 12px;border-radius:20px;opacity:0;transition:opacity 0.2s;}
+.feedback.show{opacity:1;}
+.feedback.correct-fb{background:var(--green-light);color:var(--green);}
+.feedback.wrong-fb{background:var(--red-light);color:var(--red);}
 
-  /* LETTER TILES input area */
-  .answer-row {
-    display: flex;
-    gap: 8px;
-    justify-content: center;
-    flex-wrap: wrap;
-    margin-bottom: 20px;
-  }
-  .tile {
-    width: 44px;
-    height: 52px;
-    border: 1.5px solid var(--border);
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: 'Syne', sans-serif;
-    font-size: 22px;
-    font-weight: 700;
-    color: var(--ink);
-    background: var(--cream);
-    transition: all 0.15s;
-  }
-  .tile.filled { background: white; border-color: var(--blue); color: var(--blue); }
-  .tile.correct { background: var(--green-light); border-color: var(--green); color: var(--green); }
-  .tile.wrong { background: var(--red-light); border-color: var(--red); color: var(--red); animation: shake 0.3s ease; }
+.msg-row{display:flex;justify-content:center;align-items:center;gap:10px;min-height:20px;margin-bottom:12px;}
+.msg{font-size:13px;color:var(--muted);}
+.msg.ok{color:var(--green);}.msg.bad{color:var(--red);}
+.del-btn{font-size:12px;color:var(--muted);background:none;border:none;cursor:pointer;padding:2px 8px;border-radius:4px;}
+.del-btn:hover{color:var(--ink);background:var(--cream);}
 
-  @keyframes shake {
-    0%,100% { transform: translateX(0); }
-    25% { transform: translateX(-4px); }
-    75% { transform: translateX(4px); }
-  }
-  @keyframes popIn {
-    0% { transform: scale(0.85); opacity: 0; }
-    100% { transform: scale(1); opacity: 1; }
-  }
-  .tile.pop { animation: popIn 0.2s ease; }
+.btn-row{display:flex;gap:8px;justify-content:center;}
+button{font-family:'DM Sans',sans-serif;font-size:14px;padding:10px 20px;background:white;color:var(--ink);border:0.5px solid rgba(0,0,0,0.3);border-radius:8px;cursor:pointer;transition:background 0.15s,transform 0.05s;}
+button:hover{background:#f0eee7;}button:active{transform:scale(0.98);}
+button.primary{background:var(--ink);color:white;border-color:var(--ink);font-size:16px;padding:12px 28px;}
+button.primary:hover{background:#444441;}
 
-  /* TEXT INPUT */
-  .input-wrap { width: 100%; margin-bottom: 16px; }
-  .text-input {
-    width: 100%;
-    padding: 12px 16px;
-    font-family: 'Syne', sans-serif;
-    font-size: 20px;
-    font-weight: 700;
-    letter-spacing: 4px;
-    text-transform: lowercase;
-    text-align: center;
-    background: var(--cream);
-    border: 1.5px solid var(--border);
-    border-radius: 10px;
-    outline: none;
-    color: var(--ink);
-    transition: border-color 0.15s;
-  }
-  .text-input:focus { border-color: var(--blue); background: white; }
-  .text-input.correct { border-color: var(--green); background: var(--green-light); color: var(--green); }
-  .text-input.wrong { border-color: var(--red); background: var(--red-light); color: var(--red); animation: shake 0.3s ease; }
+/* SCREENS */
+.screen{background:white;border:0.5px solid var(--border);border-radius:12px;padding:32px 24px;text-align:center;}
+.screen h2{font-family:'Syne',sans-serif;font-size:24px;font-weight:800;margin-bottom:12px;}
+.screen p{font-size:14px;color:var(--muted);line-height:1.6;margin-bottom:16px;}
+.final-score{font-family:'Syne',sans-serif;font-size:64px;font-weight:800;color:var(--ink);margin:12px 0;}
+.final-score span{font-size:24px;color:var(--muted);}
 
-  /* BUTTONS */
-  .btn-row { display: flex; gap: 8px; width: 100%; justify-content: center; }
-  button {
-    font-family: 'DM Sans', sans-serif;
-    font-size: 14px;
-    padding: 10px 20px;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    background: white;
-    color: var(--ink);
-    cursor: pointer;
-    transition: background 0.12s, transform 0.05s;
-  }
-  button:hover { background: var(--cream); }
-  button:active { transform: scale(0.97); }
-  button.primary {
-    background: var(--ink);
-    color: var(--cream);
-    border-color: var(--ink);
-    font-weight: 500;
-    padding: 10px 28px;
-  }
-  button.primary:hover { background: #333; }
-
-  /* FEEDBACK BADGE */
-  .feedback {
-    position: absolute;
-    top: 16px; right: 16px;
-    font-size: 13px;
-    font-weight: 500;
-    padding: 4px 12px;
-    border-radius: 20px;
-    opacity: 0;
-    transition: opacity 0.2s;
-  }
-  .feedback.show { opacity: 1; }
-  .feedback.correct-fb { background: var(--green-light); color: var(--green); }
-  .feedback.wrong-fb { background: var(--red-light); color: var(--red); }
-
-  /* SETUP / END SCREENS */
-  .screen {
-    background: white;
-    border: 0.5px solid var(--border);
-    border-radius: 16px;
-    padding: 40px 32px;
-    text-align: center;
-  }
-  .screen h2 { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800; margin-bottom: 12px; }
-  .screen p { font-size: 14px; color: var(--muted); line-height: 1.7; margin-bottom: 20px; }
-  .word-chip {
-    display: inline-block;
-    background: var(--blue-light);
-    color: var(--blue);
-    font-size: 12px;
-    font-weight: 500;
-    padding: 3px 10px;
-    border-radius: 20px;
-    margin: 3px;
-  }
-  .final-score {
-    font-family: 'Syne', sans-serif;
-    font-size: 64px;
-    font-weight: 800;
-    color: var(--ink);
-    margin: 12px 0;
-  }
-  .final-score span { font-size: 24px; color: var(--muted); }
+/* WORD LIST EDITOR */
+.editor-toggle{font-size:13px;color:var(--blue);background:none;border:none;cursor:pointer;padding:4px 0;text-decoration:underline;display:block;margin:0 auto 16px;}
+.word-editor{background:#f9f7f3;border:0.5px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px;text-align:left;}
+.word-editor label{font-size:12px;color:var(--muted);letter-spacing:0.5px;display:block;margin-bottom:8px;}
+.word-editor textarea{width:100%;font-family:'DM Sans',sans-serif;font-size:14px;border:0.5px solid var(--border);border-radius:6px;padding:8px 10px;resize:vertical;min-height:80px;background:white;color:var(--ink);outline:none;}
+.word-editor textarea:focus{border-color:var(--blue);}
+.word-editor .hint{font-size:11px;color:var(--muted);margin-top:6px;}
+.word-editor-btns{display:flex;gap:8px;margin-top:8px;}
+.hidden-input{position:absolute;opacity:0;pointer-events:none;width:1px;height:1px;}
 </style>
 </head>
 <body>
 <div class="app">
   <div class="header">
     <h1>UN<span>SCRAM</span>BLE</h1>
-    <p>Weather &amp; Emotions Vocabulary</p>
+    <p id="subtitle">Weather &amp; Emotions Vocabulary</p>
   </div>
 
-  <!-- SETUP -->
   <div id="setupScreen" class="screen">
     <h2>How to play</h2>
-    <p>Each round, you'll see a scrambled word from the vocabulary list. Type the correct spelling and press Enter — or hit Skip to move on.</p>
-    <p>
-      <strong>15 words:</strong><br>
-      <span class="word-chip">bored</span><span class="word-chip">frustrated</span><span class="word-chip">sleepy</span><span class="word-chip">surprised</span><span class="word-chip">energetic</span>
-      <span class="word-chip">upset</span><span class="word-chip">cool</span><span class="word-chip">foggy</span><span class="word-chip">freezing</span><span class="word-chip">warm</span>
-      <span class="word-chip">humid</span><span class="word-chip">icy</span><span class="word-chip">lightning</span><span class="word-chip">snowstorm</span><span class="word-chip">thunderstorm</span>
-    </p>
+    <p>A scrambled word appears at the top. Type the correct spelling — letters cross off as you go. Press Enter or fill all letters to check.</p>
+    <button class="editor-toggle" onclick="toggleEditor()">✎ Edit word list</button>
+    <div id="wordEditor" class="word-editor" style="display:none">
+      <label>WORD LIST — one word per line</label>
+      <textarea id="wordListInput"></textarea>
+      <div class="hint">Minimum 2 words. Changes apply immediately.</div>
+      <div class="word-editor-btns">
+        <button onclick="applyWordList()" style="font-size:13px;padding:7px 16px">Apply</button>
+        <button onclick="resetWordList()" style="font-size:13px;padding:7px 16px">Reset to default</button>
+      </div>
+    </div>
+    <p id="wordCountMsg" style="font-size:13px;margin-bottom:16px;"></p>
     <button class="primary" onclick="startGame()">Start game</button>
   </div>
 
-  <!-- GAME -->
   <div id="gameArea" style="display:none">
     <div class="scorebar">
-      <div>Card <strong id="cardNum">1</strong> of 15</div>
+      <div>Card <strong id="cardNum">1</strong> of <strong id="cardTotal">?</strong></div>
       <div>Score <strong id="scoreNum">0</strong></div>
       <div>Skipped <strong id="skipNum">0</strong></div>
     </div>
     <div class="progress-bar-bg"><div class="progress-bar" id="progressBar" style="width:0%"></div></div>
-
-    <div class="card" id="gameCard">
+    <div class="card">
       <div id="feedback" class="feedback"></div>
-      <div>
-        <p class="round-badge" id="roundBadge">SCRAMBLED WORD</p>
-        <div class="scrambled-word" id="scrambledDisplay">LOADING</div>
-        <p class="hint-text" id="hintText"></p>
-      </div>
       <div style="width:100%">
-        <div class="input-wrap">
-          <input class="text-input" id="answerInput" type="text" placeholder="type your answer…" autocomplete="off" autocorrect="off" spellcheck="false" />
+        <p class="round-badge">SCRAMBLED — type the correct spelling</p>
+        <div class="scramble-tiles" id="scrambleTiles"></div>
+        <p class="hint-text" id="hintText"></p>
+        <div class="typed-row" id="typedRow"></div>
+        <div class="msg-row">
+          <span class="msg" id="msgBox"></span>
+          <button class="del-btn" id="delBtn">⌫ delete</button>
         </div>
         <div class="btn-row">
           <button onclick="skipWord()">Skip</button>
-          <button class="primary" onclick="checkAnswer()">Check →</button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- END -->
   <div id="endScreen" class="screen" style="display:none">
     <h2>Nice work! 🎉</h2>
-    <div class="final-score" id="finalScore">0 <span>/ 15</span></div>
+    <div class="final-score" id="finalScore">0 <span>/ ?</span></div>
     <p id="endMsg"></p>
     <button class="primary" onclick="startGame()">Play again</button>
+    <br><br>
+    <button class="editor-toggle" onclick="goSetup()">← Back to word list</button>
   </div>
 </div>
+<input class="hidden-input" id="hiddenInput" autocomplete="off" autocorrect="off" spellcheck="false"/>
 
 <script>
-const words = ["bored","frustrated","sleepy","surprised","energetic","upset","cool","foggy","freezing","warm","humid","icy","lightning","snowstorm","thunderstorm"];
-
-const hints = {
-  "bored": "feeling uninterested or restless",
-  "frustrated": "feeling annoyed or stuck",
-  "sleepy": "feeling like you need to sleep",
-  "surprised": "feeling shocked by something unexpected",
-  "energetic": "feeling full of energy and activity",
-  "upset": "feeling sad or disturbed",
-  "cool": "slightly cold temperature or also trendy",
-  "foggy": "weather: misty, hard to see far",
-  "freezing": "extremely cold temperature",
-  "warm": "comfortably hot temperature",
-  "humid": "weather: hot and sticky with moisture",
-  "icy": "covered in ice; slippery",
-  "lightning": "weather: bright electric flash in the sky",
-  "snowstorm": "weather: heavy snow with strong winds",
-  "thunderstorm": "weather: storm with thunder and lightning"
+const DEFAULT_WORDS = ["bored","frustrated","sleepy","surprised","energetic","upset","cool","foggy","freezing","warm","humid","icy","lightning","snowstorm","thunderstorm"];
+const DEFAULT_HINTS = {
+  "bored":"feeling uninterested or restless","frustrated":"feeling annoyed or stuck",
+  "sleepy":"feeling like you need to sleep","surprised":"feeling shocked by something unexpected",
+  "energetic":"feeling full of energy and activity","upset":"feeling sad or disturbed",
+  "cool":"slightly cold temperature or also trendy","foggy":"weather: misty, hard to see far",
+  "freezing":"extremely cold temperature","warm":"comfortably hot temperature",
+  "humid":"weather: hot and sticky with moisture","icy":"covered in ice; slippery",
+  "lightning":"weather: bright electric flash in the sky","snowstorm":"weather: heavy snow with strong winds",
+  "thunderstorm":"weather: storm with thunder and lightning"
 };
 
-function scramble(word) {
-  const a = word.split('');
-  let tries = 0;
-  do {
-    for (let i = a.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [a[i], a[j]] = [a[j], a[i]];
-    }
-    tries++;
-  } while (a.join('') === word && tries < 10);
-  return a.join('').toUpperCase();
+let wordList = DEFAULT_WORDS.slice();
+let deck=[], idx=0, score=0, skipped=0;
+let typed="", scrambledArr=[], lockedPositions={}; // lockedPositions: {index: char} for correct-spot letters
+
+function toggleEditor(){
+  const ed = document.getElementById('wordEditor');
+  ed.style.display = ed.style.display==='none' ? 'block' : 'none';
+  if(ed.style.display==='block') document.getElementById('wordListInput').value = wordList.join('\n');
+}
+function applyWordList(){
+  const raw = document.getElementById('wordListInput').value;
+  const parsed = raw.split('\n').map(w=>w.trim().toLowerCase()).filter(w=>w.length>1);
+  const unique = [...new Set(parsed)];
+  if(unique.length < 2){alert('Please enter at least 2 words.');return;}
+  wordList = unique;
+  updateSubtitle();
+  document.getElementById('wordEditor').style.display='none';
+  updateWordCountMsg();
+}
+function resetWordList(){
+  wordList = DEFAULT_WORDS.slice();
+  document.getElementById('wordListInput').value = wordList.join('\n');
+  updateSubtitle();
+  updateWordCountMsg();
+}
+function updateSubtitle(){
+  document.getElementById('subtitle').textContent = wordList.length + ' words';
+}
+function updateWordCountMsg(){
+  document.getElementById('wordCountMsg').textContent = wordList.length + ' word' + (wordList.length===1?'':'s') + ' in list';
+}
+function goSetup(){
+  document.getElementById('endScreen').style.display='none';
+  document.getElementById('setupScreen').style.display='block';
+  updateWordCountMsg();
 }
 
-let deck = [], idx = 0, score = 0, skipped = 0;
-
-function shuffle(arr) {
-  const a = arr.slice();
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
+function scramble(word){
+  const a=word.split('');
+  let tries=0;
+  do{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}tries++;}
+  while(a.join('')===word&&tries<10);
+  return a;
+}
+function shuffleArr(arr){
+  const a=arr.slice();
+  for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
   return a;
 }
 
-function startGame() {
-  deck = shuffle(words);
-  idx = 0; score = 0; skipped = 0;
-  document.getElementById('setupScreen').style.display = 'none';
-  document.getElementById('endScreen').style.display = 'none';
-  document.getElementById('gameArea').style.display = 'block';
+function startGame(){
+  deck=shuffleArr(wordList);
+  idx=0;score=0;skipped=0;typed="";
+  document.getElementById('setupScreen').style.display='none';
+  document.getElementById('endScreen').style.display='none';
+  document.getElementById('gameArea').style.display='block';
   renderCard();
+  focusHidden();
 }
 
-function renderCard() {
-  const word = deck[idx];
-  document.getElementById('cardNum').textContent = idx + 1;
-  document.getElementById('scoreNum').textContent = score;
-  document.getElementById('skipNum').textContent = skipped;
-  document.getElementById('progressBar').style.width = (idx / 15 * 100) + '%';
-  document.getElementById('scrambledDisplay').textContent = scramble(word);
-  document.getElementById('hintText').textContent = hints[word] || '';
-  const inp = document.getElementById('answerInput');
-  inp.value = '';
-  inp.className = 'text-input';
-  inp.focus();
+function renderCard(){
+  const word=deck[idx];
+  scrambledArr=scramble(word);
+  typed="";
+  lockedPositions={};
+  document.getElementById('cardNum').textContent=idx+1;
+  document.getElementById('cardTotal').textContent=deck.length;
+  document.getElementById('scoreNum').textContent=score;
+  document.getElementById('skipNum').textContent=skipped;
+  document.getElementById('progressBar').style.width=(idx/deck.length*100)+'%';
+  document.getElementById('hintText').textContent=DEFAULT_HINTS[word]||'';
   hideFeedback();
+  setMsg('','');
+  renderScrambleTiles([]);
+  renderTypedRow('normal');
 }
 
-function showFeedback(correct) {
-  const fb = document.getElementById('feedback');
-  fb.textContent = correct ? '✓ Correct!' : '✗ Try again';
-  fb.className = 'feedback show ' + (correct ? 'correct-fb' : 'wrong-fb');
-  if (!correct) setTimeout(hideFeedback, 1200);
+function renderScrambleTiles(usedIndices){
+  const row=document.getElementById('scrambleTiles');
+  row.innerHTML='';
+  scrambledArr.forEach((ch,i)=>{
+    const t=document.createElement('div');
+    t.className='s-tile'+(usedIndices.includes(i)?' used':'');
+    t.textContent=ch.toUpperCase();
+    row.appendChild(t);
+  });
 }
 
-function hideFeedback() {
-  document.getElementById('feedback').className = 'feedback';
+// Figure out which scramble indices are consumed by what's been typed
+function getUsedIndices(typedSoFar){
+  // greedy match typed chars to scrambled positions
+  const used=[];
+  const available=scrambledArr.map((c,i)=>({c,i}));
+  for(const ch of typedSoFar){
+    const idx=available.findIndex(x=>!used.includes(x.i)&&x.c===ch);
+    if(idx!==-1) used.push(available[idx].i);
+    else{
+      // fallback: find any unused match
+      const fb=scrambledArr.findIndex((c,i)=>c===ch&&!used.includes(i));
+      if(fb!==-1) used.push(fb);
+    }
+  }
+  return used;
 }
 
-function checkAnswer() {
-  const inp = document.getElementById('answerInput');
-  const val = inp.value.trim().toLowerCase();
-  const word = deck[idx];
-  if (!val) return;
-  if (val === word) {
-    inp.className = 'text-input correct';
+function renderTypedRow(state){
+  const word=deck[idx];
+  const row=document.getElementById('typedRow');
+  row.innerHTML='';
+  for(let i=0;i<word.length;i++){
+    const tile=document.createElement('div');tile.className='t-tile';
+    const ch=document.createElement('div');ch.className='t-char';
+    const line=document.createElement('div');line.className='t-line';
+    if(state==='correct'){
+      ch.textContent=word[i].toUpperCase();ch.classList.add('correct-char');line.classList.add('correct-line');
+    }else if(state==='wrong'){
+      if(lockedPositions[i]!==undefined){
+        // correct-spot letter — show green and keep
+        ch.textContent=lockedPositions[i].toUpperCase();ch.classList.add('correct-char');line.classList.add('correct-line');
+      }else{
+        ch.textContent=(typed[i]||'').toUpperCase();
+        if(typed[i])ch.classList.add('wrong-char');line.classList.add('wrong-line');
+      }
+    }else{
+      if(lockedPositions[i]!==undefined){
+        ch.textContent=lockedPositions[i].toUpperCase();ch.classList.add('correct-char');line.classList.add('correct-line');
+      }else if(i<typed.length){
+        ch.textContent=typed[i].toUpperCase();ch.classList.add('filled');line.classList.add('filled-line');
+      }else if(i===typed.length){
+        ch.classList.add('cursor-on');line.classList.add('active-line');
+      }
+    }
+    tile.appendChild(ch);tile.appendChild(line);row.appendChild(tile);
+  }
+}
+
+function focusHidden(){document.getElementById('hiddenInput').focus();}
+
+function handleKey(key){
+  const word=deck[idx];
+  if(key==='Backspace'){deleteLast();return;}
+  if(key==='Enter'){if(typed.length>0)checkAnswer();return;}
+  if(!/^[a-zA-Z]$/.test(key))return;
+  if(typed.length>=word.length)return;
+  const ch=key.toLowerCase();
+  // only allow letters that are still available in the scramble
+  const usedSoFar=getUsedIndices(typed);
+  const available=scrambledArr.findIndex((c,i)=>c===ch&&!usedSoFar.includes(i));
+  if(available===-1)return;
+  // advance past any locked positions automatically
+  let pos=typed.length;
+  while(lockedPositions[pos]!==undefined) pos++;
+  if(pos>=word.length)return;
+  // rebuild typed to skip over locked slots
+  let newTyped=typed;
+  newTyped+=ch;
+  typed=newTyped;
+  const newUsed=getUsedIndices(typed);
+  renderScrambleTiles(newUsed);
+  renderTypedRow('normal');
+  if(typed.length===word.length)setTimeout(checkAnswer,120);
+}
+
+function deleteLast(){
+  // find the last non-locked position in typed
+  let pos=typed.length-1;
+  while(pos>=0 && lockedPositions[pos]!==undefined) pos--;
+  if(pos>=0){
+    typed=typed.slice(0,pos);
+    renderScrambleTiles(getUsedIndices(typed));
+    renderTypedRow('normal');
+    setMsg('','');
+  }
+  focusHidden();
+}
+
+function checkAnswer(){
+  const word=deck[idx];
+  if(!typed)return;
+  if(typed===word){
+    renderTypedRow('correct');
+    renderScrambleTiles(scrambledArr.map((_,i)=>i));
     showFeedback(true);
-    score++;
-    document.getElementById('scoreNum').textContent = score;
-    setTimeout(advance, 700);
-  } else {
-    inp.className = 'text-input wrong';
+    score++;document.getElementById('scoreNum').textContent=score;
+    setTimeout(advance,800);
+  }else{
+    // lock letters that are in the correct position
+    for(let i=0;i<typed.length;i++){
+      if(typed[i]===word[i]) lockedPositions[i]=typed[i];
+    }
+    renderTypedRow('wrong');
     showFeedback(false);
-    setTimeout(() => { inp.className = 'text-input'; inp.select(); }, 600);
+    setTimeout(()=>{
+      // rebuild typed: keep locked chars, clear the rest
+      let newTyped='';
+      for(let i=0;i<word.length;i++){
+        if(lockedPositions[i]!==undefined) newTyped+=lockedPositions[i];
+        else break; // typed must be a contiguous prefix
+      }
+      typed=newTyped;
+      renderScrambleTiles(getUsedIndices(typed));
+      renderTypedRow('normal');
+      setMsg('','');
+      focusHidden();
+    },700);
   }
 }
 
-function skipWord() {
-  skipped++;
-  document.getElementById('skipNum').textContent = skipped;
-  advance();
+function showFeedback(correct){
+  const fb=document.getElementById('feedback');
+  fb.textContent=correct?'✓ Correct!':'✗ Try again';
+  fb.className='feedback show '+(correct?'correct-fb':'wrong-fb');
+  if(!correct)setTimeout(hideFeedback,1200);
+}
+function hideFeedback(){document.getElementById('feedback').className='feedback';}
+function setMsg(t,type){const el=document.getElementById('msgBox');el.textContent=t;el.className='msg'+(type?' '+type:'');}
+
+function skipWord(){skipped++;document.getElementById('skipNum').textContent=skipped;advance();}
+function advance(){idx++;if(idx>=deck.length)endGame();else{renderCard();focusHidden();}}
+
+function endGame(){
+  document.getElementById('gameArea').style.display='none';
+  document.getElementById('endScreen').style.display='block';
+  const total=deck.length;
+  document.getElementById('finalScore').innerHTML=score+' <span>/ '+total+'</span>';
+  const pct=score/total;
+  const msgs=['Keep practicing!','Getting there!','Good effort!','Well done!','Excellent work!','Perfect score! 🌟'];
+  const mi=pct<=0.33?0:pct<=0.55?1:pct<=0.7?2:pct<=0.85?3:pct<1?4:5;
+  document.getElementById('endMsg').textContent=msgs[mi];
 }
 
-function advance() {
-  idx++;
-  if (idx >= deck.length) {
-    endGame();
-  } else {
-    renderCard();
-  }
-}
-
-function endGame() {
-  document.getElementById('gameArea').style.display = 'none';
-  document.getElementById('endScreen').style.display = 'block';
-  document.getElementById('finalScore').innerHTML = score + ' <span>/ 15</span>';
-  const msgs = ['Keep practicing!', 'Getting there!', 'Good effort!', 'Well done!', 'Excellent work!', 'Perfect score! 🌟'];
-  const msgIdx = score <= 5 ? 0 : score <= 8 ? 1 : score <= 10 ? 2 : score <= 12 ? 3 : score <= 14 ? 4 : 5;
-  document.getElementById('endMsg').textContent = msgs[msgIdx];
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-  document.getElementById('answerInput').addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') checkAnswer();
+document.addEventListener('DOMContentLoaded',function(){
+  updateWordCountMsg();
+  document.getElementById('hiddenInput').addEventListener('keydown',function(e){
+    if(document.getElementById('gameArea').style.display!=='none'){e.preventDefault();handleKey(e.key);}
+  });
+  document.getElementById('delBtn').addEventListener('click',deleteLast);
+  document.addEventListener('click',function(){
+    if(document.getElementById('gameArea').style.display!=='none')focusHidden();
   });
 });
 </script>
