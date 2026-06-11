@@ -1,0 +1,1074 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fill the Form — Tri-Cities</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --ink: #1a1a18;
+  --ink-soft: #5a5a56;
+  --paper: #f7f6f1;
+  --white: #ffffff;
+  --rule: rgba(0,0,0,0.11);
+  --blue: #1a5fa8;
+  --blue-light: #e8f0fb;
+  --green: #1a6b3a;
+  --green-light: #e5f4ec;
+  --red: #a32d2d;
+  --red-light: #fceaea;
+  --amber: #7a5100;
+  --amber-light: #fff4d4;
+  --easy: #1a6b3a;
+  --easy-bg: #e5f4ec;
+  --medium: #8a5c00;
+  --medium-bg: #fff3d4;
+  --hard: #a32d2d;
+  --hard-bg: #fceaea;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+  min-height: 100vh;
+  padding: 20px 14px 60px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.header { text-align: center; margin-bottom: 22px; }
+.header .eyebrow { font-size: 10px; letter-spacing: 3px; color: var(--ink-soft); margin-bottom: 5px; }
+.header h1 { font-family: Georgia, serif; font-size: 30px; font-weight: 700; }
+.header .tagline { font-size: 12px; color: var(--ink-soft); margin-top: 4px; }
+
+.screen { display: none; width: 100%; max-width: 980px; }
+.screen.active { display: block; }
+
+/* ── SETUP ── */
+.setup-wrap { max-width: 620px; margin: 0 auto; }
+.setup-card {
+  background: var(--white);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  padding: 32px 28px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+}
+.setup-card h2 { font-family: Georgia, serif; font-size: 22px; margin-bottom: 6px; }
+.setup-card .intro { font-size: 14px; color: var(--ink-soft); line-height: 1.6; margin-bottom: 24px; }
+
+.option-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+.option-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+
+.option-btn {
+  font-family: inherit;
+  font-size: 13px;
+  padding: 12px 14px;
+  border: 1.5px solid var(--rule);
+  border-radius: 6px;
+  background: var(--white);
+  color: var(--ink);
+  cursor: pointer;
+  text-align: left;
+  line-height: 1.4;
+  transition: border-color 0.13s, background 0.13s;
+}
+.option-btn .opt-icon { font-size: 20px; display: block; margin-bottom: 6px; }
+.option-btn .opt-title { font-weight: 600; font-size: 13px; display: block; }
+.option-btn .opt-desc { font-size: 11px; color: var(--ink-soft); margin-top: 2px; display: block; }
+.option-btn:hover { border-color: var(--blue); background: var(--blue-light); }
+.option-btn.selected { border-color: var(--blue); background: var(--blue-light); }
+.option-btn.selected .opt-title { color: var(--blue); }
+
+.diff-btn .opt-title.easy   { color: var(--easy); }
+.diff-btn .opt-title.medium { color: var(--medium); }
+.diff-btn .opt-title.hard   { color: var(--hard); }
+.diff-btn.selected { border-color: var(--blue); background: var(--blue-light); }
+
+.section-label {
+  font-size: 10px; letter-spacing: 2px; color: var(--ink-soft);
+  font-weight: 600; margin-bottom: 10px; margin-top: 20px;
+}
+
+/* ── LOADING ── */
+.loading-box {
+  background: var(--white);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  padding: 60px 40px;
+  text-align: center;
+  max-width: 380px;
+  margin: 0 auto;
+}
+.loading-box .loading-title { font-family: Georgia, serif; font-size: 18px; margin-bottom: 8px; }
+.loading-box p { font-size: 13px; color: var(--ink-soft); margin-top: 10px; line-height: 1.6; }
+.spinner {
+  width: 32px; height: 32px;
+  border: 3px solid var(--rule);
+  border-top-color: var(--blue);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 4px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── GAME LAYOUT ── */
+.game-wrap { max-width: 980px; margin: 0 auto; }
+
+.top-bar {
+  background: var(--white);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  padding: 12px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.top-bar-left { display: flex; align-items: center; gap: 14px; }
+.mode-pill {
+  font-size: 11px; font-weight: 700; letter-spacing: 1px;
+  padding: 4px 10px; border-radius: 20px;
+}
+.mode-pill.easy   { background: var(--easy-bg);   color: var(--easy); }
+.mode-pill.medium { background: var(--medium-bg);  color: var(--medium); }
+.mode-pill.hard   { background: var(--hard-bg);    color: var(--hard); }
+.style-pill {
+  font-size: 11px; color: var(--ink-soft);
+  background: var(--paper); border: 1px solid var(--rule);
+  padding: 4px 10px; border-radius: 20px;
+}
+.score-wrap { display: flex; align-items: baseline; gap: 5px; }
+.score-label { font-size: 10px; letter-spacing: 2px; color: var(--ink-soft); }
+.score-val { font-family: Georgia, serif; font-size: 26px; font-weight: 700; }
+
+.game-grid {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 16px;
+  align-items: start;
+}
+.left-col, .right-col { display: flex; flex-direction: column; gap: 14px; }
+
+/* ── PASSAGE ── */
+.passage-panel {
+  background: var(--white);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  padding: 22px 22px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+.passage-header {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 16px;
+  padding-bottom: 12px; border-bottom: 1px solid var(--rule);
+}
+.passage-icon { font-size: 24px; }
+.passage-title { font-family: Georgia, serif; font-size: 16px; font-weight: 700; }
+.passage-subtitle { font-size: 11px; color: var(--ink-soft); margin-top: 1px; }
+
+/* Interview style */
+.interview-block { display: flex; flex-direction: column; gap: 12px; }
+.interview-line { display: flex; gap: 10px; font-size: 14px; line-height: 1.6; }
+.interview-speaker {
+  font-weight: 700; font-size: 12px; letter-spacing: 0.5px;
+  flex-shrink: 0; padding-top: 1px;
+  min-width: 28px;
+}
+.interview-speaker.q { color: var(--blue); }
+.interview-speaker.a { color: var(--ink-soft); }
+
+/* Biography / article style */
+.prose-block { font-size: 15px; line-height: 1.8; color: var(--ink); }
+.prose-block p { margin-bottom: 12px; }
+.prose-block p:last-child { margin-bottom: 0; }
+
+/* News article extras */
+.news-headline { font-family: Georgia, serif; font-size: 20px; font-weight: 700; line-height: 1.3; margin-bottom: 6px; }
+.news-byline { font-size: 11px; color: var(--ink-soft); margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid var(--rule); }
+
+/* Highlight toggle */
+.highlight-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--rule);
+  font-size: 12px; color: var(--ink-soft);
+}
+.highlight-toggle {
+  font-family: inherit; font-size: 12px; padding: 5px 12px;
+  border: 1px solid var(--rule); border-radius: 4px;
+  background: var(--paper); cursor: pointer; color: var(--ink);
+}
+.highlight-toggle:hover { background: #e8e6df; }
+mark {
+  background: #fff5b0; color: var(--ink);
+  border-radius: 2px; padding: 0 1px;
+}
+
+/* ── FORM ── */
+.form-doc {
+  background: var(--white);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  padding: 18px 16px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+.form-header {
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 2px solid var(--ink); padding-bottom: 10px; margin-bottom: 14px;
+}
+.form-header .agency { font-family: Georgia, serif; font-size: 11px; font-weight: 700; line-height: 1.4; }
+.form-header .form-num { font-size: 8px; color: var(--ink-soft); letter-spacing: 1.5px; }
+.form-seal {
+  width: 36px; height: 36px; border: 2px solid #bbb; border-radius: 50%;
+  font-size: 7px; text-align: center; color: #999; display: flex;
+  align-items: center; justify-content: center; line-height: 1.2; flex-shrink: 0;
+}
+.form-section { margin-bottom: 10px; }
+.form-section-title {
+  font-size: 8px; letter-spacing: 2px; color: var(--ink-soft);
+  text-transform: uppercase; font-weight: 600;
+  margin-bottom: 8px; padding-bottom: 3px; border-bottom: 0.5px solid var(--rule);
+}
+.fields-row { display: grid; gap: 7px; margin-bottom: 7px; }
+.fields-row.c2 { grid-template-columns: 1fr 1fr; }
+.fields-row.c3 { grid-template-columns: 2fr 1fr 1fr; }
+.fields-row.c1 { grid-template-columns: 1fr; }
+
+.fld { display: flex; flex-direction: column; gap: 3px; }
+.fld label { font-size: 8px; letter-spacing: 1.2px; color: var(--ink-soft); text-transform: uppercase; }
+
+.chip-wrap {
+  display: flex; flex-wrap: wrap; gap: 4px;
+  min-height: 28px; padding: 3px 0;
+  border-bottom: 1.5px solid var(--rule);
+}
+.chip-wrap.locked { pointer-events: none; border-bottom-style: dashed; border-bottom-color: #ddd; }
+
+.chip {
+  font-family: inherit; font-size: 11px;
+  padding: 3px 8px; border: 1px solid rgba(0,0,0,0.18);
+  border-radius: 20px; background: var(--paper); color: var(--ink);
+  cursor: pointer; transition: all 0.1s; line-height: 1.4;
+  white-space: nowrap;
+}
+.chip:hover { background: #e5e3db; border-color: rgba(0,0,0,0.3); }
+.chip.selected { background: var(--blue); color: var(--white); border-color: var(--blue); font-weight: 600; }
+.chip.correct  { background: var(--green); color: var(--white); border-color: var(--green); }
+.chip.wrong    { background: var(--red);   color: var(--white); border-color: var(--red); }
+.chip.reveal   { background: var(--green-light); color: var(--green); border-color: var(--green); }
+
+
+
+/* ── BUTTONS ── */
+.btn {
+  font-family: inherit; font-size: 13px; padding: 9px 16px;
+  border-radius: 4px; cursor: pointer;
+  border: 1px solid var(--rule); background: var(--white); color: var(--ink);
+  transition: background 0.13s, transform 0.05s;
+}
+.btn:hover { background: #eee; }
+.btn:active { transform: scale(0.98); }
+.btn.primary { background: var(--ink); color: var(--white); border-color: var(--ink); }
+.btn.primary:hover { background: #333; }
+.btn.blue { background: var(--blue); color: var(--white); border-color: var(--blue); }
+.btn.blue:hover { background: #1a6dbd; }
+.btn:disabled { opacity: 0.35; cursor: default; pointer-events: none; }
+.btn-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+/* ── RESULT ── */
+.result-doc {
+  background: var(--white); border: 1px solid var(--rule); border-radius: 8px;
+  padding: 32px 28px; max-width: 680px; margin: 0 auto;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.06); text-align: center;
+}
+.result-badge {
+  display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: 2px;
+  padding: 5px 14px; border-radius: 3px; margin-bottom: 14px;
+}
+.level-banner {
+  display: none;
+  font-size: 14px; line-height: 1.5;
+  padding: 12px 16px; border-radius: 6px; margin-bottom: 18px;
+  text-align: left;
+}
+.level-banner.up   { background: var(--easy-bg);   color: var(--easy);   border: 1px solid #a8d8bc; }
+.level-banner.down { background: var(--red-light);  color: var(--red);    border: 1px solid #e8b4b4; }
+.level-banner.stay { background: var(--blue-light); color: var(--blue);   border: 1px solid #a8c8e8; }
+.result-badge.perfect  { background: var(--easy-bg);   color: var(--easy);   border: 1px solid #a8d8bc; }
+.result-badge.good     { background: var(--blue-light); color: var(--blue);   border: 1px solid #a8c8e8; }
+.result-badge.tryagain { background: var(--amber-light);color: var(--amber);  border: 1px solid #e0c060; }
+.result-doc h2 { font-family: Georgia, serif; font-size: 22px; margin-bottom: 8px; }
+.big-score { font-family: Georgia, serif; font-size: 52px; font-weight: 700; margin: 10px 0; line-height: 1; }
+.result-sub { font-size: 14px; color: var(--ink-soft); line-height: 1.6; margin-bottom: 20px; }
+
+.result-table { width: 100%; border-collapse: collapse; font-size: 12px; text-align: left; }
+.result-table th { font-size: 8px; letter-spacing: 1.5px; color: var(--ink-soft); padding: 6px 8px; border-bottom: 1px solid var(--rule); font-weight: 600; }
+.result-table td { padding: 6px 8px; border-bottom: 1px dashed var(--rule); vertical-align: middle; }
+.result-table .f-label  { color: var(--ink-soft); font-size: 11px; }
+.result-table .f-correct{ color: var(--green); font-weight: 600; }
+.result-table .f-wrong  { color: var(--red); }
+.result-table .f-blank  { color: var(--ink-soft); font-style: italic; }
+.tag { display: inline-block; font-size: 8px; font-weight: 700; letter-spacing: 1px; padding: 2px 6px; border-radius: 2px; }
+.tag.ok   { background: var(--easy-bg);   color: var(--easy); }
+.tag.err  { background: var(--red-light);  color: var(--red); }
+.tag.skip { background: var(--amber-light);color: var(--amber); }
+
+/* ── TEACHER ── */
+.teacher-panel {
+  background: #fffbe8; border: 1px solid #e0c84a;
+  border-radius: 4px; padding: 12px 16px;
+  font-size: 12px; color: #5a4200; display: none; line-height: 1.8;
+}
+.teacher-panel.open { display: block; }
+
+@media (max-width: 700px) {
+  .game-grid { grid-template-columns: 1fr; }
+  .option-grid { grid-template-columns: 1fr 1fr; }
+  .option-grid.three { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="eyebrow">Washington State · Tri-Cities</div>
+  <h1>Fill the Form</h1>
+  <p class="tagline">Read. Understand. Fill it in correctly.</p>
+</div>
+
+<!-- SETUP -->
+<div id="screen-setup" class="screen active">
+  <div class="setup-wrap">
+    <div class="setup-card">
+      <h2>Choose your activity</h2>
+      <p class="intro">You will read something about a real person, then fill in their form using the information you find. Tap the correct answer for each field.</p>
+
+      <div class="section-label">READING STYLE</div>
+      <div class="option-grid">
+        <button class="option-btn" data-type="style" data-val="interview">
+          <span class="opt-icon">💬</span>
+          <span class="opt-title">Interview</span>
+          <span class="opt-desc">A receptionist asks questions. The person answers.</span>
+        </button>
+        <button class="option-btn" data-type="style" data-val="biography">
+          <span class="opt-icon">📖</span>
+          <span class="opt-title">Biography</span>
+          <span class="opt-desc">A short paragraph describing the person.</span>
+        </button>
+        <button class="option-btn" data-type="style" data-val="news">
+          <span class="opt-icon">📰</span>
+          <span class="opt-title">News Article</span>
+          <span class="opt-desc">A local newspaper story featuring the person.</span>
+        </button>
+        <button class="option-btn" data-type="style" data-val="random" style="border-style:dashed;">
+          <span class="opt-icon">🎲</span>
+          <span class="opt-title">Surprise me</span>
+          <span class="opt-desc">Pick a random style each time.</span>
+        </button>
+      </div>
+
+      <div class="section-label">DIFFICULTY</div>
+      <div class="option-grid three">
+        <button class="option-btn diff-btn" data-type="diff" data-val="easy">
+          <span class="opt-icon">🟢</span>
+          <span class="opt-title easy">Easy</span>
+          <span class="opt-desc">Information is stated directly and clearly.</span>
+        </button>
+        <button class="option-btn diff-btn" data-type="diff" data-val="medium">
+          <span class="opt-icon">🟡</span>
+          <span class="opt-title medium">Medium</span>
+          <span class="opt-desc">Information uses different words or phrasing.</span>
+        </button>
+        <button class="option-btn diff-btn" data-type="diff" data-val="hard">
+          <span class="opt-icon">🔴</span>
+          <span class="opt-title hard">Hard</span>
+          <span class="opt-desc">Some details require reading carefully and thinking.</span>
+        </button>
+      </div>
+
+      <div style="margin-top:24px;">
+        <button class="btn primary" id="btn-start" disabled>Generate activity →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- LOADING -->
+<div id="screen-loading" class="screen">
+  <div class="loading-box">
+    <div class="spinner"></div>
+    <div class="loading-title" style="margin-top:16px;">Writing your activity…</div>
+    <p id="loading-msg">Creating a new person and writing their story.</p>
+  </div>
+</div>
+
+<!-- GAME -->
+<div id="screen-game" class="screen">
+  <div class="game-wrap">
+
+    <div class="top-bar">
+      <div class="top-bar-left">
+        <span class="mode-pill" id="diff-pill">EASY</span>
+        <span class="style-pill" id="style-pill">Biography</span>
+      </div>
+      <div class="score-wrap">
+        <span class="score-label">SCORE</span>
+        <span class="score-val" id="score-display">—</span>
+      </div>
+      <div class="btn-row">
+        <button class="btn" id="btn-teacher-toggle" style="font-size:11px;padding:6px 12px;">👁 Answer key</button>
+        <button class="btn primary" id="btn-submit">Check Answers</button>
+      </div>
+    </div>
+
+    <div class="teacher-panel" id="teacher-panel" style="margin-bottom:12px;"></div>
+
+    <div class="game-grid">
+
+      <!-- LEFT: passage -->
+      <div class="left-col">
+        <div class="passage-panel">
+          <div class="passage-header">
+            <div class="passage-icon" id="passage-icon">📖</div>
+            <div>
+              <div class="passage-title" id="passage-title">Reading</div>
+              <div class="passage-subtitle" id="passage-subtitle">Read carefully, then fill in the form.</div>
+            </div>
+          </div>
+          <div id="passage-body"></div>
+          <div class="highlight-bar">
+            <span>Tip: the form has <strong id="field-count">14</strong> fields to fill in.</span>
+            <button class="highlight-toggle" id="btn-highlight">✨ Highlight key info</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: form -->
+      <div class="right-col">
+        <div class="form-doc">
+          <div class="form-header">
+            <div>
+              <div class="agency">STATE OF WASHINGTON<br>General Information Form</div>
+              <div class="form-num">FORM WA-100 · PRINT CLEARLY</div>
+            </div>
+            <div class="form-seal">WA<br>STATE</div>
+          </div>
+
+          <div class="form-section">
+            <div class="form-section-title">Personal Information</div>
+            <div class="fields-row c2">
+              <div class="fld"><label>Last Name</label><div class="chip-wrap" id="chips-lastName"></div></div>
+              <div class="fld"><label>First Name</label><div class="chip-wrap" id="chips-firstName"></div></div>
+            </div>
+            <div class="fields-row c2">
+              <div class="fld"><label>Date of Birth (MM/DD/YYYY)</label><div class="chip-wrap" id="chips-dob"></div></div>
+              <div class="fld"><label>Sex</label><div class="chip-wrap" id="chips-sex"></div></div>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <div class="form-section-title">Address</div>
+            <div class="fields-row c1">
+              <div class="fld"><label>Street Address</label><div class="chip-wrap" id="chips-address"></div></div>
+            </div>
+            <div class="fields-row c3">
+              <div class="fld"><label>City</label><div class="chip-wrap" id="chips-city"></div></div>
+              <div class="fld"><label>State</label><div class="chip-wrap" id="chips-state"></div></div>
+              <div class="fld"><label>ZIP Code</label><div class="chip-wrap" id="chips-zip"></div></div>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <div class="form-section-title">Physical Description</div>
+            <div class="fields-row c2">
+              <div class="fld"><label>Height</label><div class="chip-wrap" id="chips-height"></div></div>
+              <div class="fld"><label>Weight</label><div class="chip-wrap" id="chips-weight"></div></div>
+            </div>
+            <div class="fields-row c2">
+              <div class="fld"><label>Eye Color</label><div class="chip-wrap" id="chips-eyeColor"></div></div>
+              <div class="fld"><label>Hair Color</label><div class="chip-wrap" id="chips-hairColor"></div></div>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <div class="form-section-title">Contact</div>
+            <div class="fields-row c1">
+              <div class="fld"><label>Phone Number</label><div class="chip-wrap" id="chips-phone"></div></div>
+            </div>
+            <div class="fields-row c1">
+              <div class="fld"><label>Email Address</label><div class="chip-wrap" id="chips-email"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /game-grid -->
+  </div>
+</div>
+
+<!-- RESULT -->
+<div id="screen-result" class="screen">
+  <div class="result-doc">
+    <div id="level-banner" class="level-banner" style="display:none;"></div>
+    <div id="result-badge" class="result-badge good">SUBMITTED</div>
+    <h2 id="result-headline">Form Complete</h2>
+    <div class="big-score" id="result-score">0 / 14</div>
+    <p class="result-sub" id="result-sub"></p>
+    <div style="overflow-x:auto;">
+      <table class="result-table">
+        <thead><tr><th>FIELD</th><th>YOUR ANSWER</th><th>CORRECT ANSWER</th><th></th></tr></thead>
+        <tbody id="result-tbody"></tbody>
+      </table>
+    </div>
+    <div class="btn-row" style="margin-top:24px; justify-content:center; gap:10px;">
+      <button class="btn" id="btn-same-settings">Same settings, new person →</button>
+      <button class="btn primary" id="btn-change-settings">Change settings</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+
+// ── FIELD DEFINITIONS ────────────────────────────────────────────────────────
+const FIELDS = [
+  { key: "lastName",  label: "Last Name" },
+  { key: "firstName", label: "First Name" },
+  { key: "dob",       label: "Date of Birth" },
+  { key: "sex",       label: "Sex" },
+  { key: "address",   label: "Street Address" },
+  { key: "city",      label: "City" },
+  { key: "state",     label: "State" },
+  { key: "zip",       label: "ZIP Code" },
+  { key: "height",    label: "Height" },
+  { key: "weight",    label: "Weight" },
+  { key: "eyeColor",  label: "Eye Color" },
+  { key: "hairColor", label: "Hair Color" },
+  { key: "phone",     label: "Phone" },
+  { key: "email",     label: "Email" },
+];
+
+const STYLE_META = {
+  interview: { icon: "💬", title: "Receptionist Interview", subtitle: "Listen to — or read — this conversation, then fill in the form." },
+  biography: { icon: "📖", title: "Biography",              subtitle: "Read this paragraph about the person, then fill in the form." },
+  news:      { icon: "📰", title: "News Article",           subtitle: "Read this local news story, then fill in the form." },
+};
+
+// ── STATE ────────────────────────────────────────────────────────────────────
+let chosenStyle = null;
+let chosenDiff  = null;
+let person      = null;
+let options     = null;
+let passageHTML = null;
+let highlights  = [];
+let selected    = {};
+let submitted    = false;
+let highlightsOn = false;
+
+// ── AUTO-LEVELER STATE ────────────────────────────────────────────────────────
+const LEVELS = ["easy", "medium", "hard"];
+const MAX_SCORE = 14; // points per round
+let scoreHistory = [];   // stores raw correct counts from completed rounds
+let levelChanged = null; // message to show on result screen: null | "up" | "down" | "stay"
+
+// ── SCREEN ───────────────────────────────────────────────────────────────────
+function showScreen(id) {
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  document.getElementById("screen-" + id).classList.add("active");
+}
+
+// ── SETUP SELECTION ──────────────────────────────────────────────────────────
+document.querySelectorAll(".option-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const type = btn.dataset.type;
+    document.querySelectorAll(`.option-btn[data-type="${type}"]`).forEach(b => b.classList.remove("selected"));
+    btn.classList.add("selected");
+    if (type === "style") chosenStyle = btn.dataset.val;
+    if (type === "diff")  chosenDiff  = btn.dataset.val;
+    document.getElementById("btn-start").disabled = !(chosenStyle && chosenDiff);
+  });
+});
+
+// ── API CALL ─────────────────────────────────────────────────────────────────
+async function callAPI(prompt) {
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 1500,
+      messages: [{ role: "user", content: prompt }]
+    })
+  });
+  const data = await res.json();
+  const text = data.content.map(b => b.text || "").join("").trim();
+  return text.replace(/```json[\s\S]*?```/g, m => m.replace(/```json|```/g, "")).replace(/^```|```$/g, "").trim();
+}
+
+// ── GENERATE ACTIVITY ────────────────────────────────────────────────────────
+async function generateActivity(style, diff) {
+
+  const diffInstructions = {
+    easy:   "State ALL information directly and clearly using simple present tense. Use the exact values (e.g. 'Her date of birth is 03/14/1991'). This is for beginner English learners.",
+    medium: "Rephrase some information using different words (e.g. say 'born in March 1991' instead of giving the exact date, say 'lives on Oak Street' without the number at first, use 'around 5 foot 6' for height). Students must understand and convert the phrasing. Intermediate English learners.",
+    hard:   "Use indirect, inferential language for at least half the fields. For example: 'She is the same age as her sister who turned 33 last year' instead of the birthdate. 'Her neighborhood is in the part of Kennewick with 993 ZIP codes.' Students must think carefully. For advanced learners."
+  };
+
+  const stylePrompts = {
+    interview: `Write a short receptionist check-in interview (8–12 Q&A exchanges). The receptionist asks questions to collect information for a form. The patient/client answers. Format as a dialogue.`,
+    biography: `Write a short biography paragraph (150–200 words, 2–3 paragraphs) about the person in third person. Naturally weave in all their information.`,
+    news:      `Write a short local Tri-Cities news article (150–200 words) about the person — maybe they won an award, started a new job, or are featured in a community story. Include all their personal details naturally in the article. Include a headline.`
+  };
+
+  const prompt = `Create a classroom English activity. Generate a fictional person from the Tri-Cities area of Washington State (Kennewick, Pasco, or Richland), then write a reading passage about them.
+
+DIFFICULTY: ${diff.toUpperCase()}
+${diffInstructions[diff]}
+
+READING STYLE:
+${stylePrompts[style]}
+
+Return ONLY valid JSON with this exact structure (no markdown):
+
+{
+  "person": {
+    "firstName": "string",
+    "lastName": "string",
+    "dob": "MM/DD/YYYY",
+    "sex": "M or F",
+    "address": "street number and name",
+    "city": "Kennewick, Pasco, or Richland",
+    "state": "WA",
+    "zip": "correct ZIP for that city",
+    "height": "like 5'6\\"",
+    "weight": "like 145 lbs",
+    "eyeColor": "Brown, Blue, Green, Hazel, or Gray",
+    "hairColor": "Black, Brown, Blonde, Red, or Gray",
+    "phone": "(509) XXX-XXXX",
+    "email": "realistic email based on their name"
+  },
+  "options": {
+    "firstName":  ["CORRECT", "wrong1", "wrong2"],
+    "lastName":   ["CORRECT", "wrong1", "wrong2"],
+    "dob":        ["CORRECT MM/DD/YYYY", "wrong MM/DD/YYYY", "wrong MM/DD/YYYY"],
+    "sex":        ["CORRECT", "other"],
+    "address":    ["CORRECT", "wrong1", "wrong2"],
+    "city":       ["Kennewick", "Pasco", "Richland"],
+    "state":      ["WA"],
+    "zip":        ["CORRECT", "wrong1", "wrong2"],
+    "height":     ["CORRECT", "wrong1", "wrong2"],
+    "weight":     ["CORRECT", "wrong1", "wrong2"],
+    "eyeColor":   ["Brown", "Blue", "Green", "Hazel", "Gray"],
+    "hairColor":  ["Black", "Brown", "Blonde", "Red", "Gray"],
+    "phone":      ["CORRECT", "wrong1", "wrong2"],
+    "email":      ["CORRECT", "wrong1", "wrong2"]
+  },
+  "passage": {
+    "type": "${style}",
+    "headline": "only for news type, otherwise empty string",
+    "content": [
+      ${style === "interview"
+        ? '{ "speaker": "R", "text": "receptionist line" }, { "speaker": "P", "text": "patient line" }'
+        : '{ "para": "paragraph text here" }, { "para": "second paragraph" }'
+      }
+    ]
+  },
+  "highlights": ["exact phrase from the passage that reveals key info 1", "exact phrase 2", "exact phrase 3", "etc — include one phrase per form field that can be found in the text"]
+}
+
+Important rules:
+- Person must be diverse and realistic — vary ethnicity, gender, age each time
+- Wrong options must be same format but clearly different values
+- Correct answer is always first in each options array
+- City options always exactly: Kennewick, Pasco, Richland
+- ZIP: Kennewick=99336/99337, Pasco=99301/99302, Richland=99352/99354
+- Highlights must be EXACT substrings that appear in the passage content
+- For interview: speaker "R" = receptionist, "P" = person/patient
+- Keep language at A1-A2 level for easy, A2-B1 for medium, B1-B2 for hard`;
+
+  const raw = await callAPI(prompt);
+  return JSON.parse(raw);
+}
+
+// ── RENDER PASSAGE ────────────────────────────────────────────────────────────
+function renderPassage(data) {
+  const meta = STYLE_META[data.passage.type] || STYLE_META.biography;
+  document.getElementById("passage-icon").textContent = meta.icon;
+  document.getElementById("passage-title").textContent = meta.title;
+  document.getElementById("passage-subtitle").textContent = meta.subtitle;
+
+  const body = document.getElementById("passage-body");
+  body.innerHTML = "";
+  highlights = data.highlights || [];
+  highlightsOn = false;
+
+  if (data.passage.type === "interview") {
+    const block = document.createElement("div");
+    block.className = "interview-block";
+    data.passage.content.forEach(line => {
+      const div = document.createElement("div");
+      div.className = "interview-line";
+      const isR = line.speaker === "R";
+      div.innerHTML = `<span class="interview-speaker ${isR ? "q" : "a"}">${isR ? "R:" : "P:"}</span>
+        <span class="interview-text">${escHtml(line.text)}</span>`;
+      block.appendChild(div);
+    });
+    body.appendChild(block);
+  } else {
+    const block = document.createElement("div");
+    block.className = "prose-block";
+    if (data.passage.headline) {
+      const h = document.createElement("div");
+      h.className = "news-headline";
+      h.textContent = data.passage.headline;
+      block.appendChild(h);
+      const by = document.createElement("div");
+      by.className = "news-byline";
+      by.textContent = `Tri-Cities Herald · Local News`;
+      block.appendChild(by);
+    }
+    data.passage.content.forEach(item => {
+      const p = document.createElement("p");
+      p.textContent = item.para;
+      block.appendChild(p);
+    });
+    body.appendChild(block);
+  }
+}
+
+function escHtml(s) {
+  return (s || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
+
+// ── HIGHLIGHT TOGGLE ─────────────────────────────────────────────────────────
+document.getElementById("btn-highlight").addEventListener("click", () => {
+  highlightsOn = !highlightsOn;
+  document.getElementById("btn-highlight").textContent = highlightsOn ? "✨ Hide highlights" : "✨ Highlight key info";
+  refreshHighlights();
+});
+
+function refreshHighlights() {
+  const body = document.getElementById("passage-body");
+  if (!highlightsOn) {
+    // Strip marks
+    body.querySelectorAll("mark").forEach(m => {
+      m.replaceWith(document.createTextNode(m.textContent));
+    });
+    // Normalize text nodes
+    body.normalize();
+    return;
+  }
+  // Apply highlights to all text nodes
+  highlights.forEach(phrase => {
+    if (!phrase || phrase.length < 3) return;
+    highlightPhrase(body, phrase);
+  });
+}
+
+function highlightPhrase(container, phrase) {
+  const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
+  const nodes = [];
+  let n;
+  while ((n = walker.nextNode())) nodes.push(n);
+  nodes.forEach(node => {
+    const idx = node.textContent.indexOf(phrase);
+    if (idx === -1) return;
+    const before = document.createTextNode(node.textContent.slice(0, idx));
+    const mark = document.createElement("mark");
+    mark.textContent = phrase;
+    const after = document.createTextNode(node.textContent.slice(idx + phrase.length));
+    node.parentNode.insertBefore(before, node);
+    node.parentNode.insertBefore(mark, node);
+    node.parentNode.insertBefore(after, node);
+    node.parentNode.removeChild(node);
+  });
+}
+
+// ── BUILD CHIPS ───────────────────────────────────────────────────────────────
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function buildChips() {
+  selected = {};
+  FIELDS.forEach(f => {
+    const wrap = document.getElementById("chips-" + f.key);
+    if (!wrap) return;
+    wrap.innerHTML = "";
+    wrap.classList.remove("locked");
+
+    const opts = f.key === "state" ? ["WA"] : shuffle(options[f.key] || []);
+    opts.forEach(opt => {
+      const btn = document.createElement("button");
+      btn.className = "chip";
+      btn.textContent = opt;
+      btn.dataset.key = f.key;
+      btn.dataset.val = opt;
+      btn.addEventListener("click", () => selectChip(f.key, opt, btn));
+      wrap.appendChild(btn);
+    });
+
+    // State auto-select
+    if (f.key === "state") {
+      const wa = wrap.querySelector('[data-val="WA"]');
+      if (wa) { wa.classList.add("selected"); selected["state"] = "WA"; wrap.classList.add("locked"); }
+    }
+  });
+}
+
+function selectChip(key, val, clickedBtn) {
+  if (submitted) return;
+  const wrap = document.getElementById("chips-" + key);
+  wrap.querySelectorAll(".chip").forEach(c => c.classList.remove("selected"));
+  clickedBtn.classList.add("selected");
+  selected[key] = val;
+  // Update filled counter
+  const filled = FIELDS.filter(f => selected[f.key]).length;
+  const total = FIELDS.length;
+  document.getElementById("score-display").textContent = filled + " / " + total + " filled";
+}
+
+// ── SUBMIT ────────────────────────────────────────────────────────────────────
+function submitForm() {
+  if (submitted) return;
+  submitted = true;
+  document.getElementById("btn-submit").disabled = true;
+
+  let correct = 0, wrong = 0;
+  const results = [];
+
+  FIELDS.forEach(f => {
+    const userVal = selected[f.key] || "";
+    const correctVal = person[f.key];
+    let status;
+    if (!userVal) {
+      status = "blank";
+    } else if (normalise(userVal) === normalise(correctVal)) {
+      status = "correct"; correct++;
+    } else {
+      status = "wrong"; wrong++;
+    }
+    results.push({ field: f, userVal, correctVal, status });
+
+    const wrap = document.getElementById("chips-" + f.key);
+    if (wrap) {
+      wrap.querySelectorAll(".chip").forEach(chip => {
+        chip.classList.remove("selected");
+        const v = chip.dataset.val;
+        if (status === "correct" && normalise(v) === normalise(correctVal)) {
+          chip.classList.add("correct");
+        } else if (status === "wrong" && normalise(v) === normalise(userVal)) {
+          chip.classList.add("wrong");
+        }
+        // blank: no color — student can see their unanswered fields in results table
+      });
+      wrap.classList.add("locked");
+    }
+  });
+
+  const blank = FIELDS.length - correct - wrong;
+  document.getElementById("score-display").textContent = correct + " correct";
+  setTimeout(() => showResult(correct, wrong, results), 500);
+}
+
+function normalise(s) {
+  return (s || "").toLowerCase().replace(/\s+/g, " ").trim();
+}
+
+// ── RESULT ────────────────────────────────────────────────────────────────────
+function showResult(correct, wrong, results) {
+  const total = FIELDS.length;
+  const badge = document.getElementById("result-badge");
+  if (correct === total) {
+    badge.textContent = "PERFECT SCORE"; badge.className = "result-badge perfect";
+  } else if (correct >= Math.ceil(total * 0.75)) {
+    badge.textContent = "GOOD WORK"; badge.className = "result-badge good";
+  } else {
+    badge.textContent = "KEEP PRACTICING"; badge.className = "result-badge tryagain";
+  }
+  document.getElementById("result-headline").textContent = `${person.firstName} ${person.lastName}'s Form`;
+  document.getElementById("result-score").textContent = `${correct} / ${total}`;
+  const msgs = correct === total
+    ? "Perfect! You found every piece of information correctly."
+    : correct >= 11 ? `Almost perfect — ${correct} right. Check the fields below.`
+    : correct >= 8  ? `Good effort — ${correct} correct. Look at what you missed.`
+    : `Keep practicing — ${correct} out of ${total}. Read each sentence carefully and match it to the right field.`;
+  document.getElementById("result-sub").textContent = msgs;
+
+  const tbody = document.getElementById("result-tbody");
+  tbody.innerHTML = "";
+  results.forEach(r => {
+    const tr = document.createElement("tr");
+    const ansClass = r.status === "correct" ? "f-correct" : r.status === "wrong" ? "f-wrong" : "f-blank";
+    const tag = r.status === "correct" ? `<span class="tag ok">✓</span>`
+      : r.status === "wrong" ? `<span class="tag err">✗</span>` : `<span class="tag skip">blank</span>`;
+    tr.innerHTML = `<td class="f-label">${r.field.label}</td>
+      <td class="${ansClass}">${r.userVal || "(blank)"}</td>
+      <td class="f-correct">${r.correctVal}</td>
+      <td>${tag}</td>`;
+    tbody.appendChild(tr);
+  });
+  // ── Compute auto-leveler ──
+  const nextLevel = computeNextLevel(correct);
+  const prevLevel = chosenDiff;
+  chosenDiff = nextLevel; // store for next round
+
+  // Level change banner
+  const banner = document.getElementById("level-banner");
+  if (scoreHistory.length < 2) {
+    banner.style.display = "none";
+  } else if (levelChanged === "up") {
+    banner.style.display = "block";
+    banner.className = "level-banner up";
+    banner.innerHTML = `⬆️ <strong>Moving up to ${nextLevel.charAt(0).toUpperCase() + nextLevel.slice(1)}!</strong> Great work — your last ${scoreHistory.length} rounds averaged ${Math.round((scoreHistory.reduce((a,b)=>a+b,0) / (3*MAX_SCORE))*100)}%.`;
+  } else if (levelChanged === "down") {
+    banner.style.display = "block";
+    banner.className = "level-banner down";
+    banner.innerHTML = `⬇️ <strong>Trying ${nextLevel.charAt(0).toUpperCase() + nextLevel.slice(1)} level.</strong> Keep reading carefully — your last ${scoreHistory.length} rounds averaged ${Math.round((scoreHistory.reduce((a,b)=>a+b,0) / (3*MAX_SCORE))*100)}%.`;
+  } else {
+    banner.style.display = "block";
+    banner.className = "level-banner stay";
+    banner.innerHTML = `➡️ <strong>Staying on ${nextLevel.charAt(0).toUpperCase() + nextLevel.slice(1)}.</strong> Your last ${scoreHistory.length} rounds averaged ${Math.round((scoreHistory.reduce((a,b)=>a+b,0) / (3*MAX_SCORE))*100)}% (out of 42 possible points).`;
+  }
+
+  showScreen("result");
+}
+
+// ── TEACHER VIEW ──────────────────────────────────────────────────────────────
+function buildTeacher() {
+  if (!person) return;
+  const p = person;
+  const rows = FIELDS.map(f => {
+    const val = p[f.key] || "";
+    return `<tr><td style="padding:3px 8px;color:var(--ink-soft);font-size:11px;">${f.label}</td>
+      <td style="padding:3px 8px;font-weight:600;">${val}</td></tr>`;
+  }).join("");
+  document.getElementById("teacher-panel").innerHTML =
+    `<strong>🔑 Answer key</strong><br><br>
+    <table style="border-collapse:collapse;width:100%;">
+      <thead><tr>
+        <th style="padding:3px 8px;font-size:9px;letter-spacing:1.5px;color:var(--ink-soft);text-align:left;border-bottom:1px solid #e0c84a;">FIELD</th>
+        <th style="padding:3px 8px;font-size:9px;letter-spacing:1.5px;color:var(--ink-soft);text-align:left;border-bottom:1px solid #e0c84a;">ANSWER</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+}
+
+document.getElementById("btn-teacher-toggle").addEventListener("click", () => {
+  document.getElementById("teacher-panel").classList.toggle("open");
+});
+
+// ── AUTO-LEVELER ─────────────────────────────────────────────────────────────
+function currentLevel() {
+  // Before any rounds played, use the setup choice
+  if (scoreHistory.length === 0) return chosenDiff;
+  // After rounds are played, use computed level stored in chosenDiff (updated after each round)
+  return chosenDiff;
+}
+
+function computeNextLevel(newScore) {
+  // Add this round's score to history, keep last 3
+  scoreHistory.push(newScore);
+  if (scoreHistory.length > 3) scoreHistory.shift();
+
+  // Need at least 2 completed rounds to adjust
+  if (scoreHistory.length < 2) {
+    levelChanged = null;
+    return chosenDiff; // no change after only 1 round
+  }
+
+  // Rolling average over up to 3 rounds, always scored out of 42 (3 × 14)
+  const total = scoreHistory.reduce((a, b) => a + b, 0);
+  const maxTotal = 3 * MAX_SCORE; // always 42
+  const pct = total / maxTotal;
+
+  const currentIdx = LEVELS.indexOf(chosenDiff);
+  let nextIdx = currentIdx;
+
+  if (pct >= 0.75 && currentIdx < LEVELS.length - 1) {
+    nextIdx = currentIdx + 1;
+    levelChanged = "up";
+  } else if (pct <= 0.25 && currentIdx > 0) {
+    nextIdx = currentIdx - 1;
+    levelChanged = "down";
+  } else {
+    levelChanged = "stay";
+  }
+
+  return LEVELS[nextIdx];
+}
+
+// ── MAIN FLOW ─────────────────────────────────────────────────────────────────
+async function startGame() {
+  let style = chosenStyle;
+  if (style === "random") {
+    const styles = ["interview", "biography", "news"];
+    style = styles[Math.floor(Math.random() * styles.length)];
+  }
+  // Use auto-leveler after first round; fall back to chosen difficulty on first play
+  const diff = currentLevel();
+
+  showScreen("loading");
+  document.getElementById("loading-msg").textContent =
+    `Writing a ${diff} ${style === "interview" ? "interview" : style === "biography" ? "biography" : "news article"}…`;
+
+  try {
+    const game = await generateActivity(style, diff);
+    person  = game.person;
+    options = game.options;
+    submitted = false;
+    highlightsOn = false;
+
+    // Diff pill
+    const pill = document.getElementById("diff-pill");
+    pill.textContent = diff.toUpperCase();
+    pill.className = `mode-pill ${diff}`;
+
+    // Style pill
+    const meta = STYLE_META[style] || STYLE_META.biography;
+    document.getElementById("style-pill").textContent = meta.title;
+
+    // Passage icon/title
+    document.getElementById("passage-icon").textContent = meta.icon;
+
+    document.getElementById("score-display").textContent = "0 / " + FIELDS.length + " filled";
+    document.getElementById("btn-submit").disabled = false;
+    document.getElementById("btn-highlight").textContent = "✨ Highlight key info";
+    document.getElementById("teacher-panel").classList.remove("open");
+
+
+    renderPassage(game);
+    buildChips();
+    buildTeacher();
+
+    showScreen("game");
+  } catch (e) {
+    alert("Could not generate the activity. Please try again.\n\n" + e.message);
+    showScreen("setup");
+  }
+}
+
+// ── EVENTS ────────────────────────────────────────────────────────────────────
+document.getElementById("btn-start").addEventListener("click", startGame);
+document.getElementById("btn-submit").addEventListener("click", submitForm);
+document.getElementById("btn-same-settings").addEventListener("click", startGame);
+document.getElementById("btn-change-settings").addEventListener("click", () => {
+  scoreHistory = [];
+  levelChanged = null;
+  showScreen("setup");
+});
+
+})();
+</script>
+</body>
+</html>
