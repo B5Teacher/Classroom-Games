@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fill the Form — Teacher</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --ink: #1a1a18; --ink-soft: #5a5a56; --paper: #f7f6f1; --white: #fff;
+  --rule: rgba(0,0,0,0.11); --blue: #1a5fa8; --blue-light: #e8f0fb;
+  --green: #1a6b3a; --green-light: #e5f4ec; --red: #a32d2d;
+  --amber: #7a5100; --amber-light: #fff4d4;
+  --easy: #1a6b3a; --easy-bg: #e5f4ec;
+  --medium: #8a5c00; --medium-bg: #fff3d4;
+  --hard: #a32d2d; --hard-bg: #fceaea;
+}
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: var(--paper); color: var(--ink); min-height: 100vh; padding: 16px; }
+.screen { display: none; } .screen.active { display: block; }
+
+.setup-card { background: var(--white); border: 1px solid var(--rule); border-radius: 10px;
+  padding: 32px 28px; max-width: 600px; margin: 40px auto; box-shadow: 0 2px 10px rgba(0,0,0,0.06); }
+.setup-card h1 { font-family: Georgia, serif; font-size: 26px; margin-bottom: 4px; }
+.setup-card .sub { font-size: 13px; color: var(--ink-soft); margin-bottom: 24px; line-height: 1.5; }
+.sec-label { font-size: 10px; letter-spacing: 2px; color: var(--ink-soft); font-weight: 600; margin-bottom: 8px; margin-top: 18px; }
+
+.filter-row { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+.filter-btn { font-family: inherit; font-size: 11px; padding: 5px 12px; border: 1.5px solid var(--rule);
+  border-radius: 20px; background: var(--white); color: var(--ink-soft); cursor: pointer; transition: all 0.12s; }
+.filter-btn:hover { border-color: var(--blue); color: var(--blue); }
+.filter-btn.active { border-color: var(--blue); background: var(--blue); color: var(--white); }
+.filter-btn.easy.active { border-color: var(--easy); background: var(--easy); }
+.filter-btn.medium.active { border-color: var(--medium); background: var(--medium); }
+.filter-btn.hard.active { border-color: var(--hard); background: var(--hard); }
+
+.passage-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 20px; max-height: 340px; overflow-y: auto; }
+.passage-item { display: flex; align-items: center; gap: 10px; padding: 11px 14px;
+  border: 1.5px solid var(--rule); border-radius: 7px; background: var(--white);
+  cursor: pointer; transition: all 0.12s; text-align: left; font-family: inherit; }
+.passage-item:hover { border-color: var(--blue); background: var(--blue-light); }
+.passage-item.selected { border-color: var(--blue); background: var(--blue-light); }
+.passage-item .pi-name { font-size: 13px; font-weight: 600; flex: 1; }
+.passage-item .pi-name.selected { color: var(--blue); }
+.pi-tags { display: flex; gap: 5px; flex-shrink: 0; }
+.tag { font-size: 9px; font-weight: 700; letter-spacing: 1px; padding: 2px 7px; border-radius: 10px; }
+.tag.easy { background: var(--easy-bg); color: var(--easy); }
+.tag.medium { background: var(--medium-bg); color: var(--medium); }
+.tag.hard { background: var(--hard-bg); color: var(--hard); }
+.tag.style { background: var(--paper); color: var(--ink-soft); border: 1px solid var(--rule); }
+.passage-item.hidden { display: none; }
+
+.game-wrap { max-width: 1100px; margin: 0 auto; }
+.top-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; gap: 12px; flex-wrap: wrap; }
+.top-row h2 { font-family: Georgia, serif; font-size: 20px; }
+.pill { font-size: 11px; font-weight: 700; letter-spacing: 1px; padding: 4px 10px; border-radius: 20px; }
+.pill.easy { background: var(--easy-bg); color: var(--easy); }
+.pill.medium { background: var(--medium-bg); color: var(--medium); }
+.pill.hard { background: var(--hard-bg); color: var(--hard); }
+.style-pill { font-size: 11px; color: var(--ink-soft); background: var(--paper); border: 1px solid var(--rule); padding: 4px 10px; border-radius: 20px; }
+
+.main-grid { display: grid; grid-template-columns: 1fr 300px; gap: 16px; align-items: start; }
+.left-col, .right-col { display: flex; flex-direction: column; gap: 14px; }
+
+.passage-card { background: var(--white); border: 1px solid var(--rule); border-top: 4px solid var(--blue);
+  border-radius: 0 0 8px 8px; padding: 20px 22px; }
+.card-label { font-size: 9px; letter-spacing: 2.5px; color: var(--blue); font-weight: 700; margin-bottom: 14px; }
+.interview-block { display: flex; flex-direction: column; gap: 11px; }
+.interview-line { display: flex; gap: 10px; font-size: 15px; line-height: 1.6; }
+.spkr { font-weight: 700; font-size: 12px; flex-shrink: 0; padding-top: 1px; min-width: 24px; }
+.spkr.r { color: var(--blue); } .spkr.p { color: var(--ink-soft); }
+.prose-block { font-size: 16px; line-height: 1.85; }
+.prose-block p { margin-bottom: 12px; } .prose-block p:last-child { margin-bottom: 0; }
+.news-hed { font-family: Georgia, serif; font-size: 20px; font-weight: 700; line-height: 1.3; margin-bottom: 6px; }
+.news-byl { font-size: 11px; color: var(--ink-soft); margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid var(--rule); }
+.hl-bar { display: flex; align-items: center; justify-content: space-between; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--rule); font-size: 12px; color: var(--ink-soft); }
+.hl-btn { font-family: inherit; font-size: 12px; padding: 5px 12px; border: 1px solid var(--rule); border-radius: 4px; background: var(--paper); cursor: pointer; }
+.hl-btn:hover { background: #e8e6df; }
+mark { background: #fff5b0; border-radius: 2px; padding: 0 1px; }
+
+.card { background: var(--white); border: 1px solid var(--rule); border-radius: 8px; padding: 18px; }
+.card h3 { font-size: 9px; letter-spacing: 2px; color: var(--ink-soft); font-weight: 700; margin-bottom: 14px; }
+.room-code-big { font-family: 'Courier New', monospace; font-size: 38px; font-weight: 700; letter-spacing: 8px; text-align: center; margin-bottom: 8px; color: var(--blue); }
+.qr-wrap { display: flex; justify-content: center; margin-bottom: 8px; }
+.join-url { font-size: 10px; color: var(--ink-soft); text-align: center; word-break: break-all; line-height: 1.4; }
+
+.progress-summary { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 8px; }
+.pb-bg { height: 10px; background: #e5e3dc; border-radius: 5px; overflow: hidden; margin-bottom: 4px; }
+.pb { height: 100%; background: var(--blue); border-radius: 5px; transition: width 0.5s; }
+
+.lb-list { display: flex; flex-direction: column; gap: 5px; max-height: 280px; overflow-y: auto; }
+.lb-row { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 6px; background: var(--paper); font-size: 13px; }
+.lb-row.done { background: var(--green-light); }
+.lb-rank { font-size: 11px; color: var(--ink-soft); width: 18px; flex-shrink: 0; }
+.lb-name { flex: 1; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lb-score { font-family: 'Courier New', monospace; font-size: 13px; font-weight: 700; color: var(--green); flex-shrink: 0; }
+.lb-pending { font-size: 11px; color: var(--ink-soft); font-style: italic; flex-shrink: 0; }
+.lb-level { font-size: 9px; letter-spacing: 1px; padding: 2px 6px; border-radius: 10px; flex-shrink: 0; }
+.lb-level.easy { background: var(--easy-bg); color: var(--easy); }
+.lb-level.medium { background: var(--medium-bg); color: var(--medium); }
+.lb-level.hard { background: var(--hard-bg); color: var(--hard); }
+.empty-lb { font-size: 13px; color: var(--ink-soft); font-style: italic; padding: 8px 0; text-align: center; }
+
+.btn { font-family: inherit; font-size: 13px; padding: 9px 16px; border-radius: 4px; cursor: pointer;
+  border: 1px solid var(--rule); background: var(--white); color: var(--ink); transition: background 0.12s; }
+.btn:hover { background: #eee; }
+.btn.primary { background: var(--ink); color: var(--white); border-color: var(--ink); }
+.btn.primary:hover { background: #333; }
+.btn.blue { background: var(--blue); color: var(--white); border-color: var(--blue); }
+.btn.blue:hover { background: #1a6dbd; }
+.btn:disabled { opacity: 0.35; cursor: default; pointer-events: none; }
+.btn-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+.answer-key { background: #fffbe8; border: 1px solid #e0c84a; border-radius: 6px;
+  padding: 12px 14px; font-size: 12px; color: #5a4200; display: none; margin-bottom: 12px; }
+.answer-key.open { display: block; }
+.answer-key table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+.answer-key td { padding: 2px 6px; font-size: 11px; border-bottom: 1px dashed #e8d87a; }
+.answer-key td:first-child { color: #8a7040; }
+.answer-key td:last-child { font-weight: 600; }
+
+@media (max-width: 740px) { .main-grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<div id="screen-setup" class="screen active">
+  <div class="setup-card">
+    <h1>Fill the Form</h1>
+    <p class="sub">Teacher view — pick a passage and start the activity. Students join with the room code on their phones.</p>
+
+    <div class="sec-label">FILTER BY DIFFICULTY</div>
+    <div class="filter-row">
+      <button class="filter-btn active" data-filter="all">All</button>
+      <button class="filter-btn easy" data-filter="easy">🟢 Easy</button>
+      <button class="filter-btn medium" data-filter="medium">🟡 Medium</button>
+      <button class="filter-btn hard" data-filter="hard">🔴 Hard</button>
+    </div>
+
+    <div class="sec-label">CHOOSE A PASSAGE</div>
+    <div class="passage-list" id="passage-list"></div>
+
+    <button class="btn primary" id="btn-start" disabled>Start activity →</button>
+  </div>
+</div>
+
+<div id="screen-game" class="screen">
+  <div class="game-wrap">
+    <div class="top-row">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <h2>Fill the Form — Teacher</h2>
+        <span class="pill" id="diff-pill">EASY</span>
+        <span class="style-pill" id="style-pill"></span>
+      </div>
+      <div class="btn-row">
+        <button class="btn" id="btn-key-toggle" style="font-size:11px;padding:6px 12px;">🔑 Answer key</button>
+        <button class="btn blue" id="btn-next-round">Next round →</button>
+        <button class="btn" id="btn-end">End session</button>
+      </div>
+    </div>
+
+    <div class="answer-key" id="answer-key"></div>
+
+    <div class="main-grid">
+      <div class="left-col">
+        <div class="passage-card">
+          <div class="card-label">READING PASSAGE — READ ALOUD OR DISPLAY ON PROJECTOR</div>
+          <div id="passage-body"></div>
+          <div class="hl-bar">
+            <span>Show where each answer comes from:</span>
+            <button class="hl-btn" id="btn-highlight">✨ Highlight answers</button>
+          </div>
+        </div>
+      </div>
+      <div class="right-col">
+        <div class="card">
+          <h3>ROOM CODE</h3>
+          <div class="room-code-big" id="room-code-display">—</div>
+          <div class="qr-wrap"><div id="qr-canvas"></div></div>
+          <div class="join-url" id="join-url-display"></div>
+        </div>
+        <div class="card">
+          <h3>CLASS PROGRESS</h3>
+          <div class="progress-summary">
+            <span id="progress-text">0 joined</span>
+            <span id="submitted-text">0 submitted</span>
+          </div>
+          <div class="pb-bg"><div class="pb" id="progress-bar" style="width:0%"></div></div>
+        </div>
+        <div class="card">
+          <h3>LEADERBOARD</h3>
+          <div class="lb-list" id="lb-list"><div class="empty-lb">Waiting for students…</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, set, get, onValue, off } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyCcSGQ5s4bVcVJrgIeBbZAN15KezGP8ozU",
+  authDomain: "b5teacher-83630.firebaseapp.com",
+  databaseURL: "https://b5teacher-83630-default-rtdb.firebaseio.com",
+  projectId: "b5teacher-83630",
+  storageBucket: "b5teacher-83630.firebasestorage.app",
+  messagingSenderId: "475318674917",
+  appId: "1:475318674917:web:57af6a9c8e5fb986d37b0c"
+};
+
+const PASSAGES = [
+  {id:1,title:"Maria Santos — Interview (Easy)",style:"interview",difficulty:"easy",person:{firstName:"Maria",lastName:"Santos",dob:"03/14/1991",sex:"F",address:"1234 W Canal Dr",city:"Kennewick",state:"WA",zip:"99336",height:"5'4\"",weight:"138 lbs",eyeColor:"Brown",hairColor:"Black",phone:"(509) 555-2847",email:"maria.santos@email.com"},options:{firstName:["Maria","Sofia","Elena"],lastName:["Santos","Torres","Rivera"],dob:["03/14/1991","07/22/1988","11/05/1994"],sex:["F","M"],address:["1234 W Canal Dr","892 N Columbia Dr","456 S Ely St"],city:["Kennewick","Pasco","Richland"],state:["WA"],zip:["99336","99337","99302"],height:["5'4\"","5'1\"","5'7\""],weight:["138 lbs","124 lbs","152 lbs"],eyeColor:["Brown","Blue","Green","Hazel","Gray"],hairColor:["Black","Brown","Blonde","Red","Gray"],phone:["(509) 555-2847","(509) 555-1034","(509) 555-7291"],email:["maria.santos@email.com","m.santos99@gmail.com","mariasantos@yahoo.com"]},passage:{type:"interview",headline:"",content:[{speaker:"R",text:"Good morning! Can I get your last name please?"},{speaker:"P",text:"Yes, it's Santos. S-A-N-T-O-S."},{speaker:"R",text:"And your first name?"},{speaker:"P",text:"Maria."},{speaker:"R",text:"Date of birth?"},{speaker:"P",text:"March 14th, 1991."},{speaker:"R",text:"Are you male or female?"},{speaker:"P",text:"Female."},{speaker:"R",text:"What's your address?"},{speaker:"P",text:"1234 West Canal Drive, Kennewick, Washington, 99336."},{speaker:"R",text:"Height and weight?"},{speaker:"P",text:"I'm 5 feet 4 inches and 138 pounds."},{speaker:"R",text:"Eye color and hair color?"},{speaker:"P",text:"Brown eyes, black hair."},{speaker:"R",text:"Phone number?"},{speaker:"P",text:"(509) 555-2847."},{speaker:"R",text:"And email?"},{speaker:"P",text:"maria.santos@email.com"}]},highlights:["Santos","Maria","March 14th, 1991","Female","1234 West Canal Drive, Kennewick","99336","5 feet 4 inches","138 pounds","Brown eyes, black hair","(509) 555-2847","maria.santos@email.com"]},
+  {id:2,title:"James Okafor — Biography (Easy)",style:"biography",difficulty:"easy",person:{firstName:"James",lastName:"Okafor",dob:"07/04/1985",sex:"M",address:"528 N 20th Ave",city:"Pasco",state:"WA",zip:"99301",height:"6'1\"",weight:"195 lbs",eyeColor:"Brown",hairColor:"Black",phone:"(509) 555-4410",email:"james.okafor@gmail.com"},options:{firstName:["James","Marcus","David"],lastName:["Okafor","Mensah","Diallo"],dob:["07/04/1985","03/19/1982","11/28/1989"],sex:["M","F"],address:["528 N 20th Ave","341 W Lewis St","875 N Oregon Ave"],city:["Pasco","Kennewick","Richland"],state:["WA"],zip:["99301","99302","99336"],height:["6'1\"","5'10\"","6'3\""],weight:["195 lbs","178 lbs","212 lbs"],eyeColor:["Brown","Blue","Green","Hazel","Gray"],hairColor:["Black","Brown","Blonde","Red","Gray"],phone:["(509) 555-4410","(509) 555-8823","(509) 555-1156"],email:["james.okafor@gmail.com","jokafor85@yahoo.com","j.okafor@email.com"]},passage:{type:"biography",headline:"",content:[{para:"James Okafor was born on July 4th, 1985. He is a male resident of Pasco, Washington. He lives at 528 North 20th Avenue, and his ZIP code is 99301."},{para:"James stands 6 feet 1 inch tall and weighs 195 pounds. He has brown eyes and black hair."},{para:"You can reach James by phone at (509) 555-4410, or by email at james.okafor@gmail.com."}]},highlights:["July 4th, 1985","male","Pasco, Washington","528 North 20th Avenue","99301","6 feet 1 inch","195 pounds","brown eyes","black hair","(509) 555-4410","james.okafor@gmail.com"]},
+  {id:3,title:"Linda Tran — News Article (Easy)",style:"news",difficulty:"easy",person:{firstName:"Linda",lastName:"Tran",dob:"09/22/1993",sex:"F",address:"703 Jadwin Ave",city:"Richland",state:"WA",zip:"99352",height:"5'3\"",weight:"125 lbs",eyeColor:"Brown",hairColor:"Black",phone:"(509) 555-6631",email:"ltran93@outlook.com"},options:{firstName:["Linda","Jenny","Amy"],lastName:["Tran","Nguyen","Pham"],dob:["09/22/1993","04/15/1990","12/01/1996"],sex:["F","M"],address:["703 Jadwin Ave","1205 George Washington Way","88 Keene Rd"],city:["Richland","Kennewick","Pasco"],state:["WA"],zip:["99352","99354","99336"],height:["5'3\"","5'0\"","5'6\""],weight:["125 lbs","110 lbs","140 lbs"],eyeColor:["Brown","Blue","Green","Hazel","Gray"],hairColor:["Black","Brown","Blonde","Red","Gray"],phone:["(509) 555-6631","(509) 555-2298","(509) 555-8847"],email:["ltran93@outlook.com","linda.tran@gmail.com","lindatran@yahoo.com"]},passage:{type:"news",headline:"Richland Woman Recognized for Community Service",content:[{para:"Linda Tran, a female resident of Richland, Washington, was honored this week at a local ceremony. Ms. Tran was born on September 22nd, 1993, and has lived in the Tri-Cities area her whole life."},{para:"She lives at 703 Jadwin Avenue, Richland, WA 99352. Ms. Tran stands 5 feet 3 inches tall and weighs 125 pounds. She has brown eyes and black hair."},{para:"Community members can contact Ms. Tran by phone at (509) 555-6631 or by email at ltran93@outlook.com."}]},highlights:["Linda Tran","female","Richland, Washington","September 22nd, 1993","703 Jadwin Avenue, Richland, WA 99352","5 feet 3 inches","125 pounds","brown eyes","black hair","(509) 555-6631","ltran93@outlook.com"]},
+  {id:4,title:"Carlos Rivera — Interview (Medium)",style:"interview",difficulty:"medium",person:{firstName:"Carlos",lastName:"Rivera",dob:"11/30/1988",sex:"M",address:"2201 W Entiat Ave",city:"Kennewick",state:"WA",zip:"99337",height:"5'9\"",weight:"172 lbs",eyeColor:"Hazel",hairColor:"Brown",phone:"(509) 555-3309",email:"carlos.r88@gmail.com"},options:{firstName:["Carlos","Miguel","Luis"],lastName:["Rivera","Morales","Gutierrez"],dob:["11/30/1988","06/14/1985","03/07/1991"],sex:["M","F"],address:["2201 W Entiat Ave","540 S Olympia St","319 N Ely Ave"],city:["Kennewick","Richland","Pasco"],state:["WA"],zip:["99337","99336","99354"],height:["5'9\"","5'6\"","6'0\""],weight:["172 lbs","158 lbs","185 lbs"],eyeColor:["Hazel","Brown","Green","Blue","Gray"],hairColor:["Brown","Black","Blonde","Red","Gray"],phone:["(509) 555-3309","(509) 555-7724","(509) 555-0018"],email:["carlos.r88@gmail.com","crivera@yahoo.com","carlosrivera@email.com"]},passage:{type:"interview",headline:"",content:[{speaker:"R",text:"Hi there, last name for the file?"},{speaker:"P",text:"Rivera."},{speaker:"R",text:"First name?"},{speaker:"P",text:"Carlos."},{speaker:"R",text:"And when were you born?"},{speaker:"P",text:"End of November, 1988. The 30th."},{speaker:"R",text:"Gender?"},{speaker:"P",text:"Male."},{speaker:"R",text:"Current address?"},{speaker:"P",text:"2201 West Entiat Avenue. That's in Kennewick, ZIP is 99337."},{speaker:"R",text:"How about your height and weight?"},{speaker:"P",text:"About five nine, and I'm around 172 pounds."},{speaker:"R",text:"Eye and hair color?"},{speaker:"P",text:"Hazel eyes, brown hair."},{speaker:"R",text:"Best phone number?"},{speaker:"P",text:"(509) 555-3309."},{speaker:"R",text:"Email address?"},{speaker:"P",text:"carlos.r88 at gmail dot com."}]},highlights:["Rivera","Carlos","End of November, 1988. The 30th","Male","2201 West Entiat Avenue","Kennewick","99337","five nine","172 pounds","Hazel eyes, brown hair","(509) 555-3309","carlos.r88"]},
+  {id:5,title:"Fatima Al-Hassan — Biography (Medium)",style:"biography",difficulty:"medium",person:{firstName:"Fatima",lastName:"Al-Hassan",dob:"02/14/1995",sex:"F",address:"415 Road 68",city:"Pasco",state:"WA",zip:"99301",height:"5'5\"",weight:"130 lbs",eyeColor:"Brown",hairColor:"Black",phone:"(509) 555-8812",email:"fatima.alhassan@email.com"},options:{firstName:["Fatima","Amira","Layla"],lastName:["Al-Hassan","Ibrahim","Malik"],dob:["02/14/1995","08/30/1992","05/19/1998"],sex:["F","M"],address:["415 Road 68","230 N 4th Ave","1102 W Clark St"],city:["Pasco","Kennewick","Richland"],state:["WA"],zip:["99301","99302","99336"],height:["5'5\"","5'2\"","5'8\""],weight:["130 lbs","118 lbs","145 lbs"],eyeColor:["Brown","Hazel","Green","Blue","Gray"],hairColor:["Black","Brown","Blonde","Red","Gray"],phone:["(509) 555-8812","(509) 555-4437","(509) 555-2291"],email:["fatima.alhassan@email.com","f.alhassan95@gmail.com","fatimaah@yahoo.com"]},passage:{type:"biography",headline:"",content:[{para:"Fatima Al-Hassan grew up in the Tri-Cities and now calls Pasco home, where she has lived on Road 68 at number 415 for the past three years. Her ZIP code is 99301."},{para:"Born in February of 1995 — Valentine's Day, in fact — she is a 30-year-old woman. She has a slight build, standing about five and a half feet tall and weighing 130 pounds, with dark brown eyes and black hair."},{para:"Fatima can be reached at (509) 555-8812 or at fatima.alhassan@email.com."}]},highlights:["Pasco","Road 68","415","99301","February of 1995","Valentine's Day","woman","five and a half feet","130 pounds","brown eyes","black hair","(509) 555-8812","fatima.alhassan@email.com"]},
+  {id:6,title:"Derek Whitman — News Article (Medium)",style:"news",difficulty:"medium",person:{firstName:"Derek",lastName:"Whitman",dob:"05/08/1979",sex:"M",address:"816 Keene Rd",city:"Richland",state:"WA",zip:"99352",height:"6'0\"",weight:"210 lbs",eyeColor:"Blue",hairColor:"Gray",phone:"(509) 555-7743",email:"dwhitman79@outlook.com"},options:{firstName:["Derek","Scott","Brian"],lastName:["Whitman","Palmer","Garrison"],dob:["05/08/1979","10/22/1975","03/14/1982"],sex:["M","F"],address:["816 Keene Rd","422 Thayer Dr","1033 Jadwin Ave"],city:["Richland","Kennewick","Pasco"],state:["WA"],zip:["99352","99354","99337"],height:["6'0\"","5'10\"","6'2\""],weight:["210 lbs","195 lbs","225 lbs"],eyeColor:["Blue","Brown","Green","Hazel","Gray"],hairColor:["Gray","Brown","Black","Blonde","Red"],phone:["(509) 555-7743","(509) 555-3318","(509) 555-9902"],email:["dwhitman79@outlook.com","derekw@gmail.com","d.whitman@yahoo.com"]},passage:{type:"news",headline:"Richland Man Elected to Local School Board",content:[{para:"Derek Whitman, a longtime Richland resident, was elected to the local school board last Tuesday. Mr. Whitman, who turns 47 this May, has lived at his Keene Road address — number 816 — for over a decade."},{para:"A tall man at an even six feet and 210 pounds, Mr. Whitman is easily recognized by his blue eyes and gray hair. His ZIP code is 99352."},{para:"Voters and community members can contact Mr. Whitman at (509) 555-7743 or via email at dwhitman79@outlook.com."}]},highlights:["Derek Whitman","Richland","816","Keene Road","six feet","210 pounds","blue eyes","gray hair","99352","(509) 555-7743","dwhitman79@outlook.com"]},
+  {id:7,title:"Yuki Tanaka — Interview (Hard)",style:"interview",difficulty:"hard",person:{firstName:"Yuki",lastName:"Tanaka",dob:"08/19/1990",sex:"F",address:"3305 W Clearwater Ave",city:"Kennewick",state:"WA",zip:"99336",height:"5'2\"",weight:"115 lbs",eyeColor:"Brown",hairColor:"Black",phone:"(509) 555-5580",email:"yuki.tanaka@gmail.com"},options:{firstName:["Yuki","Hana","Keiko"],lastName:["Tanaka","Yamamoto","Ishida"],dob:["08/19/1990","02/27/1987","11/03/1993"],sex:["F","M"],address:["3305 W Clearwater Ave","1140 N Columbia Center Blvd","678 S Auburn St"],city:["Kennewick","Richland","Pasco"],state:["WA"],zip:["99336","99337","99352"],height:["5'2\"","5'5\"","4'11\""],weight:["115 lbs","128 lbs","102 lbs"],eyeColor:["Brown","Hazel","Green","Blue","Gray"],hairColor:["Black","Brown","Blonde","Red","Gray"],phone:["(509) 555-5580","(509) 555-2219","(509) 555-8874"],email:["yuki.tanaka@gmail.com","yukitan@outlook.com","y.tanaka90@yahoo.com"]},passage:{type:"interview",headline:"",content:[{speaker:"R",text:"Name on the account?"},{speaker:"P",text:"Tanaka. My sister spells hers differently but mine is T-A-N-A-K-A."},{speaker:"R",text:"Given name?"},{speaker:"P",text:"Yuki."},{speaker:"R",text:"Date of birth?"},{speaker:"P",text:"I was born the summer before my parents moved here. August, 1990 — the 19th."},{speaker:"R",text:"I'll put female — is that correct?"},{speaker:"P",text:"Yes, that's right."},{speaker:"R",text:"Address?"},{speaker:"P",text:"3305 West Clearwater. Kennewick side, so the ZIP is 99336."},{speaker:"R",text:"Physical description for the file?"},{speaker:"P",text:"I'm pretty small — my doctor always jokes I haven't grown since middle school. Five two, about 115. Dark eyes, dark hair."},{speaker:"R",text:"Contact info?"},{speaker:"P",text:"Cell is (509) 555-5580 and email is yuki.tanaka at gmail."}]},highlights:["Tanaka","Yuki","August, 1990 — the 19th","female","3305 West Clearwater","Kennewick","99336","Five two","115","Dark eyes, dark hair","(509) 555-5580","yuki.tanaka"]},
+  {id:8,title:"Robert Chavez — Biography (Hard)",style:"biography",difficulty:"hard",person:{firstName:"Robert",lastName:"Chavez",dob:"12/01/1972",sex:"M",address:"94 S Oak St",city:"Kennewick",state:"WA",zip:"99336",height:"5'11\"",weight:"188 lbs",eyeColor:"Green",hairColor:"Gray",phone:"(509) 555-1147",email:"rchavez72@email.com"},options:{firstName:["Robert","Victor","Raymond"],lastName:["Chavez","Delgado","Reyes"],dob:["12/01/1972","07/18/1969","04/25/1975"],sex:["M","F"],address:["94 S Oak St","210 W 10th Ave","557 N Yelm St"],city:["Kennewick","Pasco","Richland"],state:["WA"],zip:["99336","99337","99301"],height:["5'11\"","5'8\"","6'1\""],weight:["188 lbs","170 lbs","202 lbs"],eyeColor:["Green","Brown","Blue","Hazel","Gray"],hairColor:["Gray","Brown","Black","Blonde","Red"],phone:["(509) 555-1147","(509) 555-6630","(509) 555-3385"],email:["rchavez72@email.com","robert.chavez@gmail.com","r.chavez@outlook.com"]},passage:{type:"biography",headline:"",content:[{para:"Robert Chavez celebrated his 53rd birthday on the first day of December last year, making him one of the older members of his department. He has lived his entire adult life in Kennewick, most recently on South Oak Street — his house number matches the year his favorite baseball team last won a championship: 94."},{para:"Robert is an inch shy of six feet and carries nearly 190 pounds on his frame. Colleagues often mention his unusual green eyes and the full head of gray hair he's had since his forties. His ZIP is 99336."},{para:"He prefers phone calls to email — (509) 555-1147 — but can also be reached at rchavez72@email.com."}]},highlights:["53rd birthday","first day of December","Kennewick","South Oak Street","94","inch shy of six feet","190 pounds","green eyes","gray hair","99336","(509) 555-1147","rchavez72@email.com"]},
+  {id:9,title:"Amara Diallo — News Article (Hard)",style:"news",difficulty:"hard",person:{firstName:"Amara",lastName:"Diallo",dob:"04/03/1998",sex:"F",address:"212 W Lewis St",city:"Pasco",state:"WA",zip:"99301",height:"5'7\"",weight:"145 lbs",eyeColor:"Brown",hairColor:"Black",phone:"(509) 555-9934",email:"amara.diallo@gmail.com"},options:{firstName:["Amara","Kemi","Zara"],lastName:["Diallo","Kouyate","Bah"],dob:["04/03/1998","09/17/1995","01/28/2001"],sex:["F","M"],address:["212 W Lewis St","830 N 4th Ave","1417 W Court St"],city:["Pasco","Kennewick","Richland"],state:["WA"],zip:["99301","99302","99336"],height:["5'7\"","5'4\"","5'10\""],weight:["145 lbs","130 lbs","160 lbs"],eyeColor:["Brown","Hazel","Green","Blue","Gray"],hairColor:["Black","Brown","Blonde","Red","Gray"],phone:["(509) 555-9934","(509) 555-4421","(509) 555-7758"],email:["amara.diallo@gmail.com","a.diallo98@outlook.com","amarad@yahoo.com"]},passage:{type:"news",headline:"Pasco Graduate Wins Regional Scholarship",content:[{para:"A young woman from Pasco has been awarded a regional scholarship for academic excellence. The recipient, whose last name is shared with a famous West African musician, was born in the spring of 1998 — April 3rd to be exact — and is currently 27 years old."},{para:"She lives on West Lewis Street at number 212, in the 99301 ZIP code area. Standing 5 feet 7 inches tall and weighing 145 pounds, she has warm brown eyes and natural black hair."},{para:"The scholarship committee can be forwarded messages through her at (509) 555-9934 or amara.diallo@gmail.com. Her first name, Amara, means grace in several African languages."}]},highlights:["Pasco","April 3rd","1998","West Lewis Street","212","99301","5 feet 7 inches","145 pounds","brown eyes","black hair","(509) 555-9934","amara.diallo@gmail.com","Amara"]},
+  {id:10,title:"Kevin Park — Interview (Easy)",style:"interview",difficulty:"easy",person:{firstName:"Kevin",lastName:"Park",dob:"06/11/1994",sex:"M",address:"1508 George Washington Way",city:"Richland",state:"WA",zip:"99354",height:"5'10\"",weight:"165 lbs",eyeColor:"Brown",hairColor:"Black",phone:"(509) 555-2266",email:"kevin.park94@gmail.com"},options:{firstName:["Kevin","Jason","Brian"],lastName:["Park","Kim","Lee"],dob:["06/11/1994","10/04/1991","02/28/1997"],sex:["M","F"],address:["1508 George Washington Way","302 Jadwin Ave","719 Thayer Dr"],city:["Richland","Kennewick","Pasco"],state:["WA"],zip:["99354","99352","99337"],height:["5'10\"","5'7\"","6'1\""],weight:["165 lbs","150 lbs","180 lbs"],eyeColor:["Brown","Blue","Green","Hazel","Gray"],hairColor:["Black","Brown","Blonde","Red","Gray"],phone:["(509) 555-2266","(509) 555-8891","(509) 555-5547"],email:["kevin.park94@gmail.com","kpark@outlook.com","kevinpark@yahoo.com"]},passage:{type:"interview",headline:"",content:[{speaker:"R",text:"Last name please?"},{speaker:"P",text:"Park. P-A-R-K."},{speaker:"R",text:"First name?"},{speaker:"P",text:"Kevin."},{speaker:"R",text:"Date of birth?"},{speaker:"P",text:"June 11th, 1994."},{speaker:"R",text:"Sex?"},{speaker:"P",text:"Male."},{speaker:"R",text:"Street address?"},{speaker:"P",text:"1508 George Washington Way, Richland, Washington. ZIP code 99354."},{speaker:"R",text:"Height and weight?"},{speaker:"P",text:"5 feet 10 inches, 165 pounds."},{speaker:"R",text:"Eye color and hair color?"},{speaker:"P",text:"Brown eyes, black hair."},{speaker:"R",text:"Phone?"},{speaker:"P",text:"(509) 555-2266."},{speaker:"R",text:"Email?"},{speaker:"P",text:"kevin.park94 at gmail dot com."}]},highlights:["Park","Kevin","June 11th, 1994","Male","1508 George Washington Way, Richland","99354","5 feet 10 inches","165 pounds","Brown eyes, black hair","(509) 555-2266","kevin.park94"]}
+];
+
+const FIELDS=[
+  {key:"lastName",label:"Last Name"},{key:"firstName",label:"First Name"},
+  {key:"dob",label:"Date of Birth"},{key:"sex",label:"Sex"},
+  {key:"address",label:"Street Address"},{key:"city",label:"City"},
+  {key:"state",label:"State"},{key:"zip",label:"ZIP Code"},
+  {key:"height",label:"Height"},{key:"weight",label:"Weight"},
+  {key:"eyeColor",label:"Eye Color"},{key:"hairColor",label:"Hair Color"},
+  {key:"phone",label:"Phone"},{key:"email",label:"Email"},
+];
+const STYLE_META={interview:{icon:"💬",title:"Interview"},biography:{icon:"📖",title:"Biography"},news:{icon:"📰",title:"News Article"}};
+
+const app = initializeApp(FIREBASE_CONFIG);
+const db = getDatabase(app);
+
+let selectedPassage=null, roomCode=null, highlights=[], highlightsOn=false, liveRef=null;
+
+// Build passage list
+function buildPassageList(filter="all"){
+  const list=document.getElementById("passage-list");
+  list.innerHTML="";
+  PASSAGES.forEach(p=>{
+    const hidden=filter!=="all"&&p.difficulty!==filter;
+    const item=document.createElement("button");
+    item.className="passage-item"+(hidden?" hidden":"")+(selectedPassage&&selectedPassage.id===p.id?" selected":"");
+    item.dataset.id=p.id;
+    const styleIcon=STYLE_META[p.style]?.icon||"📄";
+    item.innerHTML=`<span class="pi-name${selectedPassage&&selectedPassage.id===p.id?" selected":""}">${p.title}</span>
+      <span class="pi-tags"><span class="tag ${p.difficulty}">${p.difficulty.toUpperCase()}</span><span class="tag style">${styleIcon} ${p.style}</span></span>`;
+    item.addEventListener("click",()=>{
+      selectedPassage=p;
+      document.querySelectorAll(".passage-item").forEach(i=>{i.classList.remove("selected");i.querySelector(".pi-name").classList.remove("selected");});
+      item.classList.add("selected");item.querySelector(".pi-name").classList.add("selected");
+      document.getElementById("btn-start").disabled=false;
+    });
+    list.appendChild(item);
+  });
+}
+buildPassageList();
+
+document.querySelectorAll(".filter-btn").forEach(btn=>{
+  btn.addEventListener("click",()=>{
+    document.querySelectorAll(".filter-btn").forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
+    buildPassageList(btn.dataset.filter);
+  });
+});
+
+function makeCode(){const c="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";let s="";for(let i=0;i<4;i++)s+=c[Math.floor(Math.random()*c.length)];return s;}
+
+async function startGame(keepRoom){
+  const p=selectedPassage;
+  if(!p)return;
+  if(!keepRoom) roomCode=makeCode();
+
+  let students={};
+  if(keepRoom){
+    try{const snap=await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js").then(m=>m.get(m.ref(db,"rooms/"+roomCode)));
+    if(snap.exists()&&snap.val().students){
+      students=snap.val().students;
+      Object.keys(students).forEach(k=>{students[k].submitted=false;students[k].filledCount=0;});
+    }}catch(e){}
+  }
+
+  await set(ref(db,"rooms/"+roomCode),{roundId:Date.now(),options:p.options,person:p.person,students});
+
+  const pill=document.getElementById("diff-pill");
+  pill.textContent=p.difficulty.toUpperCase();pill.className="pill "+p.difficulty;
+  document.getElementById("style-pill").textContent=(STYLE_META[p.style]?.icon||"")+" "+(STYLE_META[p.style]?.title||p.style);
+  renderPassage(p);buildAnswerKey(p);
+
+  const studentURL=window.location.href.replace("classroom-teacher","classroom-student")+"?room="+roomCode;
+  document.getElementById("room-code-display").textContent=roomCode;
+  document.getElementById("join-url-display").textContent=studentURL;
+  const qrWrap=document.getElementById("qr-canvas");qrWrap.innerHTML="";
+  new QRCode(qrWrap,{text:studentURL,width:150,height:150,colorDark:"#1a1a18",colorLight:"#ffffff"});
+
+  if(liveRef){off(liveRef);}
+  liveRef=ref(db,"rooms/"+roomCode);
+  onValue(liveRef,snap=>{
+    const data=snap.val();
+    if(!data||!data.students)return;
+    const students=Object.values(data.students);
+    const total=students.length, done=students.filter(s=>s.submitted).length;
+    document.getElementById("progress-text").textContent=total+" joined";
+    document.getElementById("submitted-text").textContent=done+" submitted";
+    document.getElementById("progress-bar").style.width=(total>0?Math.round((done/total)*100):0)+"%";
+    const sorted=students.slice().sort((a,b)=>{
+      if(a.submitted&&b.submitted)return(b.lastScore||0)-(a.lastScore||0);
+      if(a.submitted)return-1;if(b.submitted)return 1;
+      return(a.joinedAt||0)-(b.joinedAt||0);
+    });
+    const lb=document.getElementById("lb-list");
+    if(!sorted.length){lb.innerHTML='<div class="empty-lb">Waiting for students…</div>';return;}
+    lb.innerHTML=sorted.map((s,i)=>{
+      const lv=s.currentLevel||"easy";
+      return s.submitted
+        ?`<div class="lb-row done"><span class="lb-rank">${i+1}</span><span class="lb-name">${esc(s.name)}</span><span class="lb-level ${lv}">${lv.toUpperCase()}</span><span class="lb-score">${s.lastScore}/${FIELDS.length}</span></div>`
+        :`<div class="lb-row"><span class="lb-rank">${i+1}</span><span class="lb-name">${esc(s.name)}</span><span class="lb-level ${lv}">${lv.toUpperCase()}</span><span class="lb-pending">${s.filledCount||0}/${FIELDS.length} filled</span></div>`;
+    }).join("");
+  });
+
+  showScreen("game");
+  document.getElementById("answer-key").classList.remove("open");
+}
+
+document.getElementById("btn-start").addEventListener("click",()=>startGame(false));
+document.getElementById("btn-next-round").addEventListener("click",()=>{
+  showScreen("setup");
+  document.getElementById("btn-start").disabled=!selectedPassage;
+});
+document.getElementById("btn-end").addEventListener("click",()=>{
+  if(liveRef){off(liveRef);liveRef=null;}
+  roomCode=null;showScreen("setup");
+});
+
+function renderPassage(p){
+  highlights=p.highlights||[];highlightsOn=false;
+  document.getElementById("btn-highlight").textContent="✨ Highlight answers";
+  const body=document.getElementById("passage-body");body.innerHTML="";
+  if(p.passage.type==="interview"){
+    const bl=document.createElement("div");bl.className="interview-block";
+    p.passage.content.forEach(line=>{
+      const d=document.createElement("div");d.className="interview-line";
+      const isR=line.speaker==="R";
+      d.innerHTML=`<span class="spkr ${isR?"r":"p"}">${isR?"R:":"P:"}</span><span>${esc(line.text)}</span>`;
+      bl.appendChild(d);
+    });body.appendChild(bl);
+  } else {
+    const bl=document.createElement("div");bl.className="prose-block";
+    if(p.passage.headline){
+      const h=document.createElement("div");h.className="news-hed";h.textContent=p.passage.headline;bl.appendChild(h);
+      const by=document.createElement("div");by.className="news-byl";by.textContent="Tri-Cities Herald · Local News";bl.appendChild(by);
+    }
+    p.passage.content.forEach(item=>{const para=document.createElement("p");para.textContent=item.para;bl.appendChild(para);});
+    body.appendChild(bl);
+  }
+}
+
+document.getElementById("btn-highlight").addEventListener("click",()=>{
+  highlightsOn=!highlightsOn;
+  document.getElementById("btn-highlight").textContent=highlightsOn?"✨ Hide highlights":"✨ Highlight answers";
+  const body=document.getElementById("passage-body");
+  body.querySelectorAll("mark").forEach(m=>m.replaceWith(document.createTextNode(m.textContent)));
+  body.normalize();
+  if(!highlightsOn)return;
+  highlights.forEach(phrase=>{
+    if(!phrase||phrase.length<3)return;
+    const walker=document.createTreeWalker(body,NodeFilter.SHOW_TEXT);
+    const nodes=[];let n;while((n=walker.nextNode()))nodes.push(n);
+    nodes.forEach(node=>{
+      const idx=node.textContent.indexOf(phrase);if(idx===-1)return;
+      const before=document.createTextNode(node.textContent.slice(0,idx));
+      const mark=document.createElement("mark");mark.textContent=phrase;
+      const after=document.createTextNode(node.textContent.slice(idx+phrase.length));
+      node.parentNode.insertBefore(before,node);node.parentNode.insertBefore(mark,node);
+      node.parentNode.insertBefore(after,node);node.parentNode.removeChild(node);
+    });
+  });
+});
+
+function buildAnswerKey(p){
+  const rows=FIELDS.map(f=>`<tr><td>${f.label}</td><td>${p.person[f.key]||""}</td></tr>`).join("");
+  document.getElementById("answer-key").innerHTML=`<strong>🔑 Answer key</strong><table><tbody>${rows}</tbody></table>`;
+}
+document.getElementById("btn-key-toggle").addEventListener("click",()=>{
+  document.getElementById("answer-key").classList.toggle("open");
+});
+
+function esc(s){return(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function showScreen(id){document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));document.getElementById("screen-"+id).classList.add("active");}
+</script>
+</body>
+</html>

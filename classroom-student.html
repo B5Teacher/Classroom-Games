@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Fill the Form — Student</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --ink: #1a1a18; --ink-soft: #5a5a56; --paper: #f7f6f1; --white: #fff;
+  --rule: rgba(0,0,0,0.11); --blue: #1a5fa8; --blue-light: #e8f0fb;
+  --green: #1a6b3a; --green-light: #e5f4ec; --red: #a32d2d; --red-light: #fceaea;
+  --amber: #7a5100; --amber-light: #fff4d4;
+  --easy: #1a6b3a; --easy-bg: #e5f4ec;
+  --medium: #8a5c00; --medium-bg: #fff3d4;
+  --hard: #a32d2d; --hard-bg: #fceaea;
+}
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: var(--paper); color: var(--ink); min-height: 100vh;
+  padding: 14px 12px 40px; max-width: 480px; margin: 0 auto; }
+.screen { display: none; } .screen.active { display: block; }
+
+.join-card { background: var(--white); border: 1px solid var(--rule); border-radius: 10px;
+  padding: 28px 22px; margin-top: 24px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); text-align: center; }
+.join-card h1 { font-family: Georgia, serif; font-size: 26px; margin-bottom: 6px; }
+.join-card .sub { font-size: 13px; color: var(--ink-soft); margin-bottom: 22px; line-height: 1.6; }
+.input-group { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
+.input-group input { font-family: inherit; font-size: 16px; padding: 12px 14px;
+  border: 1.5px solid var(--rule); border-radius: 6px; width: 100%; text-align: center; }
+.input-group input:focus { outline: none; border-color: var(--blue); background: var(--blue-light); }
+.code-input { letter-spacing: 8px; font-weight: 700; font-size: 22px; text-transform: uppercase; }
+.err { font-size: 12px; color: var(--red); min-height: 18px; margin-bottom: 4px; }
+
+.wait-card { background: var(--white); border: 1px solid var(--rule); border-radius: 10px;
+  padding: 40px 22px; margin-top: 24px; text-align: center; }
+.wait-card h2 { font-family: Georgia, serif; font-size: 20px; margin-bottom: 10px; }
+.wait-card p { font-size: 14px; color: var(--ink-soft); line-height: 1.7; }
+.pulse { animation: pulse 2s ease-in-out infinite; font-size: 36px; display: block; margin-bottom: 16px; }
+@keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.4} }
+
+.game-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.name-tag { font-size: 13px; color: var(--ink-soft); }
+.name-tag strong { color: var(--ink); }
+.pill { font-size: 10px; font-weight: 700; letter-spacing: 1px; padding: 3px 9px; border-radius: 20px; }
+.pill.easy { background: var(--easy-bg); color: var(--easy); }
+.pill.medium { background: var(--medium-bg); color: var(--medium); }
+.pill.hard { background: var(--hard-bg); color: var(--hard); }
+.fill-count { font-size: 11px; color: var(--ink-soft); margin-bottom: 10px; text-align: right; }
+
+.form-doc { background: var(--white); border: 1px solid var(--rule); border-radius: 8px; padding: 14px 12px; margin-bottom: 12px; }
+.form-hdr { display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid var(--ink); padding-bottom: 8px; margin-bottom: 12px; }
+.form-hdr .agency { font-family: Georgia, serif; font-size: 10px; font-weight: 700; line-height: 1.4; }
+.form-hdr .fnum { font-size: 8px; color: var(--ink-soft); letter-spacing: 1px; }
+.form-seal { width: 30px; height: 30px; border: 2px solid #bbb; border-radius: 50%; font-size: 7px; text-align: center; color: #999; display: flex; align-items: center; justify-content: center; line-height: 1.2; flex-shrink: 0; }
+.fsec { margin-bottom: 10px; }
+.fsec-title { font-size: 8px; letter-spacing: 2px; color: var(--ink-soft); font-weight: 600; margin-bottom: 7px; padding-bottom: 3px; border-bottom: 0.5px solid var(--rule); }
+.frow { display: grid; gap: 6px; margin-bottom: 6px; }
+.frow.c2 { grid-template-columns: 1fr 1fr; }
+.frow.c3 { grid-template-columns: 2fr 1fr 1fr; }
+.frow.c1 { grid-template-columns: 1fr; }
+.fld { display: flex; flex-direction: column; gap: 2px; }
+.fld label { font-size: 8px; letter-spacing: 1.2px; color: var(--ink-soft); text-transform: uppercase; }
+.chip-wrap { display: flex; flex-wrap: wrap; gap: 4px; min-height: 26px; padding: 3px 0; border-bottom: 1.5px solid var(--rule); }
+.chip-wrap.locked { pointer-events: none; border-bottom-style: dashed; border-bottom-color: #ddd; }
+.chip { font-family: inherit; font-size: 11px; padding: 3px 8px; border: 1px solid rgba(0,0,0,0.18);
+  border-radius: 20px; background: var(--paper); color: var(--ink); cursor: pointer; transition: all 0.1s; white-space: nowrap; }
+.chip:hover { background: #e5e3db; }
+.chip.selected { background: var(--blue); color: var(--white); border-color: var(--blue); font-weight: 600; }
+.chip.correct { background: var(--green); color: var(--white); border-color: var(--green); }
+.chip.wrong   { background: var(--red);   color: var(--white); border-color: var(--red); }
+.chip.reveal  { background: var(--green-light); color: var(--green); border-color: var(--green); }
+
+.btn { font-family: inherit; font-size: 14px; padding: 12px 18px; border-radius: 6px; cursor: pointer;
+  border: 1px solid var(--rule); background: var(--white); color: var(--ink); transition: background 0.12s; width: 100%; margin-bottom: 8px; }
+.btn:hover { background: #eee; }
+.btn.primary { background: var(--ink); color: var(--white); border-color: var(--ink); }
+.btn.primary:hover { background: #333; }
+.btn:disabled { opacity: 0.35; cursor: default; pointer-events: none; }
+
+.spinner { width: 22px; height: 22px; border: 3px solid var(--rule); border-top-color: var(--blue);
+  border-radius: 50%; animation: spin 0.8s linear infinite; display: inline-block; vertical-align: middle; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.result-card { background: var(--white); border: 1px solid var(--rule); border-radius: 10px; padding: 24px 18px; }
+.result-badge { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: 2px; padding: 5px 14px; border-radius: 3px; margin-bottom: 12px; }
+.result-badge.perfect { background: var(--easy-bg); color: var(--easy); border: 1px solid #a8d8bc; }
+.result-badge.good    { background: var(--blue-light); color: var(--blue); border: 1px solid #a8c8e8; }
+.result-badge.try     { background: var(--amber-light); color: var(--amber); border: 1px solid #e0c060; }
+.big-score { font-family: Georgia, serif; font-size: 48px; font-weight: 700; margin: 8px 0; line-height: 1; }
+.result-sub { font-size: 14px; color: var(--ink-soft); line-height: 1.6; margin-bottom: 14px; }
+.level-banner { font-size: 13px; line-height: 1.5; padding: 10px 14px; border-radius: 6px; margin-bottom: 14px; display: none; }
+.level-banner.up   { background: var(--easy-bg);   color: var(--easy);   border: 1px solid #a8d8bc; display:block; }
+.level-banner.down { background: var(--red-light);  color: var(--red);    border: 1px solid #e8b4b4; display:block; }
+.level-banner.stay { background: var(--blue-light); color: var(--blue);   border: 1px solid #a8c8e8; display:block; }
+
+.rtable { width: 100%; border-collapse: collapse; font-size: 12px; text-align: left; margin-bottom: 18px; }
+.rtable th { font-size: 8px; letter-spacing: 1.5px; color: var(--ink-soft); padding: 5px 6px; border-bottom: 1px solid var(--rule); font-weight: 600; }
+.rtable td { padding: 5px 6px; border-bottom: 1px dashed var(--rule); }
+.fc { color: var(--ink-soft); font-size: 10px; }
+.ok { color: var(--green); font-weight: 600; }
+.ng { color: var(--red); }
+.sk { color: var(--ink-soft); font-style: italic; }
+.tag { display: inline-block; font-size: 8px; font-weight: 700; letter-spacing: 1px; padding: 2px 5px; border-radius: 2px; }
+.tag.ok  { background: var(--easy-bg);   color: var(--easy); }
+.tag.err { background: var(--red-light);  color: var(--red); }
+.tag.sk  { background: var(--amber-light);color: var(--amber); }
+
+.next-wait { text-align: center; padding: 20px 0; }
+.next-wait p { font-size: 14px; color: var(--ink-soft); margin-bottom: 12px; }
+</style>
+</head>
+<body>
+
+<div id="screen-join" class="screen active">
+  <div class="join-card">
+    <h1>Fill the Form</h1>
+    <p class="sub">Enter the room code from the board and your first name to join.</p>
+    <div class="input-group">
+      <input type="text" id="inp-code" class="code-input" placeholder="CODE" maxlength="4" autocomplete="off" autocapitalize="characters" spellcheck="false">
+      <input type="text" id="inp-name" placeholder="Your first name" maxlength="20" autocomplete="off">
+    </div>
+    <div class="err" id="join-err"></div>
+    <button class="btn primary" id="btn-join">Join →</button>
+  </div>
+</div>
+
+<div id="screen-waiting" class="screen">
+  <div class="wait-card">
+    <span class="pulse">⏳</span>
+    <h2>You're in!</h2>
+    <p>Waiting for your teacher to start the activity.<br><br>Stay on this page — it will update automatically when the round begins.</p>
+  </div>
+</div>
+
+<div id="screen-game" class="screen">
+  <div class="game-header">
+    <div class="name-tag">Hi, <strong id="name-display">—</strong></div>
+    <span class="pill" id="level-pill">EASY</span>
+  </div>
+  <div class="fill-count" id="fill-count">0 / 14 filled</div>
+
+  <div class="form-doc">
+    <div class="form-hdr">
+      <div><div class="agency">STATE OF WASHINGTON<br>General Information Form</div><div class="fnum">FORM WA-100</div></div>
+      <div class="form-seal">WA<br>STATE</div>
+    </div>
+    <div class="fsec">
+      <div class="fsec-title">Personal Information</div>
+      <div class="frow c2">
+        <div class="fld"><label>Last Name</label><div class="chip-wrap" id="chips-lastName"></div></div>
+        <div class="fld"><label>First Name</label><div class="chip-wrap" id="chips-firstName"></div></div>
+      </div>
+      <div class="frow c2">
+        <div class="fld"><label>Date of Birth</label><div class="chip-wrap" id="chips-dob"></div></div>
+        <div class="fld"><label>Sex</label><div class="chip-wrap" id="chips-sex"></div></div>
+      </div>
+    </div>
+    <div class="fsec">
+      <div class="fsec-title">Address</div>
+      <div class="frow c1"><div class="fld"><label>Street Address</label><div class="chip-wrap" id="chips-address"></div></div></div>
+      <div class="frow c3">
+        <div class="fld"><label>City</label><div class="chip-wrap" id="chips-city"></div></div>
+        <div class="fld"><label>State</label><div class="chip-wrap" id="chips-state"></div></div>
+        <div class="fld"><label>ZIP Code</label><div class="chip-wrap" id="chips-zip"></div></div>
+      </div>
+    </div>
+    <div class="fsec">
+      <div class="fsec-title">Physical Description</div>
+      <div class="frow c2">
+        <div class="fld"><label>Height</label><div class="chip-wrap" id="chips-height"></div></div>
+        <div class="fld"><label>Weight</label><div class="chip-wrap" id="chips-weight"></div></div>
+      </div>
+      <div class="frow c2">
+        <div class="fld"><label>Eye Color</label><div class="chip-wrap" id="chips-eyeColor"></div></div>
+        <div class="fld"><label>Hair Color</label><div class="chip-wrap" id="chips-hairColor"></div></div>
+      </div>
+    </div>
+    <div class="fsec">
+      <div class="fsec-title">Contact</div>
+      <div class="frow c1"><div class="fld"><label>Phone Number</label><div class="chip-wrap" id="chips-phone"></div></div></div>
+      <div class="frow c1"><div class="fld"><label>Email Address</label><div class="chip-wrap" id="chips-email"></div></div></div>
+    </div>
+  </div>
+
+  <button class="btn primary" id="btn-check">Check Answers</button>
+</div>
+
+<div id="screen-result" class="screen">
+  <div class="result-card">
+    <div id="level-banner" class="level-banner"></div>
+    <div id="result-badge" class="result-badge good">DONE</div>
+    <h2 style="font-family:Georgia,serif;font-size:20px;margin-bottom:6px;">Your Score</h2>
+    <div class="big-score" id="result-score">0/14</div>
+    <p class="result-sub" id="result-sub"></p>
+    <table class="rtable">
+      <thead><tr><th>FIELD</th><th>YOUR ANSWER</th><th>CORRECT</th><th></th></tr></thead>
+      <tbody id="result-tbody"></tbody>
+    </table>
+  </div>
+  <div class="next-wait" id="next-wait">
+    <p>Waiting for your teacher to start the next round…</p>
+    <div class="spinner"></div>
+  </div>
+</div>
+
+<!-- Firebase SDK -->
+<script type="module">
+// ============================================================
+// FIREBASE CONFIG — must match the teacher file exactly
+// ============================================================
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, set, get, update, onValue, off } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyCcSGQ5s4bVcVJrgIeBbZAN15KezGP8ozU",
+  authDomain: "b5teacher-83630.firebaseapp.com",
+  databaseURL: "https://b5teacher-83630-default-rtdb.firebaseio.com",
+  projectId: "b5teacher-83630",
+  storageBucket: "b5teacher-83630.firebasestorage.app",
+  messagingSenderId: "475318674917",
+  appId: "1:475318674917:web:57af6a9c8e5fb986d37b0c"
+};
+// ============================================================
+
+const FIELDS=[
+  {key:"lastName",label:"Last Name"},{key:"firstName",label:"First Name"},
+  {key:"dob",label:"Date of Birth"},{key:"sex",label:"Sex"},
+  {key:"address",label:"Street Address"},{key:"city",label:"City"},
+  {key:"state",label:"State"},{key:"zip",label:"ZIP Code"},
+  {key:"height",label:"Height"},{key:"weight",label:"Weight"},
+  {key:"eyeColor",label:"Eye Color"},{key:"hairColor",label:"Hair Color"},
+  {key:"phone",label:"Phone"},{key:"email",label:"Email"},
+];
+const LEVELS=["easy","medium","hard"];
+const MAX_SCORE=14;
+
+let myName="",roomCode="",selected={},submitted=false;
+let currentLevel="easy",scoreHistory=[],lastRoundId=null,roomRef=null,db=null;
+
+const app = initializeApp(FIREBASE_CONFIG);
+db = getDatabase(app);
+
+function dbRef(path){ return ref(db, path); }
+async function dbGet(path){ const s=await get(dbRef(path)); return s.exists()?s.val():null; }
+async function dbUpdate(path, val){ await update(dbRef(path), val); }
+async function dbSet(path, val){ await set(dbRef(path), val); }
+
+// Pre-fill room code from URL param
+const urlCode = new URLSearchParams(window.location.search).get("room");
+if(urlCode){ document.getElementById("inp-code").value=urlCode.toUpperCase(); }
+
+document.getElementById("btn-join").addEventListener("click",joinRoom);
+document.getElementById("inp-code").addEventListener("keydown",e=>{if(e.key==="Enter")document.getElementById("inp-name").focus();});
+document.getElementById("inp-name").addEventListener("keydown",e=>{if(e.key==="Enter")joinRoom();});
+document.getElementById("inp-code").addEventListener("input",e=>{e.target.value=e.target.value.toUpperCase();});
+
+async function joinRoom(){
+  const code=document.getElementById("inp-code").value.trim().toUpperCase();
+  const name=document.getElementById("inp-name").value.trim();
+  const err=document.getElementById("join-err");
+  if(!code||code.length<4){err.textContent="Please enter the 4-letter room code.";return;}
+  if(!name){err.textContent="Please enter your name.";return;}
+  err.textContent="";
+  const btn=document.getElementById("btn-join");
+  btn.disabled=true;btn.textContent="Joining…";
+
+  const roomData=await dbGet("rooms/"+code);
+  if(!roomData){
+    err.textContent="Room not found. Check the code and try again.";
+    btn.disabled=false;btn.textContent="Join →";return;
+  }
+
+  roomCode=code;myName=name;
+
+  // Load personal history from localStorage (works on GitHub Pages)
+  try{
+    const saved=JSON.parse(localStorage.getItem("ftf_"+myName)||"{}");
+    currentLevel=saved.currentLevel||"easy";
+    scoreHistory=saved.scoreHistory||[];
+  }catch(e){}
+
+  // Register student in room (use name as key, safe for Firebase)
+  const safeKey=myName.replace(/[.#$\[\]]/g,"_");
+  await dbSet("rooms/"+code+"/students/"+safeKey, {
+    name:myName, joinedAt:Date.now(), submitted:false, filledCount:0, lastScore:0, currentLevel
+  });
+
+  lastRoundId=roomData.roundId;
+
+  if(roomData.options&&roomData.person){
+    startRound(roomData);
+  } else {
+    showScreen("waiting");
+    listenForStart();
+  }
+}
+
+function listenForStart(){
+  if(roomRef) off(roomRef);
+  roomRef=dbRef("rooms/"+roomCode);
+  onValue(roomRef, snap=>{
+    const data=snap.val();
+    if(!data)return;
+    if(data.roundId!==lastRoundId&&data.options&&data.person){
+      lastRoundId=data.roundId;
+      startRound(data);
+    }
+  });
+}
+
+function startRound(roomData){
+  submitted=false;selected={};
+  document.getElementById("name-display").textContent=myName;
+  const pill=document.getElementById("level-pill");
+  pill.textContent=currentLevel.toUpperCase();pill.className="pill "+currentLevel;
+  buildChips(roomData.options,roomData.person);
+  document.getElementById("fill-count").textContent="0 / "+FIELDS.length+" filled";
+  document.getElementById("btn-check").disabled=false;
+  showScreen("game");
+  // Keep listening for next round after submission
+  if(!roomRef){
+    roomRef=dbRef("rooms/"+roomCode);
+    onValue(roomRef, snap=>{
+      const data=snap.val();
+      if(!data||!submitted)return;
+      if(data.roundId!==lastRoundId&&data.options&&data.person){
+        lastRoundId=data.roundId;
+        startRound(data);
+      }
+    });
+  }
+}
+
+function shuf(arr){const a=arr.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+function buildChips(options){
+  FIELDS.forEach(f=>{
+    const wrap=document.getElementById("chips-"+f.key);
+    if(!wrap)return;
+    wrap.innerHTML="";wrap.classList.remove("locked");
+    const opts=f.key==="state"?["WA"]:shuf(options[f.key]||[]);
+    opts.forEach(opt=>{
+      const btn=document.createElement("button");
+      btn.className="chip";btn.textContent=opt;btn.dataset.key=f.key;btn.dataset.val=opt;
+      btn.addEventListener("click",()=>selectChip(f.key,opt,btn));
+      wrap.appendChild(btn);
+    });
+    if(f.key==="state"){const wa=wrap.querySelector('[data-val="WA"]');if(wa){wa.classList.add("selected");selected.state="WA";wrap.classList.add("locked");}}
+  });
+}
+
+function selectChip(key,val,btn){
+  if(submitted)return;
+  const wrap=document.getElementById("chips-"+key);
+  wrap.querySelectorAll(".chip").forEach(c=>c.classList.remove("selected"));
+  btn.classList.add("selected");selected[key]=val;
+  const filled=FIELDS.filter(f=>selected[f.key]).length;
+  document.getElementById("fill-count").textContent=filled+" / "+FIELDS.length+" filled";
+  updateProgress(false,filled,null);
+}
+
+document.getElementById("btn-check").addEventListener("click",checkAnswers);
+
+async function checkAnswers(){
+  if(submitted)return;
+  const roomData=await dbGet("rooms/"+roomCode);
+  if(!roomData){alert("Lost connection. Please rejoin.");return;}
+  const person=roomData.person;
+  submitted=true;document.getElementById("btn-check").disabled=true;
+  let correct=0;const results=[];
+  FIELDS.forEach(f=>{
+    const uv=selected[f.key]||"";const cv=person[f.key];
+    let st;
+    if(!uv)st="blank";
+    else if(norm(uv)===norm(cv)){st="correct";correct++;}
+    else st="wrong";
+    results.push({field:f,uv,cv,st});
+    const wrap=document.getElementById("chips-"+f.key);
+    if(wrap){
+      wrap.querySelectorAll(".chip").forEach(chip=>{
+        chip.classList.remove("selected");const v=chip.dataset.val;
+        if(st==="correct"&&norm(v)===norm(cv))chip.classList.add("correct");
+        else if(st==="wrong"&&norm(v)===norm(uv))chip.classList.add("wrong");
+      });
+      wrap.classList.add("locked");
+    }
+  });
+  const lc=computeLevel(correct);
+  await updateProgress(true,FIELDS.length,correct);
+  showResult(correct,results,lc);
+}
+
+function norm(s){return(s||"").toLowerCase().replace(/\s+/g," ").trim();}
+
+function computeLevel(score){
+  scoreHistory.push(score);if(scoreHistory.length>3)scoreHistory.shift();
+  saveLocal();
+  if(scoreHistory.length<2)return"stay";
+  const pct=scoreHistory.reduce((a,b)=>a+b,0)/(3*MAX_SCORE);
+  const idx=LEVELS.indexOf(currentLevel);let changed="stay";
+  if(pct>=0.75&&idx<LEVELS.length-1){currentLevel=LEVELS[idx+1];changed="up";}
+  else if(pct<=0.25&&idx>0){currentLevel=LEVELS[idx-1];changed="down";}
+  saveLocal();
+  return changed;
+}
+
+function saveLocal(){
+  try{localStorage.setItem("ftf_"+myName,JSON.stringify({currentLevel,scoreHistory}));}catch(e){}
+}
+
+async function updateProgress(isSubmitted,filled,score){
+  try{
+    const safeKey=myName.replace(/[.#$\[\]]/g,"_");
+    const upd={submitted:isSubmitted,filledCount:filled,currentLevel};
+    if(score!==null)upd.lastScore=score;
+    await dbUpdate("rooms/"+roomCode+"/students/"+safeKey, upd);
+  }catch(e){}
+}
+
+function showResult(correct,results,lc){
+  const total=FIELDS.length;
+  const badge=document.getElementById("result-badge");
+  if(correct===total){badge.textContent="PERFECT!";badge.className="result-badge perfect";}
+  else if(correct>=Math.ceil(total*0.75)){badge.textContent="GOOD WORK";badge.className="result-badge good";}
+  else{badge.textContent="KEEP GOING";badge.className="result-badge try";}
+  document.getElementById("result-score").textContent=correct+"/"+total;
+  document.getElementById("result-sub").textContent=
+    correct===total?"Perfect! Every field is correct.":
+    correct>=11?"Almost perfect — check the fields below.":
+    correct>=8?"Good effort — look at what you missed.":
+    "Keep practicing — read each sentence carefully.";
+  const banner=document.getElementById("level-banner");
+  if(scoreHistory.length>=2){
+    const pct=Math.round((scoreHistory.reduce((a,b)=>a+b,0)/(3*MAX_SCORE))*100);
+    const r=scoreHistory.length;
+    if(lc==="up"){banner.className="level-banner up";banner.innerHTML=`⬆️ <strong>Moving up to ${cap(currentLevel)}!</strong> Last ${r} rounds averaged ${pct}%.`;}
+    else if(lc==="down"){banner.className="level-banner down";banner.innerHTML=`⬇️ <strong>Trying ${cap(currentLevel)}.</strong> Last ${r} rounds averaged ${pct}%.`;}
+    else{banner.className="level-banner stay";banner.innerHTML=`➡️ <strong>Staying on ${cap(currentLevel)}.</strong> Average ${pct}%.`;}
+  }
+  const tbody=document.getElementById("result-tbody");tbody.innerHTML="";
+  results.forEach(r=>{
+    const tr=document.createElement("tr");
+    const ac=r.st==="correct"?"ok":r.st==="wrong"?"ng":"sk";
+    const tag=r.st==="correct"?`<span class="tag ok">✓</span>`:r.st==="wrong"?`<span class="tag err">✗</span>`:`<span class="tag sk">—</span>`;
+    tr.innerHTML=`<td class="fc">${r.field.label}</td><td class="${ac}">${r.uv||"—"}</td><td class="ok">${r.cv}</td><td>${tag}</td>`;
+    tbody.appendChild(tr);
+  });
+  showScreen("result");
+}
+
+function cap(s){return s.charAt(0).toUpperCase()+s.slice(1);}
+function showScreen(id){document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));document.getElementById("screen-"+id).classList.add("active");}
+</script>
+</body>
+</html>
