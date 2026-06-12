@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>B5 Classroom Games</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --ink: #1a1a18;
+  --ink-soft: #5a5a56;
+  --paper: #f7f6f1;
+  --white: #fff;
+  --rule: rgba(0,0,0,0.11);
+  --blue: #1a5fa8;
+  --blue-light: #e8f0fb;
+  --green: #1a6b3a;
+  --green-light: #e5f4ec;
+}
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+  min-height: 100vh;
+}
+
+/* Header */
+.site-header {
+  background: var(--ink);
+  color: var(--white);
+  padding: 36px 24px 32px;
+  text-align: center;
+}
+.site-header .eyebrow {
+  font-size: 10px;
+  letter-spacing: 3px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.5);
+  margin-bottom: 10px;
+}
+.site-header h1 {
+  font-family: Georgia, serif;
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  letter-spacing: -0.5px;
+}
+.site-header p {
+  font-size: 14px;
+  color: rgba(255,255,255,0.65);
+  line-height: 1.6;
+  max-width: 420px;
+  margin: 0 auto;
+}
+
+/* Main */
+.main {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 32px 20px 60px;
+}
+
+.section-label {
+  font-size: 10px;
+  letter-spacing: 2.5px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  margin-bottom: 14px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.game-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 40px;
+}
+
+.game-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--white);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  padding: 16px 18px;
+  text-decoration: none;
+  color: inherit;
+  transition: box-shadow 0.15s, border-color 0.15s;
+}
+.game-card:hover {
+  border-color: var(--blue);
+  box-shadow: 0 2px 12px rgba(26,95,168,0.1);
+}
+.game-card:hover .game-title {
+  color: var(--blue);
+}
+.game-icon {
+  font-size: 28px;
+  flex-shrink: 0;
+  width: 44px;
+  text-align: center;
+}
+.game-info {
+  flex: 1;
+  min-width: 0;
+}
+.game-title {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 3px;
+  transition: color 0.15s;
+}
+.game-desc {
+  font-size: 12px;
+  color: var(--ink-soft);
+  line-height: 1.5;
+}
+.game-tags {
+  display: flex;
+  gap: 5px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+.tag {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  padding: 2px 7px;
+  border-radius: 10px;
+  background: var(--paper);
+  color: var(--ink-soft);
+  border: 1px solid var(--rule);
+}
+.tag.vocab { background: #fff4e0; color: #8a5000; border-color: #f0d090; }
+.tag.spelling { background: var(--blue-light); color: var(--blue); border-color: #b8d4f0; }
+.tag.grammar { background: var(--green-light); color: var(--green); border-color: #a0d8b8; }
+.tag.reading { background: #f0e8ff; color: #6030a0; border-color: #c8a8f0; }
+.tag.multiplayer { background: #fff0f0; color: #a03030; border-color: #f0b8b8; }
+.tag.solo { background: #f0f0f0; color: #606060; border-color: #d0d0d0; }
+.tag.ai { background: #e8ffe8; color: #206020; border-color: #90d890; }
+
+.arrow {
+  font-size: 16px;
+  color: var(--rule);
+  flex-shrink: 0;
+  transition: color 0.15s, transform 0.15s;
+}
+.game-card:hover .arrow {
+  color: var(--blue);
+  transform: translateX(3px);
+}
+
+/* Coming soon card */
+.game-card.coming-soon {
+  opacity: 0.55;
+  pointer-events: none;
+  border-style: dashed;
+}
+.coming-pill {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: var(--paper);
+  color: var(--ink-soft);
+  border: 1px solid var(--rule);
+  flex-shrink: 0;
+}
+
+/* Footer */
+.site-footer {
+  text-align: center;
+  padding: 24px;
+  font-size: 11px;
+  color: var(--ink-soft);
+  border-top: 1px solid var(--rule);
+}
+
+@media (max-width: 480px) {
+  .site-header h1 { font-size: 26px; }
+  .game-card { padding: 14px 14px; gap: 12px; }
+  .game-icon { font-size: 24px; width: 36px; }
+}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="eyebrow">B5 FAMILY LEARNING CENTER</div>
+  <h1>Classroom Games</h1>
+  <p>Interactive English learning activities for ESL students. Open any game on your phone or tablet.</p>
+</header>
+
+<main class="main">
+
+  <div class="section-label">VOCABULARY &amp; SPELLING</div>
+  <div class="game-grid">
+
+    <a class="game-card" href="taboo-game.html">
+      <div class="game-icon">🚫</div>
+      <div class="game-info">
+        <div class="game-title">Taboo</div>
+        <div class="game-desc">Describe a word without using the forbidden clue words. Covers weather, emotions, and everyday topics.</div>
+        <div class="game-tags">
+          <span class="tag vocab">VOCAB</span>
+          <span class="tag solo">SOLO</span>
+        </div>
+      </div>
+      <div class="arrow">›</div>
+    </a>
+
+    <a class="game-card" href="missing-vowels-game.html">
+      <div class="game-icon">🔤</div>
+      <div class="game-info">
+        <div class="game-title">Missing Vowels</div>
+        <div class="game-desc">Fill in the missing vowels to complete each word. Good for spelling practice at any level.</div>
+        <div class="game-tags">
+          <span class="tag spelling">SPELLING</span>
+          <span class="tag solo">SOLO</span>
+        </div>
+      </div>
+      <div class="arrow">›</div>
+    </a>
+
+    <a class="game-card" href="unscramble-game.html">
+      <div class="game-icon">🔀</div>
+      <div class="game-info">
+        <div class="game-title">Word Unscramble</div>
+        <div class="game-desc">Rearrange the letters to find the hidden word. Timed rounds keep it fast and fun.</div>
+        <div class="game-tags">
+          <span class="tag spelling">SPELLING</span>
+          <span class="tag solo">SOLO</span>
+        </div>
+      </div>
+      <div class="arrow">›</div>
+    </a>
+
+    <a class="game-card" href="word-chain-game.html">
+      <div class="game-icon">⛓️</div>
+      <div class="game-info">
+        <div class="game-title">Word Chain</div>
+        <div class="game-desc">Each word must start with the last letter of the previous word. How long can you keep the chain going?</div>
+        <div class="game-tags">
+          <span class="tag spelling">SPELLING</span>
+          <span class="tag solo">SOLO</span>
+        </div>
+      </div>
+      <div class="arrow">›</div>
+    </a>
+
+  </div>
+
+  <div class="section-label">READING &amp; FORMS</div>
+  <div class="game-grid">
+
+    <a class="game-card" href="form-filling-practice.html">
+      <div class="game-icon">📋</div>
+      <div class="game-info">
+        <div class="game-title">Fill the Form — Solo Practice</div>
+        <div class="game-desc">Read a short passage about a fictional person, then fill in their information form using chip selectors. Works offline.</div>
+        <div class="game-tags">
+          <span class="tag reading">READING</span>
+          <span class="tag solo">SOLO</span>
+          <span class="tag ai">AI</span>
+        </div>
+      </div>
+      <div class="arrow">›</div>
+    </a>
+
+    <a class="game-card" href="classroom-teacher.html">
+      <div class="game-icon">🏫</div>
+      <div class="game-info">
+        <div class="game-title">Fill the Form — Classroom (Teacher)</div>
+        <div class="game-desc">Live multiplayer. Pick a passage, share the room code, students join on their phones and compete on the leaderboard.</div>
+        <div class="game-tags">
+          <span class="tag reading">READING</span>
+          <span class="tag multiplayer">MULTIPLAYER</span>
+        </div>
+      </div>
+      <div class="arrow">›</div>
+    </a>
+
+    <a class="game-card" href="classroom-student.html">
+      <div class="game-icon">📱</div>
+      <div class="game-info">
+        <div class="game-title">Fill the Form — Classroom (Student)</div>
+        <div class="game-desc">Student view. Enter the room code from the board, fill in the form using chip selectors, and see your score.</div>
+        <div class="game-tags">
+          <span class="tag reading">READING</span>
+          <span class="tag multiplayer">MULTIPLAYER</span>
+        </div>
+      </div>
+      <div class="arrow">›</div>
+    </a>
+
+  </div>
+
+  <div class="section-label">GRAMMAR</div>
+  <div class="game-grid">
+
+    <a class="game-card coming-soon" href="#">
+      <div class="game-icon">🗺️</div>
+      <div class="game-info">
+        <div class="game-title">Treasure Hunt</div>
+        <div class="game-desc">Grid-based grammar game focused on present simple tense. Navigate the map by answering correctly.</div>
+        <div class="game-tags">
+          <span class="tag grammar">GRAMMAR</span>
+          <span class="tag solo">SOLO</span>
+        </div>
+      </div>
+      <span class="coming-pill">COMING SOON</span>
+    </a>
+
+    <a class="game-card coming-soon" href="#">
+      <div class="game-icon">🎰</div>
+      <div class="game-info">
+        <div class="game-title">Verb Betting</div>
+        <div class="game-desc">Bet on whether a verb is regular or irregular. The bigger the bet, the bigger the reward — or loss.</div>
+        <div class="game-tags">
+          <span class="tag grammar">GRAMMAR</span>
+          <span class="tag solo">SOLO</span>
+        </div>
+      </div>
+      <span class="coming-pill">COMING SOON</span>
+    </a>
+
+  </div>
+
+</main>
+
+<footer class="site-footer">
+  B5 Family Learning Center · Tri-Cities, WA · ESL/EFL Classroom Tools
+</footer>
+
+</body>
+</html>
