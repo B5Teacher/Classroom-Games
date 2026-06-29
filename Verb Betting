@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Regular or Irregular? — Verb Betting Game</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green: #2ecc71;
+    --red: #e74c3c;
+    --gold: #f1c40f;
+    --dark: #0d0d0d;
+    --mid: #1a1a2e;
+    --card: #16213e;
+    --text: #f0ece0;
+    --muted: #888;
+    --bonus: #e67e22;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Lato', sans-serif;
+    background: var(--dark);
+    color: var(--text);
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── SLIDE WRAPPER ── */
+  .slide {
+    display: none;
+    flex-direction: column;
+    height: 100vh;
+    width: 100vw;
+    position: absolute;
+    top: 0; left: 0;
+  }
+  .slide.active { display: flex; }
+
+  /* ══════════════════════════════
+     SLIDE 0 — TITLE
+  ══════════════════════════════ */
+  #slide-title {
+    align-items: center;
+    justify-content: center;
+    background: var(--dark);
+    text-align: center;
+    gap: 20px;
+  }
+  #slide-title .big {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(60px, 12vw, 120px);
+    letter-spacing: 6px;
+    line-height: 1;
+    color: var(--text);
+  }
+  #slide-title .big span { color: var(--gold); }
+  #slide-title .tagline {
+    font-size: 18px;
+    font-weight: 300;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  #slide-title .rules {
+    margin-top: 16px;
+    max-width: 560px;
+    background: var(--card);
+    border: 1px solid #333;
+    border-radius: 12px;
+    padding: 24px 32px;
+    text-align: left;
+  }
+  #slide-title .rules h3 {
+    font-family: 'Bebas Neue', sans-serif;
+    letter-spacing: 3px;
+    font-size: 18px;
+    color: var(--gold);
+    margin-bottom: 12px;
+  }
+  #slide-title .rules li {
+    font-size: 15px;
+    font-weight: 300;
+    line-height: 2;
+    list-style: none;
+    padding-left: 16px;
+    position: relative;
+    color: #ccc;
+  }
+  #slide-title .rules li::before {
+    content: '→';
+    position: absolute;
+    left: 0;
+    color: var(--gold);
+  }
+  .start-btn {
+    margin-top: 8px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 4px;
+    padding: 14px 48px;
+    background: var(--gold);
+    color: var(--dark);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform 0.1s, background 0.15s;
+  }
+  .start-btn:hover { background: #d4ac0d; transform: scale(1.03); }
+
+  /* ══════════════════════════════
+     SLIDE 1 — VERB CARD (BET)
+  ══════════════════════════════ */
+  #slide-bet {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: var(--mid);
+    gap: 0;
+  }
+
+  .slide-header {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 36px;
+    border-bottom: 1px solid #222;
+  }
+  .slide-header .prog {
+    font-size: 13px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .slide-header .title-sm {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    letter-spacing: 4px;
+    color: var(--gold);
+  }
+
+  .progress-bar-wrap {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    background: #222;
+  }
+  .progress-bar {
+    height: 100%;
+    background: var(--gold);
+    transition: width 0.4s ease;
+  }
+
+  .verb-stage {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    width: 100%;
+    padding: 100px 40px 40px;
+  }
+
+  .bet-label {
+    font-size: 13px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .verb-card {
+    background: var(--card);
+    border: 1px solid #2a2a4a;
+    border-radius: 20px;
+    width: min(500px, 88vw);
+    padding: 52px 40px;
+    text-align: center;
+    position: relative;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+
+  .verb-word {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(72px, 14vw, 130px);
+    letter-spacing: 4px;
+    line-height: 1;
+    color: var(--text);
+    transition: color 0.3s;
+  }
+
+  .verb-prompt {
+    font-size: 15px;
+    font-weight: 300;
+    color: var(--muted);
+    letter-spacing: 2px;
+    margin-top: 10px;
+  }
+
+  /* bet buttons */
+  .bet-buttons {
+    display: flex;
+    gap: 16px;
+    margin-top: 8px;
+  }
+
+  .bet-btn {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 3px;
+    padding: 18px 40px;
+    border: 2px solid transparent;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+    min-width: 180px;
+  }
+  .bet-btn.regular {
+    background: rgba(46,204,113,0.12);
+    border-color: var(--green);
+    color: var(--green);
+  }
+  .bet-btn.regular:hover { background: rgba(46,204,113,0.25); transform: translateY(-2px); }
+  .bet-btn.irregular {
+    background: rgba(231,76,60,0.12);
+    border-color: var(--red);
+    color: var(--red);
+  }
+  .bet-btn.irregular:hover { background: rgba(231,76,60,0.25); transform: translateY(-2px); }
+
+  /* ══════════════════════════════
+     SLIDE 2 — REVEAL
+  ══════════════════════════════ */
+  #slide-reveal {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+  }
+
+  #slide-reveal .verb-stage { gap: 20px; }
+
+  .answer-card {
+    background: var(--card);
+    border-radius: 20px;
+    width: min(560px, 88vw);
+    padding: 40px;
+    text-align: center;
+    border: 2px solid #333;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    transition: border-color 0.4s;
+  }
+  .answer-card.regular-reveal { border-color: var(--green); }
+  .answer-card.irregular-reveal { border-color: var(--red); }
+  .answer-card.bonus-reveal { border-color: var(--bonus); }
+
+  .reveal-type {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(48px, 10vw, 90px);
+    letter-spacing: 4px;
+    margin-bottom: 8px;
+  }
+  .reveal-type.regular-color { color: var(--green); }
+  .reveal-type.irregular-color { color: var(--red); }
+  .reveal-type.bonus-color { color: var(--bonus); }
+
+  .reveal-verb-big {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(52px, 10vw, 96px);
+    letter-spacing: 3px;
+    color: var(--text);
+    line-height: 1;
+  }
+
+  .past-form {
+    font-size: 22px;
+    font-weight: 700;
+    margin-top: 10px;
+    letter-spacing: 1px;
+  }
+  .past-form .arrow { color: var(--muted); margin: 0 10px; font-weight: 300; }
+  .past-form .past { color: var(--gold); }
+
+  .bonus-note {
+    margin-top: 12px;
+    font-size: 13px;
+    font-weight: 300;
+    letter-spacing: 1px;
+    color: var(--bonus);
+    background: rgba(230,126,34,0.1);
+    border-radius: 6px;
+    padding: 8px 16px;
+    display: inline-block;
+  }
+
+  .result-row {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 4px;
+  }
+
+  .result-chip {
+    font-size: 13px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 6px 18px;
+    border-radius: 20px;
+    font-weight: 700;
+  }
+  .chip-correct { background: rgba(46,204,113,0.2); color: var(--green); }
+  .chip-wrong   { background: rgba(231,76,60,0.2);  color: var(--red); }
+  .chip-bonus   { background: rgba(230,126,34,0.2); color: var(--bonus); }
+
+  .nav-row {
+    display: flex;
+    gap: 14px;
+    margin-top: 12px;
+  }
+  .nav-btn {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    letter-spacing: 3px;
+    padding: 14px 36px;
+    border-radius: 8px;
+    border: 1px solid #444;
+    background: transparent;
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .nav-btn:hover { background: #222; border-color: #666; }
+  .nav-btn.primary-nav {
+    background: var(--gold);
+    color: var(--dark);
+    border-color: var(--gold);
+  }
+  .nav-btn.primary-nav:hover { background: #d4ac0d; }
+
+  /* bet indicator on reveal */
+  .your-bet {
+    font-size: 13px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+
+  /* ══════════════════════════════
+     SLIDE 3 — SCOREBOARD
+  ══════════════════════════════ */
+  #slide-score {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: var(--dark);
+    gap: 24px;
+    text-align: center;
+    padding: 40px;
+  }
+  #slide-score .big-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(48px, 9vw, 90px);
+    letter-spacing: 6px;
+    color: var(--gold);
+  }
+  .score-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    width: min(600px, 90vw);
+  }
+  .score-box {
+    background: var(--card);
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid #2a2a4a;
+  }
+  .score-box .num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 52px;
+    letter-spacing: 2px;
+    line-height: 1;
+  }
+  .score-box .lbl {
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+  .score-box.correct-box .num { color: var(--green); }
+  .score-box.wrong-box   .num { color: var(--red); }
+  .score-box.bonus-box   .num { color: var(--bonus); }
+
+  .missed-words {
+    width: min(600px, 90vw);
+    text-align: left;
+  }
+  .missed-words h3 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    letter-spacing: 3px;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+  .missed-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .missed-chip {
+    font-size: 13px;
+    padding: 5px 14px;
+    border-radius: 20px;
+    background: rgba(231,76,60,0.15);
+    color: #ff8a80;
+    border: 1px solid rgba(231,76,60,0.3);
+  }
+
+  /* keyboard hint */
+  .key-hint {
+    position: fixed;
+    bottom: 18px;
+    right: 24px;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #444;
+  }
+</style>
+</head>
+<body>
+
+<!-- ══ SLIDE 0: TITLE ══ -->
+<div class="slide active" id="slide-title">
+  <div class="big">Regular<br><span>or Irregular?</span></div>
+  <div class="tagline">The Verb Betting Game</div>
+  <div class="rules">
+    <h3>How to Play</h3>
+    <ul>
+      <li>A verb appears on screen — place your bet!</li>
+      <li>Regular = past tense ends in <strong>-ed</strong></li>
+      <li>Irregular = past tense changes form</li>
+      <li>Correct bet = <strong style="color:var(--gold)">+1 point</strong> &nbsp;|&nbsp; Wrong = <strong style="color:var(--red)">-1 point</strong></li>
+      <li>Bonus verbs accept both forms — no penalty!</li>
+    </ul>
+  </div>
+  <button class="start-btn" onclick="startGame()">Let's Play →</button>
+</div>
+
+<!-- ══ SLIDE 1: BET ══ -->
+<div class="slide" id="slide-bet">
+  <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar"></div></div>
+  <div class="slide-header">
+    <span class="prog" id="betProg">1 / 50</span>
+    <span class="title-sm">Verb Betting</span>
+    <span class="prog" id="betScore">Score: 0</span>
+  </div>
+  <div class="verb-stage">
+    <div class="bet-label">Place your bet — is this verb...</div>
+    <div class="verb-card">
+      <div class="verb-word" id="betVerb">walk</div>
+      <div class="verb-prompt">What is the past tense?</div>
+    </div>
+    <div class="bet-buttons">
+      <button class="bet-btn regular" onclick="placeBet('regular')">✔ Regular</button>
+      <button class="bet-btn irregular" onclick="placeBet('irregular')">✘ Irregular</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SLIDE 2: REVEAL ══ -->
+<div class="slide" id="slide-reveal">
+  <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar2"></div></div>
+  <div class="slide-header">
+    <span class="prog" id="revProg">1 / 50</span>
+    <span class="title-sm">Verb Betting</span>
+    <span class="prog" id="revScore">Score: 0</span>
+  </div>
+  <div class="verb-stage">
+    <div class="answer-card" id="answerCard">
+      <div class="reveal-type" id="revealType">REGULAR</div>
+      <div class="reveal-verb-big" id="revealVerb">walk</div>
+      <div class="past-form">
+        <span id="pastBase"></span>
+        <span class="arrow">→</span>
+        <span class="past" id="pastForm"></span>
+      </div>
+      <div class="bonus-note" id="bonusNote" style="display:none"></div>
+    </div>
+    <div class="result-row" id="resultRow"></div>
+    <div class="nav-row">
+      <button class="nav-btn" onclick="goToScore()">Scoreboard</button>
+      <button class="nav-btn primary-nav" id="nextCardBtn" onclick="nextCard()">Next Verb →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SLIDE 3: SCOREBOARD ══ -->
+<div class="slide" id="slide-score">
+  <div class="big-title" id="scoreTitle">Round Over!</div>
+  <div class="score-grid">
+    <div class="score-box correct-box">
+      <div class="num" id="scoreCorrect">0</div>
+      <div class="lbl">Correct</div>
+    </div>
+    <div class="score-box wrong-box">
+      <div class="num" id="scoreWrong">0</div>
+      <div class="lbl">Wrong</div>
+    </div>
+    <div class="score-box bonus-box">
+      <div class="num" id="scoreBonus">0</div>
+      <div class="lbl">Bonus</div>
+    </div>
+  </div>
+  <div class="missed-words" id="missedSection" style="display:none">
+    <h3>Tricky ones to review:</h3>
+    <div class="missed-list" id="missedList"></div>
+  </div>
+  <div style="display:flex;gap:14px;margin-top:8px;">
+    <button class="nav-btn primary-nav" onclick="restartGame()">Play Again</button>
+    <button class="nav-btn" onclick="goToBet()">Keep Going</button>
+  </div>
+</div>
+
+<div class="key-hint">← → arrow keys to navigate</div>
+
+<script>
+const verbs = [
+  // Regular (25)
+  { word:'walk',      type:'regular',   past:'walked' },
+  { word:'talk',      type:'regular',   past:'talked' },
+  { word:'cook',      type:'regular',   past:'cooked' },
+  { word:'clean',     type:'regular',   past:'cleaned' },
+  { word:'watch',     type:'regular',   past:'watched' },
+  { word:'play',      type:'regular',   past:'played' },
+  { word:'work',      type:'regular',   past:'worked' },
+  { word:'help',      type:'regular',   past:'helped' },
+  { word:'open',      type:'regular',   past:'opened' },
+  { word:'close',     type:'regular',   past:'closed' },
+  { word:'start',     type:'regular',   past:'started' },
+  { word:'finish',    type:'regular',   past:'finished' },
+  { word:'visit',     type:'regular',   past:'visited' },
+  { word:'listen',    type:'regular',   past:'listened' },
+  { word:'answer',    type:'regular',   past:'answered' },
+  { word:'call',      type:'regular',   past:'called' },
+  { word:'ask',       type:'regular',   past:'asked' },
+  { word:'move',      type:'regular',   past:'moved' },
+  { word:'practice',  type:'regular',   past:'practiced' },
+  { word:'use',       type:'regular',   past:'used' },
+  { word:'need',      type:'regular',   past:'needed' },
+  { word:'want',      type:'regular',   past:'wanted' },
+  { word:'jump',      type:'regular',   past:'jumped' },
+  { word:'stop',      type:'regular',   past:'stopped' },
+  { word:'live',      type:'regular',   past:'lived' },
+  // Irregular (25)
+  { word:'eat',       type:'irregular', past:'ate' },
+  { word:'go',        type:'irregular', past:'went' },
+  { word:'have',      type:'irregular', past:'had' },
+  { word:'do',        type:'irregular', past:'did' },
+  { word:'run',       type:'irregular', past:'ran' },
+  { word:'sit',       type:'irregular', past:'sat' },
+  { word:'sleep',     type:'irregular', past:'slept' },
+  { word:'come',      type:'irregular', past:'came' },
+  { word:'see',       type:'irregular', past:'saw' },
+  { word:'give',      type:'irregular', past:'gave' },
+  { word:'read',      type:'irregular', past:'read (same spelling, different sound!)' },
+  { word:'drink',     type:'irregular', past:'drank' },
+  { word:'write',     type:'irregular', past:'wrote' },
+  { word:'buy',       type:'irregular', past:'bought' },
+  { word:'take',      type:'irregular', past:'took' },
+  { word:'think',     type:'irregular', past:'thought' },
+  { word:'know',      type:'irregular', past:'knew' },
+  { word:'speak',     type:'irregular', past:'spoke' },
+  { word:'swim',      type:'irregular', past:'swam' },
+  { word:'drive',     type:'irregular', past:'drove' },
+  { word:'bring',     type:'irregular', past:'brought' },
+  { word:'find',      type:'irregular', past:'found' },
+  { word:'make',      type:'irregular', past:'made' },
+  { word:'put',       type:'irregular', past:'put (no change!)' },
+  { word:'cut',       type:'irregular', past:'cut (no change!)' },
+  // Bonus — both forms accepted
+  { word:'dream',     type:'bonus',     past:'dreamed / dreamt',    bonusNote:'Both forms are correct! -ed is American English; -t is British.' },
+  { word:'learn',     type:'bonus',     past:'learned / learnt',    bonusNote:'Both forms are correct! -ed is American English; -t is British.' },
+  { word:'burn',      type:'bonus',     past:'burned / burnt',      bonusNote:'Both forms are correct! Tricky, right?' },
+  { word:'spell',     type:'bonus',     past:'spelled / spelt',     bonusNote:'Both forms exist — spelt is also a grain!' },
+  { word:'spill',     type:'bonus',     past:'spilled / spilt',     bonusNote:'Both forms are correct! British English prefers spilt.' },
+];
+
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length-1; i > 0; i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+
+let deck = [];
+let idx = 0;
+let score = 0;
+let correct = 0;
+let wrong = 0;
+let bonusCount = 0;
+let missed = [];
+let lastBet = null;
+
+function startGame() {
+  deck = shuffle(verbs);
+  idx = 0; score = 0; correct = 0; wrong = 0; bonusCount = 0; missed = [];
+  showSlide('slide-bet');
+  loadCard();
+}
+
+function restartGame() {
+  startGame();
+}
+
+function loadCard() {
+  if (idx >= deck.length) { showFinalScore(); return; }
+  const v = deck[idx];
+  document.getElementById('betVerb').textContent = v.word;
+  document.getElementById('betProg').textContent = (idx+1) + ' / ' + deck.length;
+  document.getElementById('betScore').textContent = 'Score: ' + score;
+  updateBar('progressBar', idx, deck.length);
+}
+
+function updateBar(id, cur, total) {
+  document.getElementById(id).style.width = Math.round((cur/total)*100) + '%';
+}
+
+function placeBet(bet) {
+  lastBet = bet;
+  const v = deck[idx];
+
+  // score
+  let resultText = '';
+  let resultClass = '';
+  if (v.type === 'bonus') {
+    bonusCount++;
+    score++;
+    resultText = '🎉 Bonus verb — both forms accepted! +1';
+    resultClass = 'chip-bonus';
+  } else if (bet === v.type) {
+    correct++;
+    score++;
+    resultText = '✔ Correct! +1';
+    resultClass = 'chip-correct';
+  } else {
+    wrong++;
+    score--;
+    missed.push(v.word);
+    resultText = '✘ Wrong! -1';
+    resultClass = 'chip-wrong';
+  }
+
+  // build reveal
+  const card = document.getElementById('answerCard');
+  card.className = 'answer-card ' + v.type + '-reveal';
+
+  const rt = document.getElementById('revealType');
+  rt.textContent = v.type === 'bonus' ? 'BONUS!' : v.type.toUpperCase();
+  rt.className = 'reveal-type ' + v.type + '-color';
+
+  document.getElementById('revealVerb').textContent = v.word;
+  document.getElementById('pastBase').textContent = v.word;
+  document.getElementById('pastForm').textContent = v.past;
+
+  const bn = document.getElementById('bonusNote');
+  if (v.bonusNote) { bn.textContent = v.bonusNote; bn.style.display = 'inline-block'; }
+  else { bn.style.display = 'none'; }
+
+  const rr = document.getElementById('resultRow');
+  rr.innerHTML = `<span class="result-chip ${resultClass}">${resultText}</span>
+                  <span class="result-chip" style="background:#1a1a2e;color:#aaa;">Bet: ${bet}</span>`;
+
+  document.getElementById('revProg').textContent = (idx+1) + ' / ' + deck.length;
+  document.getElementById('revScore').textContent = 'Score: ' + score;
+  updateBar('progressBar2', idx+1, deck.length);
+
+  const nb = document.getElementById('nextCardBtn');
+  nb.textContent = idx < deck.length-1 ? 'Next Verb →' : 'See Results →';
+
+  showSlide('slide-reveal');
+}
+
+function nextCard() {
+  idx++;
+  if (idx >= deck.length) { showFinalScore(); return; }
+  showSlide('slide-bet');
+  loadCard();
+}
+
+function goToScore() {
+  showFinalScore();
+}
+
+function goToBet() {
+  if (idx >= deck.length-1) { showFinalScore(); return; }
+  showSlide('slide-bet');
+}
+
+function showFinalScore() {
+  document.getElementById('scoreTitle').textContent = score >= 35 ? '🏆 Amazing!' : score >= 20 ? '👍 Nice Work!' : 'Keep Practicing!';
+  document.getElementById('scoreCorrect').textContent = correct;
+  document.getElementById('scoreWrong').textContent = wrong;
+  document.getElementById('scoreBonus').textContent = bonusCount;
+
+  const ms = document.getElementById('missedSection');
+  const ml = document.getElementById('missedList');
+  if (missed.length > 0) {
+    ms.style.display = 'block';
+    ml.innerHTML = missed.map(w => `<span class="missed-chip">${w}</span>`).join('');
+  } else {
+    ms.style.display = 'none';
+  }
+  showSlide('slide-score');
+}
+
+function showSlide(id) {
+  document.querySelectorAll('.slide').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// keyboard nav
+document.addEventListener('keydown', e => {
+  const active = document.querySelector('.slide.active').id;
+  if (e.key === 'ArrowRight' || e.key === ' ') {
+    if (active === 'slide-reveal') nextCard();
+  }
+  if (e.key === 'r' || e.key === 'R') {
+    if (active === 'slide-bet') placeBet('regular');
+  }
+  if (e.key === 'i' || e.key === 'I') {
+    if (active === 'slide-bet') placeBet('irregular');
+  }
+});
+</script>
+</body>
+</html>
