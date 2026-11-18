@@ -282,6 +282,8 @@ td.gcell { padding:3px; }
       </div>
       <div id="verbRows"></div>
       <button class="add-row-btn" onclick="addVerb()">+ Add verb</button>
+      <button class="add-row-btn" onclick="resetContent()">Reset to defaults</button>
+      <div style="font-size:12px;opacity:.7;margin-top:6px">Your verbs and sentence patterns are saved in this browser when you start a game.</div>
     </div>
   </div>
 
@@ -404,6 +406,10 @@ let templates = {
   q_a2:  "{Aux} {subj_low} {verb} {ctx} after school?",
 };
 
+const DEF_VERBS = JSON.parse(JSON.stringify(verbs)), DEF_TEMPLATES = JSON.parse(JSON.stringify(templates));
+try { const sv = JSON.parse(localStorage.getItem("b5edit:treasure-hunt") || "null"); if (sv && sv.verbs && sv.verbs.length) { verbs = sv.verbs; templates = Object.assign({}, templates, sv.templates || {}); } } catch (e) {}
+function saveContent() { try { localStorage.setItem("b5edit:treasure-hunt", JSON.stringify({ verbs: verbs.filter(v => v.base), templates: templates })); } catch (e) {} }
+function resetContent() { if (!confirm("Bring back the original verbs and sentence patterns?")) return; verbs = JSON.parse(JSON.stringify(DEF_VERBS)); templates = JSON.parse(JSON.stringify(DEF_TEMPLATES)); try { localStorage.removeItem("b5edit:treasure-hunt"); } catch (e) {} buildVerbEditor(); buildTplEditor(); }
 let state   = {};
 let pending = null;
 
@@ -474,6 +480,7 @@ function buildTplEditor(){
 
 // ── game init ─────────────────────────────────────────────────────────────
 function startGame(){
+  saveContent();
   const nT=parseInt(document.getElementById("teamCount").value)||2;
   const nC=parseInt(document.getElementById("colCount").value)||6;
   const nR=parseInt(document.getElementById("rowCount").value)||5;

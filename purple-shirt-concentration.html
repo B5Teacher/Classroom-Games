@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Concentration — PURPLE SHIRT Sound (er / ir / ur / ear)</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --accent: #7C5295;
+    --ink: #2c2c2a;
+    --bg: #f5f5f0;
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    padding: 20px;
+  }
+  .wrap { max-width: 1500px; margin: 0 auto; }
+  h1 {
+    font-size: clamp(22px, 3vw, 32px);
+    font-weight: 500;
+    text-align: center;
+    margin-bottom: 4px;
+  }
+  .subtitle {
+    text-align: center;
+    color: #5f5e5a;
+    font-size: 14px;
+    margin-bottom: 20px;
+  }
+  .setup {
+    background: white;
+    border: 0.5px solid rgba(0,0,0,0.15);
+    border-radius: 12px;
+    padding: 32px 24px;
+    max-width: 560px;
+    margin: 0 auto;
+    text-align: center;
+  }
+  .setup h2 { font-size: 16px; font-weight: 600; margin: 20px 0 10px; }
+  .setup h2:first-of-type { margin-top: 0; }
+  .option-row {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+  }
+  .option-btn {
+    font-family: inherit;
+    font-size: 14px;
+    padding: 10px 18px;
+    background: white;
+    color: var(--ink);
+    border: 1.5px solid rgba(0,0,0,0.25);
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  .option-btn.selected {
+    background: var(--ink);
+    color: white;
+    border-color: var(--ink);
+  }
+  button.primary {
+    font-family: inherit;
+    background: var(--ink);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    padding: 12px 28px;
+    margin-top: 22px;
+    cursor: pointer;
+  }
+  button.primary:hover { background: #444441; }
+  .play { display: none; }
+  .scoreboard {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+  .team-chip {
+    background: white;
+    border: 2px solid rgba(0,0,0,0.15);
+    border-radius: 10px;
+    padding: 8px 16px;
+    font-size: 14px;
+    min-width: 100px;
+    text-align: center;
+  }
+  .team-chip.active {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(124,82,149,0.25);
+  }
+  .team-chip .name { font-weight: 600; }
+  .team-chip .score { font-size: 22px; font-weight: 700; color: var(--accent); }
+  .board-wrap {
+    position: relative;
+    max-width: 1400px;
+    margin: 0 auto;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 0.5px solid rgba(0,0,0,0.15);
+  }
+  .big-picture {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background: #f5f5f0;
+  }
+  .big-picture svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+  .board {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    gap: 3px;
+    width: 100%;
+    height: 100%;
+  }
+  .cell {
+    position: relative;
+  }
+  .cell .tile {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: clamp(14px, 2.2vw, 26px);
+    font-weight: 600;
+    transition: transform 0.15s;
+    user-select: none;
+  }
+  .tile.hidden-face {
+    background: var(--accent);
+    color: transparent;
+  }
+  .tile.hidden-face::after {
+    content: "?";
+    color: rgba(255,255,255,0.55);
+    font-size: clamp(20px, 3vw, 34px);
+  }
+  .tile-number {
+    position: absolute;
+    top: 4px;
+    left: 6px;
+    font-size: clamp(11px, 1.5vw, 16px);
+    font-weight: 700;
+    color: rgba(255,255,255,0.9);
+    z-index: 2;
+  }
+  .tile.revealed-face {
+    background: white;
+    color: var(--ink);
+    border: 2px solid var(--accent);
+  }
+  .tile.matched-recent {
+    background: #f3edf5;
+    border: 2px solid var(--accent);
+    flex-direction: column;
+    gap: 2px;
+    color: var(--accent);
+    font-size: clamp(11px, 1.6vw, 16px);
+  }
+  .tile.matched-recent .mini-icon {
+    width: 46%;
+    height: 46%;
+  }
+  .tile.matched-recent .mini-icon svg { width: 100%; height: 100%; }
+  .tile:hover.hidden-face { filter: brightness(1.08); }
+  .tile.matched-final { display: none; }
+  .controls {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin-top: 20px;
+    flex-wrap: wrap;
+  }
+  button.secondary {
+    font-family: inherit;
+    font-size: 14px;
+    padding: 10px 18px;
+    background: white;
+    color: var(--ink);
+    border: 0.5px solid rgba(0,0,0,0.3);
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  button.secondary:hover { background: #f0eee7; }
+  .win-banner {
+    text-align: center;
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--accent);
+    margin-top: 16px;
+    display: none;
+  }
+  .reveal-prompt {
+    display: none;
+    text-align: center;
+    margin-top: 16px;
+  }
+  .reveal-prompt button {
+    font-family: inherit;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 18px;
+    font-weight: 600;
+    padding: 14px 32px;
+    cursor: pointer;
+    animation: pulse 1.2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(124,82,149,0.45); }
+    50% { box-shadow: 0 0 0 10px rgba(124,82,149,0); }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Concentration</h1>
+  <p class="subtitle">PURPLE SHIRT sound — er, ir, ur, ear (father, bird, nurse, earth...)</p>
+
+  <div id="setup" class="setup">
+    <h2>Difficulty</h2>
+    <div class="option-row" id="diffRow">
+      <button class="option-btn" data-diff="easy">Easy — 6 pairs (12 tiles)</button>
+      <button class="option-btn" data-diff="medium">Medium — 9 pairs (18 tiles)</button>
+      <button class="option-btn" data-diff="hard">Hard — 12 pairs (24 tiles)</button>
+    </div>
+
+    <h2>Teams</h2>
+    <div class="option-row" id="teamRow">
+      <button class="option-btn" data-teams="2">2</button>
+      <button class="option-btn" data-teams="3">3</button>
+      <button class="option-btn" data-teams="4">4</button>
+      <button class="option-btn" data-teams="5">5</button>
+      <button class="option-btn" data-teams="6">6</button>
+    </div>
+
+    <button id="startBtn" class="primary">Start game</button>
+  </div>
+
+  <div id="play" class="play">
+    <div class="scoreboard" id="scoreboard"></div>
+    <div class="board-wrap" id="boardWrap">
+      <div class="big-picture" id="bigPicture"></div>
+      <div class="board" id="board"></div>
+    </div>
+    <p class="win-banner" id="winBanner">Board complete! 🎉</p>
+    <div class="reveal-prompt" id="revealPrompt">
+      <button id="revealMatchBtn">Click to reveal</button>
+    </div>
+    <div class="controls">
+      <button id="restartBtn" class="secondary">New game</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* B5 content editor — shared by the Classroom-Games suite.
+   Saved per browser in localStorage. Supports several named lists,
+   a table editor, a "paste many" text box, and Reset to defaults. */
+(function () {
+  var CSS = '' +
+  '.b5e-btn{position:fixed;right:12px;bottom:12px;z-index:9000;font:600 14px/1 -apple-system,"Segoe UI",sans-serif;background:#fff;color:#2c2c2a;border:1px solid rgba(0,0,0,.25);border-radius:20px;padding:9px 14px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.12);opacity:.85}' +
+  '.b5e-btn:hover{opacity:1}' +
+  '.b5e-ov{position:fixed;inset:0;z-index:9500;background:rgba(20,20,18,.55);display:none;align-items:center;justify-content:center;font:15px/1.4 -apple-system,"Segoe UI",Roboto,sans-serif;color:#2c2c2a}' +
+  '.b5e-ov.open{display:flex}' +
+  '.b5e-box{background:#fff;border-radius:14px;width:min(1000px,96vw);height:min(760px,94vh);display:flex;flex-direction:column;box-shadow:0 10px 40px rgba(0,0,0,.3)}' +
+  '.b5e-head{padding:14px 18px 10px;border-bottom:1px solid #e6e4dd}' +
+  '.b5e-head h2{font-size:20px;font-weight:600;margin:0 0 8px}' +
+  '.b5e-lists{display:flex;flex-wrap:wrap;gap:6px;align-items:center}' +
+  '.b5e-lists select,.b5e-lists input{font:inherit;padding:5px 8px;border:1px solid #c9c6bd;border-radius:6px}' +
+  '.b5e-lists input{width:220px}' +
+  '.b5e-help{font-size:13px;color:#66645e;margin-top:6px}' +
+  '.b5e-body{flex:1;overflow:auto;padding:10px 18px}' +
+  '.b5e-set{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:10px;padding:8px 10px;background:#f6f5f0;border-radius:8px}' +
+  '.b5e-set label{font-size:13px;display:flex;gap:6px;align-items:center}' +
+  '.b5e-set input,.b5e-set select{font:inherit;padding:3px 6px;border:1px solid #c9c6bd;border-radius:5px}' +
+  '.b5e-tbl{width:100%;border-collapse:collapse}' +
+  '.b5e-tbl th{text-align:left;font-size:12px;letter-spacing:.5px;color:#66645e;padding:4px;position:sticky;top:-10px;background:#fff}' +
+  '.b5e-tbl td{padding:3px 4px;vertical-align:top}' +
+  '.b5e-tbl td.n{color:#99968e;font-size:12px;width:26px;padding-top:9px}' +
+  '.b5e-tbl input,.b5e-tbl select,.b5e-tbl textarea{width:100%;font:inherit;padding:5px 7px;border:1px solid #d4d1c8;border-radius:5px;background:#fff}' +
+  '.b5e-tbl textarea{min-height:34px;resize:vertical}' +
+  '.b5e-x{border:none;background:none;color:#a33;font-size:18px;cursor:pointer;padding:4px 6px}' +
+  '.b5e-act{font:inherit;font-size:12px;padding:5px 8px;border:1px solid #c9c6bd;border-radius:5px;background:#f6f5f0;cursor:pointer;white-space:nowrap}' +
+  '.b5e-bulk{width:100%;height:100%;min-height:360px;font:14px/1.5 ui-monospace,Consolas,monospace;padding:10px;border:1px solid #c9c6bd;border-radius:8px}' +
+  '.b5e-foot{padding:10px 18px;border-top:1px solid #e6e4dd;display:flex;flex-wrap:wrap;gap:8px;align-items:center}' +
+  '.b5e-foot .sp{flex:1}' +
+  '.b5e-b{font:inherit;font-size:14px;padding:8px 14px;border-radius:8px;border:1px solid #c9c6bd;background:#fff;cursor:pointer}' +
+  '.b5e-b.pri{background:#1a5fa8;border-color:#1a5fa8;color:#fff;font-weight:600}' +
+  '.b5e-b.warn{color:#a33}' +
+  '.b5e-msg{font-size:13px;color:#a33;min-height:18px}' +
+  '.b5e-msg.ok{color:#1a6b3a}';
+
+  function el(tag, attrs, kids) {
+    var e = document.createElement(tag);
+    if (attrs) for (var k in attrs) {
+      if (k === 'text') e.textContent = attrs[k];
+      else if (k === 'html') e.innerHTML = attrs[k];
+      else if (k.slice(0, 2) === 'on') e.addEventListener(k.slice(2), attrs[k]);
+      else e.setAttribute(k, attrs[k]);
+    }
+    (kids || []).forEach(function (c) { if (c) e.appendChild(c); });
+    return e;
+  }
+  function clone(x) { return JSON.parse(JSON.stringify(x)); }
+
+  function B5Edit(cfg) {
+    var self = this;
+    this.cfg = cfg;
+    this.cols = cfg.columns;
+    this.key = 'b5edit:' + cfg.key;
+    this.defaultName = cfg.defaultName || 'Default list';
+    this.listeners = [];
+    if (cfg.onChange) this.listeners.push(cfg.onChange);
+    this.state = this._load();
+    if (!document.getElementById('b5e-css')) {
+      var st = el('style', { id: 'b5e-css' }); st.textContent = CSS; document.head.appendChild(st);
+    }
+    this._build();
+    if (cfg.button !== false) {
+      var host = cfg.buttonHost ? (typeof cfg.buttonHost === 'string' ? document.querySelector(cfg.buttonHost) : cfg.buttonHost) : null;
+      var b = el('button', { 'class': host ? (cfg.buttonClass || '') : 'b5e-btn', type: 'button', text: cfg.buttonLabel || '⚙ Edit content', onclick: function () { self.open(); } });
+      if (host) host.appendChild(b); else document.body.appendChild(b);
+      this.button = b;
+    }
+  }
+
+  B5Edit.prototype._defaults = function () {
+    var s = {};
+    (this.cfg.settings || []).forEach(function (f) { s[f.key] = f.default; });
+    return { v: 1, current: 'default', settings: s,
+      lists: [{ id: 'default', name: this.defaultName, rows: clone(this.cfg.defaults) }] };
+  };
+  B5Edit.prototype._load = function () {
+    var d = this._defaults();
+    try {
+      var raw = localStorage.getItem(this.key);
+      if (raw) {
+        var s = JSON.parse(raw);
+        if (s && Array.isArray(s.lists) && s.lists.length) {
+          s.settings = Object.assign({}, d.settings, s.settings || {});
+          if (!s.lists.some(function (l) { return l.id === s.current; })) s.current = s.lists[0].id;
+          return s;
+        }
+      }
+    } catch (e) {}
+    return d;
+  };
+  B5Edit.prototype._save = function () {
+    try { localStorage.setItem(this.key, JSON.stringify(this.state)); } catch (e) {}
+  };
+  B5Edit.prototype._cur = function () {
+    var st = this.state;
+    return st.lists.filter(function (l) { return l.id === st.current; })[0] || st.lists[0];
+  };
+  /* public API */
+  B5Edit.prototype.rows = function () { return clone(this._cur().rows); };
+  B5Edit.prototype.listName = function () { return this._cur().name; };
+  B5Edit.prototype.settings = function () { return clone(this.state.settings); };
+  B5Edit.prototype.onChange = function (fn) { this.listeners.push(fn); };
+  B5Edit.prototype.listNames = function () { return this.state.lists.map(function (l) { return { id: l.id, name: l.name }; }); };
+  B5Edit.prototype.useList = function (id) {
+    if (this.state.lists.some(function (l) { return l.id === id; })) { this.state.current = id; this._save(); this._fire(); }
+  };
+  B5Edit.prototype._fire = function () {
+    var self = this;
+    this.listeners.forEach(function (fn) { try { fn(self.rows(), self.settings(), self.listName()); } catch (e) { console.error(e); } });
+  };
+
+  /* ---------- UI ---------- */
+  B5Edit.prototype._build = function () {
+    var self = this, cfg = this.cfg;
+    this.ov = el('div', { 'class': 'b5e-ov' });
+    this.sel = el('select', { onchange: function () { self._pull(); self.work.current = self.sel.value; self._render(); } });
+    this.nameIn = el('input', { placeholder: 'List name', oninput: function () { self._curW().name = self.nameIn.value; self._fillSel(); } });
+    var lists = el('div', { 'class': 'b5e-lists' }, [
+      el('span', { text: 'List:' }), this.sel, this.nameIn,
+      el('button', { 'class': 'b5e-act', type: 'button', text: '+ New list', onclick: function () { self._newList(false); } }),
+      el('button', { 'class': 'b5e-act', type: 'button', text: 'Copy list', onclick: function () { self._newList(true); } }),
+      el('button', { 'class': 'b5e-act', type: 'button', text: 'Delete list', onclick: function () { self._delList(); } })
+    ]);
+    var help = el('div', { 'class': 'b5e-help', html: cfg.help || '' });
+    this.body = el('div', { 'class': 'b5e-body' });
+    this.msg = el('div', { 'class': 'b5e-msg' });
+    this.bulkBtn = el('button', { 'class': 'b5e-b', type: 'button', text: 'Paste many', onclick: function () { self._toggleBulk(); } });
+    var foot = el('div', { 'class': 'b5e-foot' }, [
+      el('button', { 'class': 'b5e-b', type: 'button', text: '+ Add row', onclick: function () { self._pull(); self._curW().rows.push(self._blank()); self._render(); self.body.scrollTop = 1e6; } }),
+      this.bulkBtn,
+      el('button', { 'class': 'b5e-b warn', type: 'button', text: 'Reset to defaults', onclick: function () { self._reset(); } }),
+      el('div', { 'class': 'sp' }, [this.msg]),
+      el('button', { 'class': 'b5e-b', type: 'button', text: 'Cancel', onclick: function () { self.close(); } }),
+      el('button', { 'class': 'b5e-b pri', type: 'button', text: 'Save', onclick: function () { self._commit(); } })
+    ]);
+    this.box = el('div', { 'class': 'b5e-box' }, [
+      el('div', { 'class': 'b5e-head' }, [el('h2', { text: cfg.title || 'Edit content' }), lists, help]),
+      this.body, foot
+    ]);
+    this.ov.appendChild(this.box);
+    this.ov.addEventListener('keydown', function (e) { e.stopPropagation(); if (e.key === 'Escape') self.close(); });
+    this.ov.addEventListener('keyup', function (e) { e.stopPropagation(); });
+    this.ov.addEventListener('keypress', function (e) { e.stopPropagation(); });
+    document.body.appendChild(this.ov);
+  };
+  B5Edit.prototype._blank = function () { var r = {}; this.cols.forEach(function (c) { r[c.key] = c.options ? c.options[0].value !== undefined ? c.options[0].value : c.options[0] : ''; }); return r; };
+  B5Edit.prototype._curW = function () { var w = this.work; return w.lists.filter(function (l) { return l.id === w.current; })[0]; };
+  B5Edit.prototype._fillSel = function () {
+    var w = this.work, sel = this.sel; sel.innerHTML = '';
+    w.lists.forEach(function (l) { sel.appendChild(el('option', { value: l.id, text: l.name || '(no name)' })); });
+    sel.value = w.current;
+  };
+  B5Edit.prototype.open = function () {
+    this.work = clone(this.state); this.bulk = false; this.bulkBtn.textContent = 'Paste many';
+    this.msg.textContent = ''; this._render(); this.ov.classList.add('open');
+    if (this.cfg.onOpen) this.cfg.onOpen();
+  };
+  B5Edit.prototype.close = function () { this.ov.classList.remove('open'); if (this.cfg.onClose) this.cfg.onClose(); };
+  B5Edit.prototype._optVal = function (o) { return o && o.value !== undefined ? o.value : o; };
+  B5Edit.prototype._render = function () {
+    var self = this, cfg = this.cfg, L = this._curW();
+    this._fillSel(); this.nameIn.value = L.name;
+    this.body.innerHTML = '';
+    if ((cfg.settings || []).length) {
+      var set = el('div', { 'class': 'b5e-set' });
+      cfg.settings.forEach(function (f) {
+        var v = self.work.settings[f.key], inp;
+        if (f.type === 'select') {
+          inp = el('select', { 'data-k': f.key });
+          f.options.forEach(function (o) { inp.appendChild(el('option', { value: String(self._optVal(o)), text: o.label || String(o) })); });
+          inp.value = String(v);
+        } else if (f.type === 'checkbox') {
+          inp = el('input', { type: 'checkbox', 'data-k': f.key }); inp.checked = !!v;
+        } else {
+          inp = el('input', { type: f.type || 'text', 'data-k': f.key, value: v == null ? '' : v, style: 'width:' + (f.width || 90) + 'px' });
+          if (f.min != null) inp.min = f.min; if (f.max != null) inp.max = f.max;
+        }
+        set.appendChild(el('label', {}, [el('span', { text: f.label }), inp]));
+      });
+      this.body.appendChild(set);
+      this.setBox = set;
+    } else this.setBox = null;
+    if (this.bulk) {
+      var fmt = this.cols.map(function (c) { return c.label; }).join(' | ');
+      this.body.appendChild(el('div', { 'class': 'b5e-help', text: 'One row per line. ' + (this.cols.length > 1 ? 'Separate the boxes with | like this:  ' + fmt : '') }));
+      this.ta = el('textarea', { 'class': 'b5e-bulk' });
+      this.ta.value = L.rows.map(function (r) { return self.cols.map(function (c) { return r[c.key] == null ? '' : String(r[c.key]); }).join(' | '); }).join('\n');
+      this.body.appendChild(this.ta);
+      return;
+    }
+    var tbl = el('table', { 'class': 'b5e-tbl' });
+    var hr = el('tr', {}, [el('th', { text: '#' })]);
+    this.cols.forEach(function (c) { hr.appendChild(el('th', { text: c.label, style: c.width ? 'width:' + c.width : '' })); });
+    if (cfg.rowAction) hr.appendChild(el('th'));
+    hr.appendChild(el('th'));
+    tbl.appendChild(hr);
+    L.rows.forEach(function (r, i) {
+      var tr = el('tr', {}, [el('td', { 'class': 'n', text: String(i + 1) })]);
+      self.cols.forEach(function (c) {
+        var inp, v = r[c.key] == null ? '' : r[c.key];
+        if (c.options) {
+          inp = el('select');
+          c.options.forEach(function (o) { inp.appendChild(el('option', { value: String(self._optVal(o)), text: o.label || String(o) })); });
+          inp.value = String(v);
+        } else if (c.multiline) { inp = el('textarea', { placeholder: c.placeholder || '' }); inp.value = v; }
+        else inp = el('input', { value: v, placeholder: c.placeholder || '' });
+        inp.setAttribute('data-k', c.key);
+        tr.appendChild(el('td', {}, [inp]));
+      });
+      if (cfg.rowAction) tr.appendChild(el('td', {}, [el('button', { 'class': 'b5e-act', type: 'button', text: cfg.rowAction.label, onclick: function () { self._rowAct(i); } })]));
+      tr.appendChild(el('td', {}, [el('button', { 'class': 'b5e-x', type: 'button', title: 'Delete row', text: '×', onclick: function () { self._pull(); self._curW().rows.splice(i, 1); self._render(); } })]));
+      tbl.appendChild(tr);
+    });
+    this.body.appendChild(tbl);
+    this.tbl = tbl;
+  };
+  B5Edit.prototype._pull = function () {
+    var self = this, L = this._curW();
+    if (!L) return;
+    if (this.setBox) {
+      [].forEach.call(this.setBox.querySelectorAll('[data-k]'), function (inp) {
+        var k = inp.getAttribute('data-k'), f = self.cfg.settings.filter(function (s) { return s.key === k; })[0];
+        var v = inp.type === 'checkbox' ? inp.checked : inp.value;
+        if (f && (f.type === 'number' || typeof f.default === 'number') && inp.type !== 'checkbox') v = Number(v);
+        self.work.settings[k] = v;
+      });
+    }
+    if (this.bulk) {
+      L.rows = this.ta.value.split('\n').map(function (line) { return line.trim(); }).filter(Boolean).map(function (line) {
+        var parts = self.cols.length > 1 ? line.split('|') : [line], r = {};
+        self.cols.forEach(function (c, i) { r[c.key] = (parts[i] || '').trim(); });
+        return r;
+      });
+      return;
+    }
+    var trs = this.tbl ? this.tbl.querySelectorAll('tr') : [];
+    var rows = [];
+    for (var i = 1; i < trs.length; i++) {
+      var r = {};
+      [].forEach.call(trs[i].querySelectorAll('[data-k]'), function (inp) { r[inp.getAttribute('data-k')] = inp.value.trim(); });
+      rows.push(r);
+    }
+    L.rows = rows;
+  };
+  B5Edit.prototype._toggleBulk = function () {
+    this._pull(); this.bulk = !this.bulk;
+    this.bulkBtn.textContent = this.bulk ? 'Table view' : 'Paste many';
+    this._render();
+  };
+  B5Edit.prototype._newList = function (copy) {
+    this._pull();
+    var cur = this._curW(), id = 'l' + Date.now();
+    var L = { id: id, name: copy ? cur.name + ' (copy)' : 'New list', rows: copy ? clone(cur.rows) : [this._blank()] };
+    this.work.lists.push(L); this.work.current = id; this._render(); this.nameIn.focus(); this.nameIn.select();
+  };
+  B5Edit.prototype._delList = function () {
+    if (this.work.lists.length < 2) { this._say('You need at least one list.'); return; }
+    if (!confirm('Delete the list "' + this._curW().name + '"?')) return;
+    var w = this.work; w.lists = w.lists.filter(function (l) { return l.id !== w.current; });
+    w.current = w.lists[0].id; this._render();
+  };
+  B5Edit.prototype._reset = function () {
+    if (!confirm('Bring back the original list and settings? Your other lists stay.')) return;
+    var d = this._defaults(), w = this.work;
+    var has = w.lists.filter(function (l) { return l.id === 'default'; })[0];
+    if (has) { has.rows = d.lists[0].rows; has.name = d.lists[0].name; } else w.lists.unshift(d.lists[0]);
+    w.settings = d.settings; w.current = 'default'; this._render(); this._say('Defaults restored. Press Save to use them.', true);
+  };
+  B5Edit.prototype._rowAct = function (i) {
+    var self = this; this._pull();
+    var L = this._curW(), r = L.rows[i];
+    this._say('Working…', true);
+    Promise.resolve(this.cfg.rowAction.run(clone(r))).then(function (nr) {
+      if (nr) { L.rows[i] = nr; self._render(); }
+      self._say('', true);
+    }).catch(function (e) { self._say(String(e && e.message || e)); });
+  };
+  B5Edit.prototype._say = function (t, ok) { this.msg.textContent = t; this.msg.className = 'b5e-msg' + (ok ? ' ok' : ''); };
+  B5Edit.prototype._commit = function () {
+    this._pull();
+    var self = this, w = this.work;
+    // drop fully empty rows
+    w.lists.forEach(function (L) {
+      L.rows = L.rows.filter(function (r) { return self.cols.some(function (c) { return !c.options && String(r[c.key] || '').trim() !== ''; }) || self.cols.every(function (c) { return c.options; }); });
+      if (self.cfg.clean) L.rows = L.rows.map(self.cfg.clean);
+      if (!L.name) L.name = 'Untitled list';
+    });
+    var L = this._curW();
+    var err = this.cfg.validate ? this.cfg.validate(L.rows, w.settings) : '';
+    if (!err && this.cfg.min && L.rows.length < this.cfg.min) err = 'This list needs at least ' + this.cfg.min + ' rows.';
+    if (err) { this._say(err); this._render(); return; }
+    this.state = w; this._save(); this.close(); this._fire();
+  };
+
+  window.B5Edit = B5Edit;
+})();
+
+</script>
+<script>
+const DEF_WORDS = [{"word":"her","pos":"pron.","family":"ER"},{"word":"letter","pos":"n.","family":"ER"},{"word":"were","pos":"v.","family":"ER"},{"word":"work","pos":"v., n.","family":"ER"},{"word":"father","pos":"n.","family":"ER"},{"word":"sister","pos":"n.","family":"ER"},{"word":"bird","pos":"n.","family":"IR"},{"word":"shirt","pos":"n.","family":"IR"},{"word":"girl","pos":"n.","family":"IR"},{"word":"circle","pos":"n.","family":"IR"},{"word":"fir","pos":"n.","family":"IR"},{"word":"whir","pos":"v., n.","family":"IR"},{"word":"first","pos":"adj.","family":"IR"},{"word":"fur","pos":"n.","family":"UR"},{"word":"purple","pos":"adj.","family":"UR"},{"word":"nurse","pos":"n.","family":"UR"},{"word":"turn","pos":"v., n.","family":"UR"},{"word":"hurt","pos":"v., adj.","family":"UR"},{"word":"church","pos":"n.","family":"UR"},{"word":"heard","pos":"v.","family":"EAR"},{"word":"earth","pos":"n.","family":"EAR"},{"word":"learn","pos":"v.","family":"EAR"},{"word":"earn","pos":"v.","family":"EAR"},{"word":"pearl","pos":"n.","family":"EAR"}];
+const ED = new B5Edit({ key: "purple-shirt-concentration", title: "Concentration words", defaultName: "PURPLE SHIRT (er/ir/ur/ear)",
+  help: "Pairs are made from this list (Hard uses 12 pairs, so 12+ words is best). The built-in pictures only exist for the original words; new words show the word only.",
+  columns: [{ key: "word", label: "Word" }, { key: "pos", label: "Part of speech", width: "150px", placeholder: "n. / v. / adj." }, { key: "family", label: "Spelling", width: "130px", placeholder: "ER" }],
+  defaults: DEF_WORDS, min: 2, onChange: function(){ location.reload(); } });
+const WORDS = ED.rows().map(function (r) { return { word: r.word, pos: r.pos, family: String(r.family || "").toUpperCase() }; });
+const BIG_PICTURES = ["<svg viewBox=\"0 0 100 100\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n<rect width=\"100\" height=\"100\" fill=\"#f5f5f0\"/>\n<circle cx=\"10\" cy=\"10\" r=\"2.2\" fill=\"#7C5295\" opacity=\"0.55\"/><circle cx=\"90\" cy=\"14\" r=\"2\" fill=\"#D9791E\" opacity=\"0.55\"/><circle cx=\"6\" cy=\"55\" r=\"1.8\" fill=\"#6E7B35\" opacity=\"0.55\"/><circle cx=\"94\" cy=\"60\" r=\"2.2\" fill=\"#7C5295\" opacity=\"0.55\"/><circle cx=\"16\" cy=\"88\" r=\"2\" fill=\"#D9791E\" opacity=\"0.55\"/><circle cx=\"85\" cy=\"90\" r=\"1.8\" fill=\"#6E7B35\" opacity=\"0.55\"/><circle cx=\"50\" cy=\"6\" r=\"1.6\" fill=\"#7C5295\" opacity=\"0.55\"/><circle cx=\"50\" cy=\"95\" r=\"1.8\" fill=\"#D9791E\" opacity=\"0.55\"/><circle cx=\"22\" cy=\"30\" r=\"1.4\" fill=\"#6E7B35\" opacity=\"0.55\"/><circle cx=\"78\" cy=\"25\" r=\"1.6\" fill=\"#7C5295\" opacity=\"0.55\"/><circle cx=\"8\" cy=\"72\" r=\"1.6\" fill=\"#D9791E\" opacity=\"0.55\"/><circle cx=\"92\" cy=\"35\" r=\"1.4\" fill=\"#6E7B35\" opacity=\"0.55\"/>\n<path d=\"M30 20 L45 20 Q50 30 55 20 L70 20 L88 35 L74 47 L69 41 V90 H31 V41 L26 47 L12 35 Z\" fill=\"#7C5295\" stroke=\"#2c2c2a\" stroke-width=\"3\" stroke-linejoin=\"round\"/>\n</svg>","<svg viewBox=\"0 0 100 100\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n<rect width=\"100\" height=\"100\" fill=\"#f5f5f0\"/>\n<circle cx=\"10\" cy=\"10\" r=\"2.2\" fill=\"#7C5295\" opacity=\"0.55\"/><circle cx=\"90\" cy=\"14\" r=\"2\" fill=\"#D9791E\" opacity=\"0.55\"/><circle cx=\"6\" cy=\"55\" r=\"1.8\" fill=\"#6E7B35\" opacity=\"0.55\"/><circle cx=\"94\" cy=\"60\" r=\"2.2\" fill=\"#7C5295\" opacity=\"0.55\"/><circle cx=\"16\" cy=\"88\" r=\"2\" fill=\"#D9791E\" opacity=\"0.55\"/><circle cx=\"85\" cy=\"90\" r=\"1.8\" fill=\"#6E7B35\" opacity=\"0.55\"/><circle cx=\"50\" cy=\"6\" r=\"1.6\" fill=\"#7C5295\" opacity=\"0.55\"/><circle cx=\"50\" cy=\"95\" r=\"1.8\" fill=\"#D9791E\" opacity=\"0.55\"/><circle cx=\"22\" cy=\"30\" r=\"1.4\" fill=\"#6E7B35\" opacity=\"0.55\"/><circle cx=\"78\" cy=\"25\" r=\"1.6\" fill=\"#7C5295\" opacity=\"0.55\"/><circle cx=\"8\" cy=\"72\" r=\"1.6\" fill=\"#D9791E\" opacity=\"0.55\"/><circle cx=\"92\" cy=\"35\" r=\"1.4\" fill=\"#6E7B35\" opacity=\"0.55\"/>\n<path d=\"M35 20 Q20 20 20 32 Q20 42 33 42\" fill=\"none\" stroke=\"#2c2c2a\" stroke-width=\"3\"/>\n<path d=\"M65 20 Q80 20 80 32 Q80 42 67 42\" fill=\"none\" stroke=\"#2c2c2a\" stroke-width=\"3\"/>\n<path d=\"M35 20 H65 V34 Q65 50 50 50 Q35 50 35 34 Z\" fill=\"#D9791E\" stroke=\"#2c2c2a\" stroke-width=\"3\" stroke-linejoin=\"round\"/>\n<rect x=\"45\" y=\"50\" width=\"10\" height=\"14\" fill=\"#2c2c2a\"/>\n<path d=\"M30 64 H70 L64 82 H36 Z\" fill=\"#2c2c2a\"/>\n<path d=\"M50 24 l2.5 6 6.5 0.5 -5 4.3 1.6 6.3 -5.6 -3.6 -5.6 3.6 1.6 -6.3 -5 -4.3 6.5 -0.5 Z\" fill=\"#f5f5f0\"/>\n</svg>","<svg viewBox=\"0 0 100 100\" preserveAspectRatio=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n<rect width=\"100\" height=\"100\" fill=\"#f5f5f0\"/>\n<circle cx=\"10\" cy=\"10\" r=\"2.2\" fill=\"#7C5295\" opacity=\"0.55\"/><circle cx=\"90\" cy=\"14\" r=\"2\" fill=\"#D9791E\" opacity=\"0.55\"/><circle cx=\"6\" cy=\"55\" r=\"1.8\" fill=\"#6E7B35\" opacity=\"0.55\"/><circle cx=\"94\" cy=\"60\" r=\"2.2\" fill=\"#7C5295\" opacity=\"0.55\"/><circle cx=\"16\" cy=\"88\" r=\"2\" fill=\"#D9791E\" opacity=\"0.55\"/><circle cx=\"85\" cy=\"90\" r=\"1.8\" fill=\"#6E7B35\" opacity=\"0.55\"/><circle cx=\"50\" cy=\"6\" r=\"1.6\" fill=\"#7C5295\" opacity=\"0.55\"/><circle cx=\"50\" cy=\"95\" r=\"1.8\" fill=\"#D9791E\" opacity=\"0.55\"/><circle cx=\"22\" cy=\"30\" r=\"1.4\" fill=\"#6E7B35\" opacity=\"0.55\"/><circle cx=\"78\" cy=\"25\" r=\"1.6\" fill=\"#7C5295\" opacity=\"0.55\"/><circle cx=\"8\" cy=\"72\" r=\"1.6\" fill=\"#D9791E\" opacity=\"0.55\"/><circle cx=\"92\" cy=\"35\" r=\"1.4\" fill=\"#6E7B35\" opacity=\"0.55\"/>\n<path d=\"M10 85 A40 40 0 0 1 90 85\" fill=\"none\" stroke=\"#7C5295\" stroke-width=\"6\"/>\n<path d=\"M18 85 A32 32 0 0 1 82 85\" fill=\"none\" stroke=\"#D9791E\" stroke-width=\"6\"/>\n<path d=\"M26 85 A24 24 0 0 1 74 85\" fill=\"none\" stroke=\"#6E7B35\" stroke-width=\"6\"/>\n<ellipse cx=\"14\" cy=\"86\" rx=\"10\" ry=\"7\" fill=\"#f5f5f0\" stroke=\"#2c2c2a\" stroke-width=\"2.5\"/>\n<ellipse cx=\"86\" cy=\"86\" rx=\"10\" ry=\"7\" fill=\"#f5f5f0\" stroke=\"#2c2c2a\" stroke-width=\"2.5\"/>\n</svg>"];
+const ICONS = {"her":"<circle cx=\"50\" cy=\"35\" r=\"16\" fill=\"none\" stroke=\"#2c2c2a\" stroke-width=\"4\"/><circle cx=\"28\" cy=\"45\" r=\"8\" fill=\"#7C5295\"/><circle cx=\"72\" cy=\"45\" r=\"8\" fill=\"#7C5295\"/><path d=\"M30 85 Q50 60 70 85\" fill=\"none\" stroke=\"#2c2c2a\" stroke-width=\"4\"/>","letter":"<rect x=\"15\" y=\"30\" width=\"70\" height=\"45\" rx=\"4\" fill=\"none\" stroke=\"#2c2c2a\" stroke-width=\"4\"/><path d=\"M15 30 L50 58 L85 30\" fill=\"none\" stroke=\"#7C5295\" stroke-width=\"4\" stroke-linejoin=\"round\"/>","were":"<path d=\"M25 15 H75 L52 50 L75 85 H25 L48 50 Z\" fill=\"none\" stroke=\"#2c2c2a\" stroke-width=\"4\" stroke-linejoin=\"round\"/><path d=\"M32 22 H68 L50 48 Z\" fill=\"#7C5295\"/><path d=\"M32 78 H68 L50 52 Z\" fill=\"#7C5295\"/>","work":"<rect x=\"15\" y=\"40\" width=\"70\" height=\"45\" rx=\"6\" fill=\"none\" stroke=\"#2c2c2a\" stroke-width=\"4\"/><path d=\"M38 40 V30 a8 8 0 0 1 8 -8 h8 a8 8 0 0 1 8 8 v10\" fill=\"none\" stroke=\"#2c2c2a\" stroke-width=\"4\"/><rect x=\"15\" y=\"58\" width=\"70\" height=\"10\" fill=\"#7C5295\"/>","father":"<circle cx=\"50\" cy=\"25\" r=\"14\" fill=\"none\" stroke=\"#2c2c2a\" stroke-width=\"4\"/><path d=\"M25 90 Q50 55 75 90\" fill=\"none\" stroke=\"#2c2c2a\" stroke-width=\"4\"/><path d=\"M46 42 L54 42 L58 60 L50 70 L42 60 Z\" fill=\"#7C5295\"/>","sister":"<circle cx=\"50\" cy=\"35\" r=\"16\" fill=\"none\" stroke=\"#2c2c2a\" stroke-width=\"4\"/><circle cx=\"28\" cy=\"45\" r=\"8\" fill=\"#7C5295\"/><circle cx=\"72\" cy=\"45\" r=\"8\" fill=\"#7C5295\"/><path d=\"M30 85 Q50 60 70 85\" fill=\"none\" stroke=\"#2c2c2a\" stroke-width=\"4\"/>","bird":"<ellipse cx=\"42\" cy=\"58\" rx=\"24\" ry=\"17\" fill=\"#7C5295\" stroke=\"#2c2c2a\" stroke-width=\"3\"/><circle cx=\"70\" cy=\"38\" r=\"13\" fill=\"#7C5295\" stroke=\"#2c2c2a\" stroke-width=\"3\"/><path d=\"M81 38 L94 34 L81 45 Z\" fill=\"#2c2c2a\"/><circle cx=\"73\" cy=\"35\" r=\"2\" fill=\"#2c2c2a\"/><path d=\"M22 52 L8 46 L23 60 Z\" fill=\"#7C5295\" stroke=\"#2c2c2a\" stroke-width=\"2\" stroke-linejoin=\"round\"/><path d=\"M36 74 L34 90 M50 74 L52 90\" stroke=\"#2c2c2a\" stroke-width=\"3\" stroke-linecap=\"round\"/><path d=\"M34 90 L28 94 M34 90 L38 95 M52 90 L46 95 M52 90 L58 94\" stroke=\"#2c2c2a\" stroke-width=\"2\" stroke-linecap=\"round\"/>","shirt":"<path d=\"M30 20 L45 20 Q50 28 55 20 L70 20 L85 35 L72 45 L68 40 V85 H32 V40 L28 45 L15 35 Z\" fill=\"none\" stroke=\"#2c2c2a\" stroke-width=\"4\" stroke-linejoin=\"round\"/>","girl":"<circle cx=\"50\" cy=\"35\" r=\"16\" fill=\"none\" stroke=\"#2c2c2a\" stroke-width=\"4\"/><circle cx=\"28\" cy=\"45\" r=\"8\" fill=\"#7C5295\"/><circle cx=\"72\" cy=\"45\" r=\"8\" fill=\"#7C5295\"/><path d=\"M30 85 Q50 60 70 85\" fill=\"none\" stroke=\"#2c2c2a\" stroke-width=\"4\"/>","circle":"<circle cx=\"50\" cy=\"50\" r=\"32\" fill=\"none\" stroke=\"#7C5295\" stroke-width=\"7\"/>","fir":"<path d=\"M50 10 L65 35 H57 L70 55 H60 L75 78 H25 L40 55 H30 L43 35 H35 Z\" fill=\"#7C5295\" stroke=\"#2c2c2a\" stroke-width=\"3\" stroke-linejoin=\"round\"/><rect x=\"45\" y=\"78\" width=\"10\" height=\"12\" fill=\"#2c2c2a\"/>","whir":"<path d=\"M50 15 A32 32 0 1 1 18 47\" fill=\"none\" stroke=\"#7C5295\" stroke-width=\"4\" stroke-linecap=\"round\"/><path d=\"M50 27 A20 20 0 1 1 30 47\" fill=\"none\" stroke=\"#7C5295\" stroke-width=\"4\" stroke-linecap=\"round\"/><path d=\"M50 39 A9 9 0 1 1 41 48\" fill=\"none\" stroke=\"#7C5295\" stroke-width=\"4\" stroke-linecap=\"round\"/><path d=\"M8 40 L18 47 L10 58 Z\" fill=\"#7C5295\"/>","first":"<circle cx=\"50\" cy=\"38\" r=\"26\" fill=\"#7C5295\" stroke=\"#2c2c2a\" stroke-width=\"4\"/><path d=\"M35 60 L28 90 L50 78 L72 90 L65 60\" fill=\"#7C5295\" stroke=\"#2c2c2a\" stroke-width=\"4\" stroke-linejoin=\"round\"/><text x=\"50\" y=\"46\" font-size=\"20\" text-anchor=\"middle\" fill=\"white\" font-family=\"sans-serif\" font-weight=\"bold\">1st</text>","fur":"<path d=\"M26 36 L37 14 L46 33 Z\" fill=\"#7C5295\" stroke=\"#2c2c2a\" stroke-width=\"3\" stroke-linejoin=\"round\"/><path d=\"M74 36 L63 14 L54 33 Z\" fill=\"#7C5295\" stroke=\"#2c2c2a\" stroke-width=\"3\" stroke-linejoin=\"round\"/><circle cx=\"50\" cy=\"56\" r=\"28\" fill=\"#7C5295\" stroke=\"#2c2c2a\" stroke-width=\"4\"/><circle cx=\"40\" cy=\"52\" r=\"3\" fill=\"#2c2c2a\"/><circle cx=\"60\" cy=\"52\" r=\"3\" fill=\"#2c2c2a\"/><path d=\"M44 64 Q50 69 56 64\" fill=\"none\" stroke=\"#2c2c2a\" stroke-width=\"2.5\" stroke-linecap=\"round\"/><path d=\"M16 54 H30 M16 62 H30 M70 54 H84 M70 62 H84\" stroke=\"#2c2c2a\" stroke-width=\"2\" stroke-linecap=\"round\"/>","purple":"<path d=\"M50 14 Q76 46 76 62 A26 26 0 1 1 24 62 Q24 46 50 14 Z\" fill=\"#7C5295\" stroke=\"#2c2c2a\" stroke-width=\"3\"/>","nurse":"<path d=\"M20 50 Q50 25 80 50 L80 58 Q50 42 20 58 Z\" fill=\"none\" stroke=\"#2c2c2a\" stroke-width=\"4\"/><rect x=\"44\" y=\"62\" width=\"12\" height=\"24\" fill=\"#7C5295\"/><rect x=\"32\" y=\"70\" width=\"36\" height=\"10\" fill=\"#7C5295\"/>","turn":"<path d=\"M25 82 V50 Q25 22 53 22 H62\" fill=\"none\" stroke=\"#7C5295\" stroke-width=\"10\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M55 8 L80 22 L55 36 Z\" fill=\"#7C5295\" stroke=\"#2c2c2a\" stroke-width=\"2\" stroke-linejoin=\"round\"/>","hurt":"<rect x=\"20\" y=\"40\" width=\"60\" height=\"20\" rx=\"10\" transform=\"rotate(-20 50 50)\" fill=\"#7C5295\" stroke=\"#2c2c2a\" stroke-width=\"3\"/><circle cx=\"37\" cy=\"43\" r=\"2\" fill=\"#2c2c2a\"/><circle cx=\"44\" cy=\"38\" r=\"2\" fill=\"#2c2c2a\"/><circle cx=\"57\" cy=\"60\" r=\"2\" fill=\"#2c2c2a\"/><circle cx=\"64\" cy=\"55\" r=\"2\" fill=\"#2c2c2a\"/>","church":"<polygon points=\"50,8 76,35 24,35\" fill=\"#7C5295\" stroke=\"#2c2c2a\" stroke-width=\"3\"/><rect x=\"30\" y=\"35\" width=\"40\" height=\"45\" fill=\"none\" stroke=\"#2c2c2a\" stroke-width=\"4\"/><rect x=\"46\" y=\"0\" width=\"8\" height=\"13\" fill=\"#2c2c2a\"/><rect x=\"41\" y=\"3\" width=\"18\" height=\"6\" fill=\"#2c2c2a\"/><rect x=\"43\" y=\"55\" width=\"14\" height=\"25\" fill=\"#7C5295\"/>","heard":"<path d=\"M60 15 Q35 15 30 40 Q27 55 37 62 Q35 75 47 82 Q57 86 63 78 Q53 76 51 65 Q65 62 67 45 Q69 25 60 15 Z\" fill=\"none\" stroke=\"#2c2c2a\" stroke-width=\"4\" stroke-linejoin=\"round\"/><circle cx=\"50\" cy=\"45\" r=\"4\" fill=\"#7C5295\"/><path d=\"M20 35 Q12 45 20 55\" fill=\"none\" stroke=\"#7C5295\" stroke-width=\"4\" stroke-linecap=\"round\"/><path d=\"M10 25 Q2 45 10 65\" fill=\"none\" stroke=\"#7C5295\" stroke-width=\"4\" stroke-linecap=\"round\"/>","earth":"<circle cx=\"50\" cy=\"50\" r=\"32\" fill=\"none\" stroke=\"#2c2c2a\" stroke-width=\"4\"/><ellipse cx=\"50\" cy=\"50\" rx=\"32\" ry=\"14\" fill=\"none\" stroke=\"#7C5295\" stroke-width=\"3\"/><line x1=\"18\" y1=\"50\" x2=\"82\" y2=\"50\" stroke=\"#7C5295\" stroke-width=\"3\"/><path d=\"M50 18 Q65 50 50 82 Q35 50 50 18\" fill=\"none\" stroke=\"#7C5295\" stroke-width=\"3\"/>","learn":"<path d=\"M50 25 Q30 15 15 22 V72 Q30 65 50 75 Q70 65 85 72 V22 Q70 15 50 25 Z\" fill=\"none\" stroke=\"#2c2c2a\" stroke-width=\"4\" stroke-linejoin=\"round\"/><line x1=\"50\" y1=\"25\" x2=\"50\" y2=\"75\" stroke=\"#2c2c2a\" stroke-width=\"3\"/><path d=\"M22 30 Q35 25 45 30\" fill=\"none\" stroke=\"#7C5295\" stroke-width=\"3\"/><path d=\"M55 30 Q65 25 78 30\" fill=\"none\" stroke=\"#7C5295\" stroke-width=\"3\"/>","earn":"<ellipse cx=\"50\" cy=\"75\" rx=\"28\" ry=\"8\" fill=\"#7C5295\" stroke=\"#2c2c2a\" stroke-width=\"3\"/><ellipse cx=\"50\" cy=\"60\" rx=\"28\" ry=\"8\" fill=\"#7C5295\" stroke=\"#2c2c2a\" stroke-width=\"3\"/><ellipse cx=\"50\" cy=\"45\" rx=\"28\" ry=\"8\" fill=\"#7C5295\" stroke=\"#2c2c2a\" stroke-width=\"3\"/><text x=\"50\" y=\"49\" font-size=\"14\" text-anchor=\"middle\" fill=\"white\" font-family=\"sans-serif\" font-weight=\"bold\">$</text>","pearl":"<path d=\"M20 20 Q50 42 80 20\" fill=\"none\" stroke=\"#2c2c2a\" stroke-width=\"3\"/><circle cx=\"50\" cy=\"55\" r=\"22\" fill=\"#7C5295\" stroke=\"#2c2c2a\" stroke-width=\"3\"/><circle cx=\"42\" cy=\"47\" r=\"5\" fill=\"white\" opacity=\"0.55\"/>"};
+
+function svgFor(word) {
+  return '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">' + (ICONS[word] || '<text x="50" y="58" text-anchor="middle" font-size="22" font-family="sans-serif" fill="#2c2c2a">' + word + '</text>') + '</svg>';
+}
+
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+const DIFF_PAIRS = { easy: 6, medium: 9, hard: 12 };
+const DIFF_COLS  = { easy: 4, medium: 6, hard: 6 };
+
+let selectedDiff = null;
+let selectedTeams = null;
+let teams = [];
+let currentTeam = 0;
+let board = []; // {word, state: 'hidden'|'revealed'|'matched-recent'|'matched-final', matchedTurn, matchedByTeam}
+let revealedIndices = [];
+let locked = false;
+let matchesFound = 0;
+let totalPairs = 0;
+let turnNumber = 0; // counts every resolve-click, used to time the word+icon reveal window
+
+document.querySelectorAll("#diffRow .option-btn").forEach(function(btn) {
+  btn.addEventListener("click", function() {
+    document.querySelectorAll("#diffRow .option-btn").forEach(b => b.classList.remove("selected"));
+    btn.classList.add("selected");
+    selectedDiff = btn.dataset.diff;
+  });
+});
+document.querySelectorAll("#teamRow .option-btn").forEach(function(btn) {
+  btn.addEventListener("click", function() {
+    document.querySelectorAll("#teamRow .option-btn").forEach(b => b.classList.remove("selected"));
+    btn.classList.add("selected");
+    selectedTeams = parseInt(btn.dataset.teams, 10);
+  });
+});
+
+document.getElementById("startBtn").addEventListener("click", function() {
+  if (!selectedDiff) selectedDiff = "medium";
+  if (!selectedTeams) selectedTeams = 2;
+  startGame();
+});
+
+document.getElementById("restartBtn").addEventListener("click", function() {
+  document.getElementById("play").style.display = "none";
+  document.getElementById("setup").style.display = "block";
+  document.getElementById("winBanner").style.display = "none";
+});
+
+function startGame() {
+  const pairCount = DIFF_PAIRS[selectedDiff];
+  const chosenWords = shuffle(WORDS.map(w => w.word)).slice(0, pairCount);
+  totalPairs = pairCount;
+  matchesFound = 0;
+
+  let cells = [];
+  chosenWords.forEach(function(w) {
+    cells.push({ word: w, state: "hidden" });
+    cells.push({ word: w, state: "hidden" });
+  });
+  board = shuffle(cells);
+
+  teams = [];
+  for (let i = 0; i < selectedTeams; i++) teams.push({ name: "Team " + (i + 1), score: 0 });
+  currentTeam = 0;
+  revealedIndices = [];
+  locked = false;
+  turnNumber = 0;
+
+  const pic = BIG_PICTURES[Math.floor(Math.random() * BIG_PICTURES.length)];
+  document.getElementById("bigPicture").innerHTML = pic;
+
+  document.getElementById("setup").style.display = "none";
+  document.getElementById("play").style.display = "block";
+  document.getElementById("winBanner").style.display = "none";
+  document.getElementById("revealPrompt").style.display = "none";
+
+  renderScoreboard();
+  renderBoard();
+}
+
+function renderScoreboard() {
+  const sb = document.getElementById("scoreboard");
+  sb.innerHTML = "";
+  teams.forEach(function(t, i) {
+    const chip = document.createElement("div");
+    chip.className = "team-chip" + (i === currentTeam ? " active" : "");
+    chip.innerHTML = '<div class="name">' + t.name + '</div><div class="score">' + t.score + '</div>';
+    sb.appendChild(chip);
+  });
+}
+
+function renderBoard() {
+  const boardEl = document.getElementById("board");
+  boardEl.innerHTML = "";
+  boardEl.style.gridTemplateColumns = "repeat(" + DIFF_COLS[selectedDiff] + ", 1fr)";
+  boardEl.style.gridTemplateRows = "repeat(" + Math.ceil(board.length / DIFF_COLS[selectedDiff]) + ", 1fr)";
+
+  board.forEach(function(cellData, idx) {
+    const cell = document.createElement("div");
+    cell.className = "cell";
+
+    const tile = document.createElement("div");
+    if (cellData.state === "matched-final") {
+      tile.className = "tile matched-final";
+    } else if (cellData.state === "matched-recent") {
+      tile.className = "tile matched-recent";
+      const icon = document.createElement("div");
+      icon.className = "mini-icon";
+      icon.innerHTML = svgFor(cellData.word);
+      tile.appendChild(icon);
+      const label = document.createElement("div");
+      label.textContent = cellData.word;
+      tile.appendChild(label);
+    } else if (cellData.state === "revealed") {
+      tile.className = "tile revealed-face";
+      tile.textContent = cellData.word;
+    } else {
+      tile.className = "tile hidden-face";
+      const num = document.createElement("div");
+      num.className = "tile-number";
+      num.textContent = idx + 1;
+      tile.appendChild(num);
+    }
+    tile.addEventListener("click", function() { handleClick(idx); });
+    cell.appendChild(tile);
+
+    boardEl.appendChild(cell);
+  });
+
+  fitBoard();
+}
+
+function fitBoard() {
+  const wrap = document.getElementById("boardWrap");
+  const rows = Math.ceil(board.length / DIFF_COLS[selectedDiff]);
+  const cols = DIFF_COLS[selectedDiff];
+  const topOffset = wrap.getBoundingClientRect().top;
+  const bottomReserve = 130; // controls + win banner + breathing room
+  const availHeight = Math.max(260, window.innerHeight - topOffset - bottomReserve);
+  const availWidth = Math.min(1400, window.innerWidth - 40);
+
+  const heightLimitedWidth = availHeight * (cols / rows);
+  const finalWidth = Math.min(availWidth, heightLimitedWidth);
+
+  wrap.style.width = finalWidth + "px";
+  wrap.style.height = (finalWidth * (rows / cols)) + "px";
+}
+
+window.addEventListener("resize", function() {
+  if (document.getElementById("play").style.display === "block") fitBoard();
+});
+
+function collapseDueMatches() {
+  board.forEach(function(cellData) {
+    if (cellData.state === "matched-recent" && (turnNumber - cellData.matchedTurn) >= 1) {
+      cellData.state = "matched-final";
+    }
+  });
+}
+
+function handleClick(idx) {
+  if (locked) return;
+  const cellData = board[idx];
+  if (cellData.state !== "hidden") return;
+  if (revealedIndices.includes(idx)) return;
+
+  cellData.state = "revealed";
+  revealedIndices.push(idx);
+  renderBoard();
+
+  if (revealedIndices.length === 2) {
+    locked = true;
+    document.getElementById("revealPrompt").style.display = "block";
+  }
+}
+
+document.getElementById("revealMatchBtn").addEventListener("click", function() {
+  const [a, b] = revealedIndices;
+  document.getElementById("revealPrompt").style.display = "none";
+
+  turnNumber++;
+  collapseDueMatches(); // clear out any pair shown during the previous resolution
+
+  if (board[a].word === board[b].word) {
+    board[a].state = "matched-recent";
+    board[b].state = "matched-recent";
+    board[a].matchedTurn = turnNumber;
+    board[b].matchedTurn = turnNumber;
+    teams[currentTeam].score += 1;
+    matchesFound++;
+    revealedIndices = [];
+    locked = false;
+    currentTeam = (currentTeam + 1) % teams.length;
+    renderScoreboard();
+    renderBoard();
+    if (matchesFound === totalPairs) {
+      // Full reveal: collapse every remaining matched-recent tile so the
+      // whole picture shows cleanly once the board is complete.
+      board.forEach(function(c) { if (c.state === "matched-recent") c.state = "matched-final"; });
+      renderBoard();
+      document.getElementById("winBanner").style.display = "block";
+    }
+  } else {
+    board[a].state = "hidden";
+    board[b].state = "hidden";
+    revealedIndices = [];
+    locked = false;
+    currentTeam = (currentTeam + 1) % teams.length;
+    renderScoreboard();
+    renderBoard();
+  }
+});
+</script>
+</body>
+</html>

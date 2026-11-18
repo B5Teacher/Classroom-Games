@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Present Simple Verb Betting</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green: #2ecc71;
+    --red: #e74c3c;
+    --gold: #f1c40f;
+    --blue: #3498db;
+    --dark: #0d0d0d;
+    --mid: #1a1a2e;
+    --card: #16213e;
+    --text: #f0ece0;
+    --muted: #888;
+    --bonus: #e67e22;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Lato', sans-serif;
+    background: var(--dark);
+    color: var(--text);
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── SLIDE WRAPPER ── */
+  .slide {
+    display: none;
+    flex-direction: column;
+    height: 100vh;
+    width: 100vw;
+    position: absolute;
+    top: 0; left: 0;
+  }
+  .slide.active { display: flex; }
+
+  /* ══════════════════════════════
+     SLIDE 0 — TITLE
+  ══════════════════════════════ */
+  #slide-title {
+    align-items: center;
+    justify-content: center;
+    background: var(--dark);
+    text-align: center;
+    gap: 20px;
+  }
+  #slide-title .big {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(52px, 10vw, 100px);
+    letter-spacing: 6px;
+    line-height: 1;
+    color: var(--text);
+  }
+  #slide-title .big span { color: var(--gold); }
+  #slide-title .tagline {
+    font-size: 18px;
+    font-weight: 300;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  #slide-title .rules {
+    margin-top: 16px;
+    max-width: 600px;
+    background: var(--card);
+    border: 1px solid #333;
+    border-radius: 12px;
+    padding: 24px 32px;
+    text-align: left;
+  }
+  #slide-title .rules h3 {
+    font-family: 'Bebas Neue', sans-serif;
+    letter-spacing: 3px;
+    font-size: 18px;
+    color: var(--gold);
+    margin-bottom: 12px;
+  }
+  #slide-title .rules li {
+    font-size: 15px;
+    font-weight: 300;
+    line-height: 1.9;
+    list-style: none;
+    padding-left: 16px;
+    position: relative;
+    color: #ccc;
+  }
+  #slide-title .rules li::before {
+    content: '→';
+    position: absolute;
+    left: 0;
+    color: var(--gold);
+  }
+  .start-btn {
+    margin-top: 8px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 4px;
+    padding: 14px 48px;
+    background: var(--gold);
+    color: var(--dark);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform 0.1s, background 0.15s;
+  }
+  .start-btn:hover { background: #d4ac0d; transform: scale(1.03); }
+
+  /* ══════════════════════════════
+     SLIDE 1 — VERB CARD (BET)
+  ══════════════════════════════ */
+  #slide-bet {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: var(--mid);
+    gap: 0;
+  }
+
+  .slide-header {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 36px;
+    border-bottom: 1px solid #222;
+  }
+  .slide-header .prog {
+    font-size: 13px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .slide-header .title-sm {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    letter-spacing: 4px;
+    color: var(--gold);
+  }
+
+  .progress-bar-wrap {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    background: #222;
+  }
+  .progress-bar {
+    height: 100%;
+    background: var(--gold);
+    transition: width 0.4s ease;
+  }
+
+  .verb-stage {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    width: 100%;
+    padding: 100px 40px 40px;
+  }
+
+  .bet-label {
+    font-size: 13px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .verb-card {
+    background: var(--card);
+    border: 1px solid #2a2a4a;
+    border-radius: 20px;
+    width: min(520px, 88vw);
+    padding: 48px 40px;
+    text-align: center;
+    position: relative;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+
+  .subject-tag {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(56px, 11vw, 96px);
+    letter-spacing: 4px;
+    line-height: 1;
+    color: var(--gold);
+    margin-bottom: 4px;
+  }
+
+  .verb-word {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(56px, 11vw, 96px);
+    letter-spacing: 4px;
+    line-height: 1;
+    color: var(--text);
+    transition: color 0.3s;
+  }
+
+  .verb-prompt {
+    font-size: 15px;
+    font-weight: 300;
+    color: var(--muted);
+    letter-spacing: 2px;
+    margin-top: 10px;
+  }
+
+  /* bet buttons */
+  .bet-buttons {
+    display: flex;
+    gap: 14px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .bet-btn {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    letter-spacing: 2px;
+    padding: 16px 26px;
+    border: 2px solid transparent;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+    min-width: 140px;
+  }
+  .bet-btn.none {
+    background: rgba(52,152,219,0.12);
+    border-color: var(--blue);
+    color: var(--blue);
+  }
+  .bet-btn.none:hover { background: rgba(52,152,219,0.25); transform: translateY(-2px); }
+  .bet-btn.s {
+    background: rgba(46,204,113,0.12);
+    border-color: var(--green);
+    color: var(--green);
+  }
+  .bet-btn.s:hover { background: rgba(46,204,113,0.25); transform: translateY(-2px); }
+  .bet-btn.es {
+    background: rgba(230,126,34,0.12);
+    border-color: var(--bonus);
+    color: var(--bonus);
+  }
+  .bet-btn.es:hover { background: rgba(230,126,34,0.25); transform: translateY(-2px); }
+  .bet-btn.irregular {
+    background: rgba(231,76,60,0.12);
+    border-color: var(--red);
+    color: var(--red);
+  }
+  .bet-btn.irregular:hover { background: rgba(231,76,60,0.25); transform: translateY(-2px); }
+
+  /* ══════════════════════════════
+     SLIDE 2 — REVEAL
+  ══════════════════════════════ */
+  #slide-reveal {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+  }
+
+  #slide-reveal .verb-stage { gap: 20px; }
+
+  .answer-card {
+    background: var(--card);
+    border-radius: 20px;
+    width: min(580px, 88vw);
+    padding: 40px;
+    text-align: center;
+    border: 2px solid #333;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    transition: border-color 0.4s;
+  }
+  .answer-card.none-reveal { border-color: var(--blue); }
+  .answer-card.s-reveal { border-color: var(--green); }
+  .answer-card.es-reveal { border-color: var(--bonus); }
+  .answer-card.irregular-reveal { border-color: var(--red); }
+
+  .reveal-type {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(42px, 9vw, 78px);
+    letter-spacing: 4px;
+    margin-bottom: 8px;
+  }
+  .reveal-type.none-color { color: var(--blue); }
+  .reveal-type.s-color { color: var(--green); }
+  .reveal-type.es-color { color: var(--bonus); }
+  .reveal-type.irregular-color { color: var(--red); }
+
+  .reveal-verb-big {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(48px, 9vw, 88px);
+    letter-spacing: 3px;
+    color: var(--text);
+    line-height: 1;
+  }
+
+  .rule-note {
+    font-size: 15px;
+    font-weight: 300;
+    letter-spacing: 0.5px;
+    color: var(--muted);
+    margin-top: 12px;
+  }
+
+  .result-row {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 4px;
+  }
+
+  .result-chip {
+    font-size: 13px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 6px 18px;
+    border-radius: 20px;
+    font-weight: 700;
+  }
+  .chip-correct { background: rgba(46,204,113,0.2); color: var(--green); }
+  .chip-wrong   { background: rgba(231,76,60,0.2);  color: var(--red); }
+
+  .nav-row {
+    display: flex;
+    gap: 14px;
+    margin-top: 12px;
+  }
+  .nav-btn {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    letter-spacing: 3px;
+    padding: 14px 36px;
+    border-radius: 8px;
+    border: 1px solid #444;
+    background: transparent;
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .nav-btn:hover { background: #222; border-color: #666; }
+  .nav-btn.primary-nav {
+    background: var(--gold);
+    color: var(--dark);
+    border-color: var(--gold);
+  }
+  .nav-btn.primary-nav:hover { background: #d4ac0d; }
+
+  /* ══════════════════════════════
+     SLIDE 3 — SCOREBOARD
+  ══════════════════════════════ */
+  #slide-score {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: var(--dark);
+    gap: 24px;
+    text-align: center;
+    padding: 40px;
+  }
+  #slide-score .big-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(48px, 9vw, 90px);
+    letter-spacing: 6px;
+    color: var(--gold);
+  }
+  .score-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    width: min(440px, 90vw);
+  }
+  .score-box {
+    background: var(--card);
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid #2a2a4a;
+  }
+  .score-box .num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 52px;
+    letter-spacing: 2px;
+    line-height: 1;
+  }
+  .score-box .lbl {
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+  .score-box.correct-box .num { color: var(--green); }
+  .score-box.wrong-box   .num { color: var(--red); }
+
+  .missed-words {
+    width: min(600px, 90vw);
+    text-align: left;
+  }
+  .missed-words h3 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    letter-spacing: 3px;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+  .missed-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .missed-chip {
+    font-size: 13px;
+    padding: 5px 14px;
+    border-radius: 20px;
+    background: rgba(231,76,60,0.15);
+    color: #ff8a80;
+    border: 1px solid rgba(231,76,60,0.3);
+  }
+
+  /* keyboard hint */
+  .key-hint {
+    position: fixed;
+    bottom: 18px;
+    right: 24px;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #444;
+  }
+</style>
+</head>
+<body>
+
+<!-- ══ SLIDE 0: TITLE ══ -->
+<div class="slide active" id="slide-title">
+  <div class="big">Present Simple<br><span>Verb Betting</span></div>
+  <div class="tagline">-S, -ES, or No Change?</div>
+  <div class="rules">
+    <h3>How to Play</h3>
+    <ul>
+      <li>A subject + verb appears — place your bet!</li>
+      <li><strong>No Change</strong> = I / you / we / they + verb stays the same</li>
+      <li><strong>+S</strong> = he / she / it + most verbs just add -s</li>
+      <li><strong>+ES</strong> = he / she / it + verbs ending in ch, sh, or o</li>
+      <li><strong>Irregular</strong> = have, do, go → has, does, goes (they break the pattern!)</li>
+      <li>Correct bet = <strong style="color:var(--gold)">+1 point</strong> &nbsp;|&nbsp; Wrong = <strong style="color:var(--red)">-1 point</strong></li>
+    </ul>
+  </div>
+  <button class="start-btn" onclick="startGame()">Let's Play →</button>
+</div>
+
+<!-- ══ SLIDE 1: BET ══ -->
+<div class="slide" id="slide-bet">
+  <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar"></div></div>
+  <div class="slide-header">
+    <span class="prog" id="betProg">1 / 70</span>
+    <span class="title-sm">Verb Betting</span>
+    <span class="prog" id="betScore">Score: 0</span>
+  </div>
+  <div class="verb-stage">
+    <div class="bet-label">Place your bet — what's the ending?</div>
+    <div class="verb-card">
+      <div class="subject-tag" id="betSubject">She</div>
+      <div class="verb-word" id="betVerb">walk</div>
+      <div class="verb-prompt">How does the verb change?</div>
+    </div>
+    <div class="bet-buttons">
+      <button class="bet-btn none" onclick="placeBet('none')">No Change</button>
+      <button class="bet-btn s" onclick="placeBet('s')">+S</button>
+      <button class="bet-btn es" onclick="placeBet('es')">+ES</button>
+      <button class="bet-btn irregular" onclick="placeBet('irregular')">Irregular</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SLIDE 2: REVEAL ══ -->
+<div class="slide" id="slide-reveal">
+  <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar2"></div></div>
+  <div class="slide-header">
+    <span class="prog" id="revProg">1 / 70</span>
+    <span class="title-sm">Verb Betting</span>
+    <span class="prog" id="revScore">Score: 0</span>
+  </div>
+  <div class="verb-stage">
+    <div class="answer-card" id="answerCard">
+      <div class="reveal-type" id="revealType">+S</div>
+      <div class="reveal-verb-big" id="revealVerb">She walks</div>
+      <div class="rule-note" id="ruleNote"></div>
+    </div>
+    <div class="result-row" id="resultRow"></div>
+    <div class="nav-row">
+      <button class="nav-btn" onclick="goToScore()">Scoreboard</button>
+      <button class="nav-btn primary-nav" id="nextCardBtn" onclick="nextCard()">Next Verb →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SLIDE 3: SCOREBOARD ══ -->
+<div class="slide" id="slide-score">
+  <div class="big-title" id="scoreTitle">Round Over!</div>
+  <div class="score-grid">
+    <div class="score-box correct-box">
+      <div class="num" id="scoreCorrect">0</div>
+      <div class="lbl">Correct</div>
+    </div>
+    <div class="score-box wrong-box">
+      <div class="num" id="scoreWrong">0</div>
+      <div class="lbl">Wrong</div>
+    </div>
+  </div>
+  <div class="missed-words" id="missedSection" style="display:none">
+    <h3>Tricky ones to review:</h3>
+    <div class="missed-list" id="missedList"></div>
+  </div>
+  <div style="display:flex;gap:14px;margin-top:8px;">
+    <button class="nav-btn primary-nav" onclick="restartGame()">Play Again</button>
+    <button class="nav-btn" onclick="goToBet()">Keep Going</button>
+  </div>
+</div>
+
+<div class="key-hint">← → arrow keys to navigate</div>
+
+<script>
+/* B5 content editor — shared by the Classroom-Games suite.
+   Saved per browser in localStorage. Supports several named lists,
+   a table editor, a "paste many" text box, and Reset to defaults. */
+(function () {
+  var CSS = '' +
+  '.b5e-btn{position:fixed;right:12px;bottom:12px;z-index:9000;font:600 14px/1 -apple-system,"Segoe UI",sans-serif;background:#fff;color:#2c2c2a;border:1px solid rgba(0,0,0,.25);border-radius:20px;padding:9px 14px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.12);opacity:.85}' +
+  '.b5e-btn:hover{opacity:1}' +
+  '.b5e-ov{position:fixed;inset:0;z-index:9500;background:rgba(20,20,18,.55);display:none;align-items:center;justify-content:center;font:15px/1.4 -apple-system,"Segoe UI",Roboto,sans-serif;color:#2c2c2a}' +
+  '.b5e-ov.open{display:flex}' +
+  '.b5e-box{background:#fff;border-radius:14px;width:min(1000px,96vw);height:min(760px,94vh);display:flex;flex-direction:column;box-shadow:0 10px 40px rgba(0,0,0,.3)}' +
+  '.b5e-head{padding:14px 18px 10px;border-bottom:1px solid #e6e4dd}' +
+  '.b5e-head h2{font-size:20px;font-weight:600;margin:0 0 8px}' +
+  '.b5e-lists{display:flex;flex-wrap:wrap;gap:6px;align-items:center}' +
+  '.b5e-lists select,.b5e-lists input{font:inherit;padding:5px 8px;border:1px solid #c9c6bd;border-radius:6px}' +
+  '.b5e-lists input{width:220px}' +
+  '.b5e-help{font-size:13px;color:#66645e;margin-top:6px}' +
+  '.b5e-body{flex:1;overflow:auto;padding:10px 18px}' +
+  '.b5e-set{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:10px;padding:8px 10px;background:#f6f5f0;border-radius:8px}' +
+  '.b5e-set label{font-size:13px;display:flex;gap:6px;align-items:center}' +
+  '.b5e-set input,.b5e-set select{font:inherit;padding:3px 6px;border:1px solid #c9c6bd;border-radius:5px}' +
+  '.b5e-tbl{width:100%;border-collapse:collapse}' +
+  '.b5e-tbl th{text-align:left;font-size:12px;letter-spacing:.5px;color:#66645e;padding:4px;position:sticky;top:-10px;background:#fff}' +
+  '.b5e-tbl td{padding:3px 4px;vertical-align:top}' +
+  '.b5e-tbl td.n{color:#99968e;font-size:12px;width:26px;padding-top:9px}' +
+  '.b5e-tbl input,.b5e-tbl select,.b5e-tbl textarea{width:100%;font:inherit;padding:5px 7px;border:1px solid #d4d1c8;border-radius:5px;background:#fff}' +
+  '.b5e-tbl textarea{min-height:34px;resize:vertical}' +
+  '.b5e-x{border:none;background:none;color:#a33;font-size:18px;cursor:pointer;padding:4px 6px}' +
+  '.b5e-act{font:inherit;font-size:12px;padding:5px 8px;border:1px solid #c9c6bd;border-radius:5px;background:#f6f5f0;cursor:pointer;white-space:nowrap}' +
+  '.b5e-bulk{width:100%;height:100%;min-height:360px;font:14px/1.5 ui-monospace,Consolas,monospace;padding:10px;border:1px solid #c9c6bd;border-radius:8px}' +
+  '.b5e-foot{padding:10px 18px;border-top:1px solid #e6e4dd;display:flex;flex-wrap:wrap;gap:8px;align-items:center}' +
+  '.b5e-foot .sp{flex:1}' +
+  '.b5e-b{font:inherit;font-size:14px;padding:8px 14px;border-radius:8px;border:1px solid #c9c6bd;background:#fff;cursor:pointer}' +
+  '.b5e-b.pri{background:#1a5fa8;border-color:#1a5fa8;color:#fff;font-weight:600}' +
+  '.b5e-b.warn{color:#a33}' +
+  '.b5e-msg{font-size:13px;color:#a33;min-height:18px}' +
+  '.b5e-msg.ok{color:#1a6b3a}';
+
+  function el(tag, attrs, kids) {
+    var e = document.createElement(tag);
+    if (attrs) for (var k in attrs) {
+      if (k === 'text') e.textContent = attrs[k];
+      else if (k === 'html') e.innerHTML = attrs[k];
+      else if (k.slice(0, 2) === 'on') e.addEventListener(k.slice(2), attrs[k]);
+      else e.setAttribute(k, attrs[k]);
+    }
+    (kids || []).forEach(function (c) { if (c) e.appendChild(c); });
+    return e;
+  }
+  function clone(x) { return JSON.parse(JSON.stringify(x)); }
+
+  function B5Edit(cfg) {
+    var self = this;
+    this.cfg = cfg;
+    this.cols = cfg.columns;
+    this.key = 'b5edit:' + cfg.key;
+    this.defaultName = cfg.defaultName || 'Default list';
+    this.listeners = [];
+    if (cfg.onChange) this.listeners.push(cfg.onChange);
+    this.state = this._load();
+    if (!document.getElementById('b5e-css')) {
+      var st = el('style', { id: 'b5e-css' }); st.textContent = CSS; document.head.appendChild(st);
+    }
+    this._build();
+    if (cfg.button !== false) {
+      var host = cfg.buttonHost ? (typeof cfg.buttonHost === 'string' ? document.querySelector(cfg.buttonHost) : cfg.buttonHost) : null;
+      var b = el('button', { 'class': host ? (cfg.buttonClass || '') : 'b5e-btn', type: 'button', text: cfg.buttonLabel || '⚙ Edit content', onclick: function () { self.open(); } });
+      if (host) host.appendChild(b); else document.body.appendChild(b);
+      this.button = b;
+    }
+  }
+
+  B5Edit.prototype._defaults = function () {
+    var s = {};
+    (this.cfg.settings || []).forEach(function (f) { s[f.key] = f.default; });
+    return { v: 1, current: 'default', settings: s,
+      lists: [{ id: 'default', name: this.defaultName, rows: clone(this.cfg.defaults) }] };
+  };
+  B5Edit.prototype._load = function () {
+    var d = this._defaults();
+    try {
+      var raw = localStorage.getItem(this.key);
+      if (raw) {
+        var s = JSON.parse(raw);
+        if (s && Array.isArray(s.lists) && s.lists.length) {
+          s.settings = Object.assign({}, d.settings, s.settings || {});
+          if (!s.lists.some(function (l) { return l.id === s.current; })) s.current = s.lists[0].id;
+          return s;
+        }
+      }
+    } catch (e) {}
+    return d;
+  };
+  B5Edit.prototype._save = function () {
+    try { localStorage.setItem(this.key, JSON.stringify(this.state)); } catch (e) {}
+  };
+  B5Edit.prototype._cur = function () {
+    var st = this.state;
+    return st.lists.filter(function (l) { return l.id === st.current; })[0] || st.lists[0];
+  };
+  /* public API */
+  B5Edit.prototype.rows = function () { return clone(this._cur().rows); };
+  B5Edit.prototype.listName = function () { return this._cur().name; };
+  B5Edit.prototype.settings = function () { return clone(this.state.settings); };
+  B5Edit.prototype.onChange = function (fn) { this.listeners.push(fn); };
+  B5Edit.prototype.listNames = function () { return this.state.lists.map(function (l) { return { id: l.id, name: l.name }; }); };
+  B5Edit.prototype.useList = function (id) {
+    if (this.state.lists.some(function (l) { return l.id === id; })) { this.state.current = id; this._save(); this._fire(); }
+  };
+  B5Edit.prototype._fire = function () {
+    var self = this;
+    this.listeners.forEach(function (fn) { try { fn(self.rows(), self.settings(), self.listName()); } catch (e) { console.error(e); } });
+  };
+
+  /* ---------- UI ---------- */
+  B5Edit.prototype._build = function () {
+    var self = this, cfg = this.cfg;
+    this.ov = el('div', { 'class': 'b5e-ov' });
+    this.sel = el('select', { onchange: function () { self._pull(); self.work.current = self.sel.value; self._render(); } });
+    this.nameIn = el('input', { placeholder: 'List name', oninput: function () { self._curW().name = self.nameIn.value; self._fillSel(); } });
+    var lists = el('div', { 'class': 'b5e-lists' }, [
+      el('span', { text: 'List:' }), this.sel, this.nameIn,
+      el('button', { 'class': 'b5e-act', type: 'button', text: '+ New list', onclick: function () { self._newList(false); } }),
+      el('button', { 'class': 'b5e-act', type: 'button', text: 'Copy list', onclick: function () { self._newList(true); } }),
+      el('button', { 'class': 'b5e-act', type: 'button', text: 'Delete list', onclick: function () { self._delList(); } })
+    ]);
+    var help = el('div', { 'class': 'b5e-help', html: cfg.help || '' });
+    this.body = el('div', { 'class': 'b5e-body' });
+    this.msg = el('div', { 'class': 'b5e-msg' });
+    this.bulkBtn = el('button', { 'class': 'b5e-b', type: 'button', text: 'Paste many', onclick: function () { self._toggleBulk(); } });
+    var foot = el('div', { 'class': 'b5e-foot' }, [
+      el('button', { 'class': 'b5e-b', type: 'button', text: '+ Add row', onclick: function () { self._pull(); self._curW().rows.push(self._blank()); self._render(); self.body.scrollTop = 1e6; } }),
+      this.bulkBtn,
+      el('button', { 'class': 'b5e-b warn', type: 'button', text: 'Reset to defaults', onclick: function () { self._reset(); } }),
+      el('div', { 'class': 'sp' }, [this.msg]),
+      el('button', { 'class': 'b5e-b', type: 'button', text: 'Cancel', onclick: function () { self.close(); } }),
+      el('button', { 'class': 'b5e-b pri', type: 'button', text: 'Save', onclick: function () { self._commit(); } })
+    ]);
+    this.box = el('div', { 'class': 'b5e-box' }, [
+      el('div', { 'class': 'b5e-head' }, [el('h2', { text: cfg.title || 'Edit content' }), lists, help]),
+      this.body, foot
+    ]);
+    this.ov.appendChild(this.box);
+    this.ov.addEventListener('keydown', function (e) { e.stopPropagation(); if (e.key === 'Escape') self.close(); });
+    this.ov.addEventListener('keyup', function (e) { e.stopPropagation(); });
+    this.ov.addEventListener('keypress', function (e) { e.stopPropagation(); });
+    document.body.appendChild(this.ov);
+  };
+  B5Edit.prototype._blank = function () { var r = {}; this.cols.forEach(function (c) { r[c.key] = c.options ? c.options[0].value !== undefined ? c.options[0].value : c.options[0] : ''; }); return r; };
+  B5Edit.prototype._curW = function () { var w = this.work; return w.lists.filter(function (l) { return l.id === w.current; })[0]; };
+  B5Edit.prototype._fillSel = function () {
+    var w = this.work, sel = this.sel; sel.innerHTML = '';
+    w.lists.forEach(function (l) { sel.appendChild(el('option', { value: l.id, text: l.name || '(no name)' })); });
+    sel.value = w.current;
+  };
+  B5Edit.prototype.open = function () {
+    this.work = clone(this.state); this.bulk = false; this.bulkBtn.textContent = 'Paste many';
+    this.msg.textContent = ''; this._render(); this.ov.classList.add('open');
+    if (this.cfg.onOpen) this.cfg.onOpen();
+  };
+  B5Edit.prototype.close = function () { this.ov.classList.remove('open'); if (this.cfg.onClose) this.cfg.onClose(); };
+  B5Edit.prototype._optVal = function (o) { return o && o.value !== undefined ? o.value : o; };
+  B5Edit.prototype._render = function () {
+    var self = this, cfg = this.cfg, L = this._curW();
+    this._fillSel(); this.nameIn.value = L.name;
+    this.body.innerHTML = '';
+    if ((cfg.settings || []).length) {
+      var set = el('div', { 'class': 'b5e-set' });
+      cfg.settings.forEach(function (f) {
+        var v = self.work.settings[f.key], inp;
+        if (f.type === 'select') {
+          inp = el('select', { 'data-k': f.key });
+          f.options.forEach(function (o) { inp.appendChild(el('option', { value: String(self._optVal(o)), text: o.label || String(o) })); });
+          inp.value = String(v);
+        } else if (f.type === 'checkbox') {
+          inp = el('input', { type: 'checkbox', 'data-k': f.key }); inp.checked = !!v;
+        } else {
+          inp = el('input', { type: f.type || 'text', 'data-k': f.key, value: v == null ? '' : v, style: 'width:' + (f.width || 90) + 'px' });
+          if (f.min != null) inp.min = f.min; if (f.max != null) inp.max = f.max;
+        }
+        set.appendChild(el('label', {}, [el('span', { text: f.label }), inp]));
+      });
+      this.body.appendChild(set);
+      this.setBox = set;
+    } else this.setBox = null;
+    if (this.bulk) {
+      var fmt = this.cols.map(function (c) { return c.label; }).join(' | ');
+      this.body.appendChild(el('div', { 'class': 'b5e-help', text: 'One row per line. ' + (this.cols.length > 1 ? 'Separate the boxes with | like this:  ' + fmt : '') }));
+      this.ta = el('textarea', { 'class': 'b5e-bulk' });
+      this.ta.value = L.rows.map(function (r) { return self.cols.map(function (c) { return r[c.key] == null ? '' : String(r[c.key]); }).join(' | '); }).join('\n');
+      this.body.appendChild(this.ta);
+      return;
+    }
+    var tbl = el('table', { 'class': 'b5e-tbl' });
+    var hr = el('tr', {}, [el('th', { text: '#' })]);
+    this.cols.forEach(function (c) { hr.appendChild(el('th', { text: c.label, style: c.width ? 'width:' + c.width : '' })); });
+    if (cfg.rowAction) hr.appendChild(el('th'));
+    hr.appendChild(el('th'));
+    tbl.appendChild(hr);
+    L.rows.forEach(function (r, i) {
+      var tr = el('tr', {}, [el('td', { 'class': 'n', text: String(i + 1) })]);
+      self.cols.forEach(function (c) {
+        var inp, v = r[c.key] == null ? '' : r[c.key];
+        if (c.options) {
+          inp = el('select');
+          c.options.forEach(function (o) { inp.appendChild(el('option', { value: String(self._optVal(o)), text: o.label || String(o) })); });
+          inp.value = String(v);
+        } else if (c.multiline) { inp = el('textarea', { placeholder: c.placeholder || '' }); inp.value = v; }
+        else inp = el('input', { value: v, placeholder: c.placeholder || '' });
+        inp.setAttribute('data-k', c.key);
+        tr.appendChild(el('td', {}, [inp]));
+      });
+      if (cfg.rowAction) tr.appendChild(el('td', {}, [el('button', { 'class': 'b5e-act', type: 'button', text: cfg.rowAction.label, onclick: function () { self._rowAct(i); } })]));
+      tr.appendChild(el('td', {}, [el('button', { 'class': 'b5e-x', type: 'button', title: 'Delete row', text: '×', onclick: function () { self._pull(); self._curW().rows.splice(i, 1); self._render(); } })]));
+      tbl.appendChild(tr);
+    });
+    this.body.appendChild(tbl);
+    this.tbl = tbl;
+  };
+  B5Edit.prototype._pull = function () {
+    var self = this, L = this._curW();
+    if (!L) return;
+    if (this.setBox) {
+      [].forEach.call(this.setBox.querySelectorAll('[data-k]'), function (inp) {
+        var k = inp.getAttribute('data-k'), f = self.cfg.settings.filter(function (s) { return s.key === k; })[0];
+        var v = inp.type === 'checkbox' ? inp.checked : inp.value;
+        if (f && (f.type === 'number' || typeof f.default === 'number') && inp.type !== 'checkbox') v = Number(v);
+        self.work.settings[k] = v;
+      });
+    }
+    if (this.bulk) {
+      L.rows = this.ta.value.split('\n').map(function (line) { return line.trim(); }).filter(Boolean).map(function (line) {
+        var parts = self.cols.length > 1 ? line.split('|') : [line], r = {};
+        self.cols.forEach(function (c, i) { r[c.key] = (parts[i] || '').trim(); });
+        return r;
+      });
+      return;
+    }
+    var trs = this.tbl ? this.tbl.querySelectorAll('tr') : [];
+    var rows = [];
+    for (var i = 1; i < trs.length; i++) {
+      var r = {};
+      [].forEach.call(trs[i].querySelectorAll('[data-k]'), function (inp) { r[inp.getAttribute('data-k')] = inp.value.trim(); });
+      rows.push(r);
+    }
+    L.rows = rows;
+  };
+  B5Edit.prototype._toggleBulk = function () {
+    this._pull(); this.bulk = !this.bulk;
+    this.bulkBtn.textContent = this.bulk ? 'Table view' : 'Paste many';
+    this._render();
+  };
+  B5Edit.prototype._newList = function (copy) {
+    this._pull();
+    var cur = this._curW(), id = 'l' + Date.now();
+    var L = { id: id, name: copy ? cur.name + ' (copy)' : 'New list', rows: copy ? clone(cur.rows) : [this._blank()] };
+    this.work.lists.push(L); this.work.current = id; this._render(); this.nameIn.focus(); this.nameIn.select();
+  };
+  B5Edit.prototype._delList = function () {
+    if (this.work.lists.length < 2) { this._say('You need at least one list.'); return; }
+    if (!confirm('Delete the list "' + this._curW().name + '"?')) return;
+    var w = this.work; w.lists = w.lists.filter(function (l) { return l.id !== w.current; });
+    w.current = w.lists[0].id; this._render();
+  };
+  B5Edit.prototype._reset = function () {
+    if (!confirm('Bring back the original list and settings? Your other lists stay.')) return;
+    var d = this._defaults(), w = this.work;
+    var has = w.lists.filter(function (l) { return l.id === 'default'; })[0];
+    if (has) { has.rows = d.lists[0].rows; has.name = d.lists[0].name; } else w.lists.unshift(d.lists[0]);
+    w.settings = d.settings; w.current = 'default'; this._render(); this._say('Defaults restored. Press Save to use them.', true);
+  };
+  B5Edit.prototype._rowAct = function (i) {
+    var self = this; this._pull();
+    var L = this._curW(), r = L.rows[i];
+    this._say('Working…', true);
+    Promise.resolve(this.cfg.rowAction.run(clone(r))).then(function (nr) {
+      if (nr) { L.rows[i] = nr; self._render(); }
+      self._say('', true);
+    }).catch(function (e) { self._say(String(e && e.message || e)); });
+  };
+  B5Edit.prototype._say = function (t, ok) { this.msg.textContent = t; this.msg.className = 'b5e-msg' + (ok ? ' ok' : ''); };
+  B5Edit.prototype._commit = function () {
+    this._pull();
+    var self = this, w = this.work;
+    // drop fully empty rows
+    w.lists.forEach(function (L) {
+      L.rows = L.rows.filter(function (r) { return self.cols.some(function (c) { return !c.options && String(r[c.key] || '').trim() !== ''; }) || self.cols.every(function (c) { return c.options; }); });
+      if (self.cfg.clean) L.rows = L.rows.map(self.cfg.clean);
+      if (!L.name) L.name = 'Untitled list';
+    });
+    var L = this._curW();
+    var err = this.cfg.validate ? this.cfg.validate(L.rows, w.settings) : '';
+    if (!err && this.cfg.min && L.rows.length < this.cfg.min) err = 'This list needs at least ' + this.cfg.min + ' rows.';
+    if (err) { this._say(err); this._render(); return; }
+    this.state = w; this._save(); this.close(); this._fire();
+  };
+
+  window.B5Edit = B5Edit;
+})();
+
+</script>
+<script>
+// ── Verb data: type = ending category when subject is he/she/it ──
+const DEF_VERBS = [
+  { word:'have',  type:'irregular', form:'has',     note:"have → has — irregular, just memorize it!" },
+  { word:'do',    type:'irregular', form:'does',    note:"do → does — sounds different too (doo → duz), memorize it!" },
+  { word:'go',    type:'irregular', accepted:['irregular','es'], form:'goes',
+    note:"go → goes — the -es keeps the long o sound (\"gos\" would look wrong), so either Irregular or +ES counts here!" },
+  { word:'walk',  type:'s',         form:'walks',   note:"most verbs → just add -s" },
+  { word:'run',   type:'s',         form:'runs',    note:"most verbs → just add -s" },
+  { word:'drive', type:'s',         form:'drives',  note:"most verbs → just add -s" },
+  { word:'cook',  type:'s',         form:'cooks',   note:"most verbs → just add -s" },
+  { word:'sleep', type:'s',         form:'sleeps',  note:"most verbs → just add -s" },
+  { word:'catch', type:'es',        form:'catches', note:"ends in -ch → add -es" },
+  { word:'wash',  type:'es',        form:'washes',  note:"ends in -sh → add -es" },
+];
+const ED = new B5Edit({ key: "present-simple-verb-betting", title: "Present Simple Verb Betting verbs", defaultName: "-s, -es, or irregular",
+  help: "Type = the ending with he / she / it. \"Also accept\" lets a second answer count (go → goes counts as Irregular or +ES).",
+  columns: [{ key: "word", label: "Verb" }, { key: "type", label: "He/she/it ending", width: "150px", options: [{ value: "s", label: "+S" }, { value: "es", label: "+ES" }, { value: "irregular", label: "Irregular" }] },
+            { key: "form", label: "He/she form" }, { key: "also", label: "Also accept", width: "140px", options: [{ value: "", label: "—" }, { value: "s", label: "+S" }, { value: "es", label: "+ES" }, { value: "irregular", label: "Irregular" }] }, { key: "note", label: "Note shown after the answer" }],
+  settings: [{ key: "subjects", label: "Subjects", default: "I, You, He, She, It, We, They", width: 300 }],
+  defaults: DEF_VERBS.map(function (v) { return { word: v.word, type: v.type, form: v.form, also: (v.accepted || []).filter(function (a) { return a !== v.type; })[0] || "", note: v.note }; }), min: 2, onChange: function(){ location.reload(); } });
+const verbs = ED.rows().map(function (r) { var o = { word: r.word, type: r.type, form: r.form, note: r.note }; if (r.also) o.accepted = [r.type, r.also]; return o; });
+const subjects = String(ED.settings().subjects).split(",").map(function (s) { return s.trim(); }).filter(Boolean);
+const thirdPerson = ['He','She','It'];
+
+const betLabels = { none:'No Change', s:'+S', es:'+ES', irregular:'Irregular' };
+
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length-1; i > 0; i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+
+// Build the 70 base cards: every verb × every subject
+function buildBaseCards() {
+  const cards = [];
+  verbs.forEach(v => {
+    subjects.forEach(s => {
+      const isThird = thirdPerson.includes(s);
+      const category = isThird ? v.type : 'none';
+      const acceptedCategories = isThird ? (v.accepted || [v.type]) : ['none'];
+      const form = isThird ? v.form : v.word;
+      const note = isThird ? v.note : "I / you / we / they → verb stays the same";
+      cards.push({ subject:s, verb:v.word, category, acceptedCategories, form, note });
+    });
+  });
+  return cards;
+}
+
+// Randomly build an order where each verb stays at least VERB_COOLDOWN cards
+// apart and each subject stays at least SUBJECT_COOLDOWN cards apart, so every
+// one of the 10 verbs keeps resurfacing at roughly even intervals through the
+// whole deck instead of clustering — while the random pick among valid
+// candidates at each step keeps the spacing from settling into an obvious,
+// predictable repeating cycle.
+function tryBuild(baseCards, verbCooldown, subjectCooldown) {
+  let remaining = shuffle(baseCards);
+  const order = [];
+  const lastVerbPos = {};
+  const lastSubjectPos = {};
+  for (let pos = 0; pos < baseCards.length; pos++) {
+    const candidates = remaining.filter(c => {
+      const lv = lastVerbPos[c.verb];
+      const ls = lastSubjectPos[c.subject];
+      const okVerb = (lv === undefined) || (pos - lv >= verbCooldown);
+      const okSubject = (ls === undefined) || (pos - ls >= subjectCooldown);
+      return okVerb && okSubject;
+    });
+    if (candidates.length === 0) return null;
+    const choice = candidates[Math.floor(Math.random() * candidates.length)];
+    order.push(choice);
+    lastVerbPos[choice.verb] = pos;
+    lastSubjectPos[choice.subject] = pos;
+    remaining.splice(remaining.indexOf(choice), 1);
+  }
+  return order;
+}
+
+function buildDeck() {
+  const base = buildBaseCards();
+  for (let attempt = 0; attempt < 300; attempt++) {
+    const result = tryBuild(base, 5, 3);
+    if (result) return result;
+  }
+  for (let attempt = 0; attempt < 300; attempt++) {
+    const result = tryBuild(base, 4, 2);
+    if (result) return result;
+  }
+  return shuffle(base); // last-resort fallback, practically never reached
+}
+
+let deck = [];
+let idx = 0;
+let score = 0;
+let correct = 0;
+let wrong = 0;
+let missed = [];
+let lastBet = null;
+
+function startGame() {
+  deck = buildDeck();
+  idx = 0; score = 0; correct = 0; wrong = 0; missed = [];
+  showSlide('slide-bet');
+  loadCard();
+}
+
+function restartGame() {
+  startGame();
+}
+
+function loadCard() {
+  if (idx >= deck.length) { showFinalScore(); return; }
+  const c = deck[idx];
+  document.getElementById('betSubject').textContent = c.subject;
+  document.getElementById('betVerb').textContent = c.verb;
+  document.getElementById('betProg').textContent = (idx+1) + ' / ' + deck.length;
+  document.getElementById('betScore').textContent = 'Score: ' + score;
+  updateBar('progressBar', idx, deck.length);
+}
+
+function updateBar(id, cur, total) {
+  document.getElementById(id).style.width = Math.round((cur/total)*100) + '%';
+}
+
+function placeBet(bet) {
+  lastBet = bet;
+  const c = deck[idx];
+
+  let resultText = '';
+  let resultClass = '';
+  if (c.acceptedCategories.includes(bet)) {
+    correct++;
+    score++;
+    resultText = '✔ Correct! +1';
+    resultClass = 'chip-correct';
+  } else {
+    wrong++;
+    score--;
+    missed.push(c.subject + ' + ' + c.verb);
+    resultText = '✘ Wrong! -1';
+    resultClass = 'chip-wrong';
+  }
+
+  const card = document.getElementById('answerCard');
+  card.className = 'answer-card ' + c.category + '-reveal';
+
+  const rt = document.getElementById('revealType');
+  rt.textContent = c.acceptedCategories.map(cat => betLabels[cat]).join(' or ');
+  rt.className = 'reveal-type ' + c.category + '-color';
+
+  document.getElementById('revealVerb').textContent = c.subject + ' ' + c.form;
+  document.getElementById('ruleNote').textContent = c.note;
+
+  const rr = document.getElementById('resultRow');
+  rr.innerHTML = `<span class="result-chip ${resultClass}">${resultText}</span>
+                  <span class="result-chip" style="background:#1a1a2e;color:#aaa;">Bet: ${betLabels[bet]}</span>`;
+
+  document.getElementById('revProg').textContent = (idx+1) + ' / ' + deck.length;
+  document.getElementById('revScore').textContent = 'Score: ' + score;
+  updateBar('progressBar2', idx+1, deck.length);
+
+  const nb = document.getElementById('nextCardBtn');
+  nb.textContent = idx < deck.length-1 ? 'Next Verb →' : 'See Results →';
+
+  showSlide('slide-reveal');
+}
+
+function nextCard() {
+  idx++;
+  if (idx >= deck.length) { showFinalScore(); return; }
+  showSlide('slide-bet');
+  loadCard();
+}
+
+function goToScore() {
+  showFinalScore();
+}
+
+function goToBet() {
+  if (idx >= deck.length-1) { showFinalScore(); return; }
+  showSlide('slide-bet');
+}
+
+function showFinalScore() {
+  document.getElementById('scoreTitle').textContent = score >= 55 ? '🏆 Amazing!' : score >= 30 ? '👍 Nice Work!' : 'Keep Practicing!';
+  document.getElementById('scoreCorrect').textContent = correct;
+  document.getElementById('scoreWrong').textContent = wrong;
+
+  const ms = document.getElementById('missedSection');
+  const ml = document.getElementById('missedList');
+  if (missed.length > 0) {
+    ms.style.display = 'block';
+    ml.innerHTML = missed.map(w => `<span class="missed-chip">${w}</span>`).join('');
+  } else {
+    ms.style.display = 'none';
+  }
+  showSlide('slide-score');
+}
+
+function showSlide(id) {
+  document.querySelectorAll('.slide').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// keyboard nav
+document.addEventListener('keydown', e => {
+  const active = document.querySelector('.slide.active').id;
+  if (e.key === 'ArrowRight' || e.key === ' ') {
+    if (active === 'slide-reveal') nextCard();
+  }
+  if (e.key === 'n' || e.key === 'N') {
+    if (active === 'slide-bet') placeBet('none');
+  }
+  if (e.key === 's' || e.key === 'S') {
+    if (active === 'slide-bet') placeBet('s');
+  }
+  if (e.key === 'e' || e.key === 'E') {
+    if (active === 'slide-bet') placeBet('es');
+  }
+  if (e.key === 'i' || e.key === 'I') {
+    if (active === 'slide-bet') placeBet('irregular');
+  }
+});
+</script>
+</body>
+</html>

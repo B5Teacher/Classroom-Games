@@ -1,0 +1,162 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Family Mystery</title>
+<style>
+:root{--ink:#2C2C2A;--muted:#7A8B8F;--bg:#FFFFFF;--soft:#EEF2F3;--line:#9AA8AB;--accent:#B85042;--ok:#2F7D4F;--bad:#C0392B;}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--ink);font-family:Calibri,Carlito,"Segoe UI",Arial,sans-serif;user-select:none;-webkit-user-select:none;touch-action:none}
+#app{display:grid;grid-template-rows:9vh 1fr 19vh;height:100vh;padding:1vh 1.5vw;gap:1vh}
+header{display:flex;align-items:center;gap:1.2vw}
+h1{font-family:"Bookman Old Style",Georgia,serif;font-size:3.6vh;margin:0;color:var(--accent);white-space:nowrap}
+.tabs{display:flex;gap:.6vw}
+.tab{white-space:nowrap;border:2px solid var(--line);background:#fff;border-radius:1vh;padding:.8vh 1vw;font-size:2.3vh;font-weight:bold;cursor:pointer;color:var(--ink)}
+.tab.on{color:#fff}
+.spacer{flex:1}
+.btn{white-space:nowrap;border:none;border-radius:1vh;padding:1.2vh 1.4vw;font-size:2.4vh;font-weight:bold;cursor:pointer;background:var(--soft);color:var(--ink)}
+.btn.main{background:var(--accent);color:#fff;font-size:2.8vh;padding:1.3vh 2vw}
+#status{font-size:2.6vh;font-weight:bold;min-width:12vw;text-align:right}
+#tree{position:relative;border-radius:1.5vh;background:var(--soft)}
+#tree svg{position:absolute;inset:0;width:100%;height:100%}
+#tree svg line{stroke:var(--line);stroke-width:3;vector-effect:non-scaling-stroke}
+#tree.nolines svg{display:none}
+.slot{position:absolute;width:11.5%;height:17%;transform:translate(-50%,-50%);border:3px dashed var(--line);border-radius:1.4vh;background:#fff;display:flex;align-items:center;justify-content:center}
+.slot.hover{border-color:var(--accent);background:#FBEBC0}
+.slot.locked{border:3px solid var(--ok);background:#E3F2E8}
+.slot.locked .chip{background:var(--ok);color:#fff;cursor:default;box-shadow:none}
+.slot.wrong{animation:shake .45s}
+@keyframes shake{20%,60%{transform:translate(-54%,-50%)}40%,80%{transform:translate(-46%,-50%)}}
+#bank{display:flex;flex-wrap:wrap;align-content:center;justify-content:center;gap:1vh 1vw;border:3px solid var(--soft);border-radius:1.5vh;padding:1vh}
+#bank.hover{border-color:var(--accent)}
+.chip{font-size:3vh;font-weight:bold;background:#fff;border:3px solid var(--ink);border-radius:1.2vh;padding:.9vh 1.3vw;cursor:grab;white-space:nowrap;box-shadow:0 .4vh 0 rgba(0,0,0,.12)}
+.slot .chip{border:none;box-shadow:none;background:transparent;padding:0;font-size:2.9vh;width:100%;height:100%;display:flex;align-items:center;justify-content:center}
+.ghost{position:fixed;pointer-events:none;z-index:50;transform:translate(-50%,-50%) scale(1.08);opacity:.92}
+#overlay{position:fixed;inset:0;background:rgba(31,59,77,.88);display:none;align-items:center;justify-content:center;z-index:60}
+#overlay.on{display:flex}
+.card{background:#fff;border-radius:2vh;padding:4vh 4vw;max-width:80vw;text-align:left}
+.card h2{font-family:"Bookman Old Style",Georgia,serif;color:var(--accent);font-size:5vh;margin:0 0 2vh}
+.card ol{font-size:4.2vh;line-height:1.6;margin:0 0 3vh;padding-left:5vh}
+.card p{font-size:3vh;color:var(--muted);margin:0}
+.win{font-size:7vh;text-align:center}
+</style></head><body>
+<div id="app">
+ <header><h1>Family Mystery</h1><div class="tabs" id="tabs"></div><div class="spacer"></div>
+  <button class="btn" id="lines">Hide lines</button><button class="btn" id="qs">Questions</button><button class="btn" id="reset">Reset</button>
+  <span id="status"></span><button class="btn main" id="check">Check</button></header>
+ <div id="tree"><svg viewBox="0 0 100 100" preserveAspectRatio="none" id="svg"></svg></div>
+ <div id="bank"></div>
+</div>
+<div id="overlay"><div class="card" id="ocard"></div></div>
+<script>
+const FAMILIES = {
+ A: { code:"A", symbol:"★", color:"#B85042", title:"Family A — The Hassan Family", level:"Easy",
+  rows:[14,48,82],
+  slots:[
+   {id:"a1",x:47,r:0,accept:["Hassan","Amina"]},{id:"a2",x:61,r:0,accept:["Hassan","Amina"]},
+   {id:"a3",x:26,r:1,accept:["Sara"]},{id:"a4",x:40,r:1,accept:["Omar"]},
+   {id:"a5",x:68,r:1,accept:["Leila"]},{id:"a6",x:82,r:1,accept:["Karim"]},
+   {id:"a7",x:26,r:2,accept:["Ali","Nour"]},{id:"a8",x:40,r:2,accept:["Ali","Nour"]},
+   {id:"a9",x:75,r:2,accept:["Yusuf"]}],
+  couples:[["a1","a2"],["a3","a4"],["a5","a6"]],
+  kids:[{p:["a1","a2"],c:["a4","a5"]},{p:["a3","a4"],c:["a7","a8"]},{p:["a5","a6"],c:["a9"]}],
+  clues:["Hassan is Omar's father.","Amina is Hassan's wife.","Leila is Omar's sister.","Sara is Omar's wife.",
+   "Karim is Leila's husband.","Ali is Sara's son.","Nour is Ali's sister.","Yusuf is Leila's son.",
+   "Hassan and Amina are old.","Ali is tall.","Nour is young.","Yusuf is Ali's cousin."],
+  questions:["Who is Nour's aunt?","Who is Yusuf's grandmother?","Is Karim Ali's uncle?","Whose son is Yusuf?"],
+  answers:["Leila","Amina","Yes, he is.","Leila and Karim's"] },
+ B: { code:"B", symbol:"●", color:"#2F6690", title:"Family B — The Peter and Rosa Family", level:"Medium",
+  rows:[14,48,82],
+  slots:[
+   {id:"b1",x:30,r:0,accept:["Peter","Rosa"]},{id:"b2",x:44,r:0,accept:["Peter","Rosa"]},
+   {id:"b3",x:80,r:0,accept:["Gloria"]},
+   {id:"b4",x:7,r:1,accept:["Lucy"]},{id:"b5",x:20,r:1,accept:["Ben"]},{id:"b6",x:36,r:1,accept:["Mark"]},
+   {id:"b7",x:55,r:1,accept:["Dina"]},{id:"b8",x:69,r:1,accept:["Sam"]},
+   {id:"b9",x:7,r:2,accept:["Tom","Emma"]},{id:"b10",x:21,r:2,accept:["Tom","Emma"]},{id:"b11",x:62,r:2,accept:["Zoe"]}],
+  couples:[["b1","b2"],["b4","b5"],["b7","b8"]],
+  kids:[{p:["b1","b2"],c:["b5","b6","b7"]},{p:["b3"],c:["b8"]},{p:["b4","b5"],c:["b9","b10"]},{p:["b7","b8"],c:["b11"]}],
+  clues:["Peter is Rosa's husband.","Ben is Mark's brother.","Mark is single.","Dina is Peter's only daughter.",
+   "Mark's mother is Rosa.","Lucy is Ben's wife.","Tom and Emma are Lucy's children.","Emma is Tom's older sister.",
+   "Zoe is Tom's cousin. Her father is Sam.","Sam is not Lucy's husband.","Zoe's mother is not Lucy.",
+   "Ben is the oldest child. Mark is the youngest.","Gloria is Sam's mother.","Gloria is not Peter's wife. She is old."],
+  questions:["Who is Zoe's mother?","Who is Sam's wife?","Who are Emma's uncles?","How many grandparents does Zoe have?"],
+  answers:["Dina","Dina","Mark and Sam","Three: Peter, Rosa, and Gloria"] },
+ C: { code:"C", symbol:"▲", color:"#2F7D4F", title:"Family C — La Familia de Jorge", level:"Hard",
+  rows:[14,48,82],
+  slots:[
+   {id:"c1",x:8,r:0,accept:["Carmen"]},{id:"c2",x:22,r:0,accept:["Jorge"]},{id:"c3",x:36,r:0,accept:["Elena"]},
+   {id:"c4",x:62,r:0,accept:["Luis","Marta"]},{id:"c5",x:76,r:0,accept:["Luis","Marta"]},
+   {id:"c6",x:12,r:1,accept:["Pablo"]},{id:"c7",x:40,r:1,accept:["Diego"]},{id:"c8",x:54,r:1,accept:["Ana"]},
+   {id:"c9",x:73,r:1,accept:["Lucía"]},{id:"c10",x:87,r:1,accept:["Raúl"]},
+   {id:"c11",x:40,r:2,accept:["Sofía","Mateo"]},{id:"c12",x:54,r:2,accept:["Sofía","Mateo"]},{id:"c13",x:80,r:2,accept:["Javier"]}],
+  couples:[["c1","c2"],["c2","c3"],["c4","c5"],["c7","c8"],["c9","c10"]],
+  kids:[{p:["c1","c2"],c:["c6"]},{p:["c2","c3"],c:["c7"]},{p:["c4","c5"],c:["c8","c9"]},{p:["c7","c8"],c:["c11","c12"]},{p:["c9","c10"],c:["c13"]}],
+  clues:["Jorge's first wife is Elena. His second wife is Carmen.","Diego and Pablo are Jorge's sons.",
+   "Pablo's mother is Jorge's second wife.","Elena has one child.","Pablo is single.","Ana's husband is Jorge's son.",
+   "Ana's parents are Luis and Marta.","Lucía is Ana's sister. She is younger.","Raúl is Lucía's husband.",
+   "Sofía and Mateo are Diego's children. Sofía is the oldest.","Javier is Mateo's cousin. His father is not Pablo.",
+   "Mateo has five grandparents!","Marta is old. Luis is older."],
+  questions:["Who is Pablo's mother?","Who is Javier's aunt?","Is Pablo Mateo's uncle?","Who is Diego's mother?","Whose son is Javier?"],
+  answers:["Carmen","Ana","Yes, he is.","Elena","Lucía and Raúl's"] }
+};
+let cur="A", state={};
+const $=s=>document.querySelector(s);
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function namesOf(f){const s=new Set();f.slots.forEach(x=>x.accept.forEach(n=>s.add(n)));return [...s]}
+function freshState(f){return {placed:{},locked:{},bank:shuffle(namesOf(f))}}
+let actx;function beep(ok){try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();const t=actx.currentTime;
+ (ok?[523,659,784]:[220,180]).forEach((fr,i)=>{const o=actx.createOscillator(),g=actx.createGain();o.frequency.value=fr;o.type=ok?"sine":"square";
+ g.gain.setValueAtTime(.0001,t+i*.12);g.gain.exponentialRampToValueAtTime(ok?.25:.08,t+i*.12+.02);g.gain.exponentialRampToValueAtTime(.0001,t+i*.12+.22);
+ o.connect(g).connect(actx.destination);o.start(t+i*.12);o.stop(t+i*.12+.25)})}catch(e){}}
+function tabs(){const el=$("#tabs");el.innerHTML="";Object.values(FAMILIES).forEach(f=>{const b=document.createElement("button");b.className="tab"+(f.code===cur?" on":"");
+ b.textContent=f.symbol+" "+f.code+" · "+f.level;if(f.code===cur){b.style.background=f.color;b.style.borderColor=f.color}else{b.style.color=f.color}
+ b.onclick=()=>{cur=f.code;render()};el.appendChild(b)})}
+function pos(f,id){const s=f.slots.find(x=>x.id===id);return {x:s.x,y:f.rows[s.r]}}
+const HW=5.75,HH=8.5;
+function drawLines(f){let h="";const L=(a,b,c,d)=>h+=`<line x1="${a}" y1="${b}" x2="${c}" y2="${d}"/>`;
+ f.couples.forEach(([a,b])=>{const p=pos(f,a),q=pos(f,b);L(Math.min(p.x,q.x)+HW,p.y,Math.max(p.x,q.x)-HW,p.y)});
+ f.kids.forEach(k=>{let px,py;if(k.p.length===2){const p=pos(f,k.p[0]),q=pos(f,k.p[1]);px=(p.x+q.x)/2;py=p.y}else{const p=pos(f,k.p[0]);px=p.x;py=p.y+HH}
+  const cs=k.c.map(c=>pos(f,c)),cy=cs[0].y-HH,bus=cy-4;L(px,py,px,bus);const xs=cs.map(c=>c.x).concat(px);
+  L(Math.min(...xs),bus,Math.max(...xs),bus);cs.forEach(c=>L(c.x,bus,c.x,cy))});
+ $("#svg").innerHTML=h}
+function chip(name){const c=document.createElement("div");c.className="chip";c.textContent=name;c.dataset.name=name;c.addEventListener("pointerdown",startDrag);return c}
+function render(){const f=FAMILIES[cur];state[cur]=state[cur]||freshState(f);const st=state[cur];tabs();drawLines(f);
+ document.documentElement.style.setProperty("--accent",f.color);
+ const tree=$("#tree");tree.querySelectorAll(".slot").forEach(e=>e.remove());
+ f.slots.forEach(s=>{const d=document.createElement("div");d.className="slot"+(st.locked[s.id]?" locked":"");d.dataset.slot=s.id;
+  d.style.left=s.x+"%";d.style.top=f.rows[s.r]+"%";const n=st.placed[s.id];if(n)d.appendChild(chip(n));tree.appendChild(d)});
+ const bank=$("#bank");bank.innerHTML="";st.bank.forEach(n=>bank.appendChild(chip(n)));status()}
+function status(){const f=FAMILIES[cur],st=state[cur],n=Object.keys(st.locked).length;$("#status").textContent=n+" / "+f.slots.length}
+let drag=null;
+function startDrag(e){const name=e.currentTarget.dataset.name,st=state[cur];const fromSlot=e.currentTarget.closest(".slot");
+ if(fromSlot&&st.locked[fromSlot.dataset.slot])return;e.preventDefault();
+ const g=e.currentTarget.cloneNode(true);g.className="chip ghost";document.body.appendChild(g);
+ drag={name,from:fromSlot?fromSlot.dataset.slot:"bank",g,src:e.currentTarget};e.currentTarget.style.opacity=".3";move(e);
+ window.addEventListener("pointermove",move);window.addEventListener("pointerup",drop,{once:true})}
+function targetAt(x,y){const el=document.elementFromPoint(x,y);if(!el)return null;return el.closest(".slot")||el.closest("#bank")}
+let hov=null;function move(e){if(!drag)return;drag.g.style.left=e.clientX+"px";drag.g.style.top=e.clientY+"px";
+ const t=targetAt(e.clientX,e.clientY);if(hov&&hov!==t)hov.classList.remove("hover");if(t&&!(t.classList.contains("locked"))){t.classList.add("hover");hov=t}}
+function drop(e){window.removeEventListener("pointermove",move);const st=state[cur],t=targetAt(e.clientX,e.clientY);if(hov)hov.classList.remove("hover");
+ drag.g.remove();const {name,from}=drag;drag=null;
+ if(t&&t.classList.contains("slot")&&!st.locked[t.dataset.slot])place(name,from,t.dataset.slot);
+ else if(t&&t.id==="bank"&&from!=="bank"){delete st.placed[from];st.bank.push(name)}
+ render()}
+function place(name,from,to){const st=state[cur];if(from===to)return;const prev=st.placed[to];
+ if(from==="bank")st.bank=st.bank.filter(n=>n!==name);else delete st.placed[from];
+ if(prev){if(from==="bank")st.bank.push(prev);else st.placed[from]=prev}
+ st.placed[to]=name}
+function check(){const f=FAMILIES[cur],st=state[cur];let good=0,bad=[];
+ f.slots.forEach(s=>{const n=st.placed[s.id];if(!n||st.locked[s.id])return;
+  if(s.accept.includes(n)){st.locked[s.id]=true;good++}else{bad.push(s.id)}});
+ if(!good&&!bad.length){flash("Put some names in the tree first!");return}
+ bad.forEach(id=>{const el=document.querySelector(`.slot[data-slot="${id}"]`);if(el)el.classList.add("wrong")});
+ beep(good>0&&!bad.length);
+ setTimeout(()=>{bad.forEach(id=>{st.bank.push(st.placed[id]);delete st.placed[id]});render();
+  if(Object.keys(st.locked).length===f.slots.length)win()},bad.length?550:0)}
+function flash(t){$("#status").textContent=t;setTimeout(status,1500)}
+function win(){beep(true);$("#ocard").innerHTML=`<div class="win">🎉 You solved it! 🎉</div><p style="text-align:center;margin-top:2vh">Now answer the questions.</p>`;$("#overlay").classList.add("on")}
+function questions(){const f=FAMILIES[cur];$("#ocard").innerHTML=`<h2>${f.symbol} Family ${f.code}: Questions</h2><ol>${f.questions.map(q=>`<li>${q}</li>`).join("")}</ol><p>Tap anywhere to close.</p>`;$("#overlay").classList.add("on")}
+$("#overlay").onclick=()=>$("#overlay").classList.remove("on");
+$("#check").onclick=check;$("#qs").onclick=questions;
+$("#reset").onclick=()=>{state[cur]=freshState(FAMILIES[cur]);render()};
+$("#lines").onclick=()=>{const t=$("#tree");t.classList.toggle("nolines");$("#lines").textContent=t.classList.contains("nolines")?"Show lines":"Hide lines"};
+window.__test={place:(n,to)=>{place(n,"bank",to);render()},check,setFam:c=>{cur=c;render()}};
+render();
+</script></body></html>

@@ -90,6 +90,33 @@
   }
   .card.hit { border-color: var(--yes); border-width: 4px; background: #E6F5F2; }
   .card:disabled { cursor: default; }
+
+  /* treasure grid mode */
+  .grid-tab[aria-pressed="false"] { border-color: var(--gold); }
+  .tg { display: grid; gap: 0.5vw; min-height: 0; height: 100%;
+        grid-template-columns: minmax(0, 1.5fr) repeat(6, minmax(0, 1fr)); grid-template-rows: minmax(0, 1.25fr) repeat(6, minmax(0, 1fr)); }
+  .tg .hd { display: flex; align-items: center; justify-content: center; gap: 0.4vw; background: var(--paper);
+            border-radius: 10px; border: 2px solid var(--line); overflow: hidden; }
+  .tg .col { flex-direction: column; gap: 0.2vh; }
+  .tg .hd .pic { font-size: clamp(18px, 4vh, 48px); line-height: 1; white-space: nowrap; display: flex; }
+  .tg .hd .pic svg { width: 1em; height: 1em; }
+  .tg .hd .w { font-size: clamp(13px, 2.3vh, 26px); font-weight: 700; text-align: center; line-height: 1.05; }
+  .tg .hd .pr { font-size: clamp(12px, 1.9vh, 20px); color: var(--gray); font-weight: 700; }
+  .tg .row { justify-content: flex-start; padding-left: 0.6vw; }
+  .sq { border: 2px solid var(--line); border-radius: 10px; background: #F8F9FC; color: var(--ink);
+        font-size: clamp(18px, 4vh, 44px); font-weight: 700; display: flex; align-items: center; justify-content: center; }
+  .sq:hover:not(:disabled) { border-color: var(--navy); background: #fff; }
+  .sq.miss { background: #FBEAE8; border-color: #F0C9C4; color: var(--no); }
+  .sq.close { background: #FFF4D6; border-color: var(--gold); color: #9A6A00; }
+  .sq.hit { background: var(--yes); border-color: var(--yes); color: #fff; }
+  .sq.left { background: #E6F5F2; border-style: dashed; border-color: var(--yes); color: var(--yes); }
+  .sq:disabled { cursor: default; }
+  .mystery .score { font-size: clamp(40px, 9vh, 110px); font-weight: 700; line-height: 1; }
+  .mystery .score small { font-size: 0.45em; opacity: 0.8; }
+  .mystery .last span { color: #fff; text-decoration: underline; text-underline-offset: 0.15em; }
+  .mystery .last { font-size: clamp(16px, 3.2vh, 36px); font-weight: 700; text-align: center; padding: 0 1vw; min-height: 2.4em; }
+  .mystery .key { font-size: clamp(12px, 2vh, 20px); opacity: 0.9; line-height: 1.6; text-align: left; }
+  .mystery .key span { display: inline-block; width: 1.1em; height: 1.1em; border-radius: 4px; vertical-align: middle; margin-right: 0.4em; }
 </style>
 </head>
 <body>
@@ -101,6 +128,7 @@
     <button class="tab" data-mode="she">she</button>
     <button class="tab" data-mode="it">it</button>
     <button class="tab" data-mode="they">they</button>
+    <button class="tab grid-tab" data-mode="grid">💎 treasure grid</button>
   </div>
   <div class="spacer"></div>
   <div class="count">Questions: <b id="count">0</b></div>
@@ -157,6 +185,86 @@
             pos: w => 'They <span class="be-are">are</span> ' + w + '.', neg: w => 'They <span class="be-are">aren\'t</span> ' + w + '.', face: "📦📦", who: "What are they?" }
   };
 
+  // treasure grid: each row has a fixed he/she
+  const gPeople = [["she","a nurse","💉"],["he","a cook","🧑‍🍳"],["she","a doctor","🧑‍⚕️"],["he","a driver","🚌"],["she","a teacher","🧑‍🏫"],["he","a farmer","🧑‍🌾"]];
+  const gThings = [["a pencil","✏️"],["an eraser",ERASER],["a backpack","🎒"],["pens","🖊️🖊️"],["books","📘📘"],["chairs","🪑🪑"]];
+  const CHESTS = [3,2,2,1,1,1];
+  let treasure = new Set(), found = 0, TOTAL = 10;
+
+  function placeTreasure() {
+    for (let tries = 0; tries < 500; tries++) {
+      const t = new Set(); let ok = true;
+      for (const len of CHESTS) {
+        let placed = false;
+        for (let k = 0; k < 100 && !placed; k++) {
+          const horiz = Math.random() < 0.5;
+          const r = Math.floor(Math.random() * (horiz ? 6 : 7 - len)), c = Math.floor(Math.random() * (horiz ? 7 - len : 6));
+          const cells = []; for (let i = 0; i < len; i++) cells.push(horiz ? r*6 + c + i : (r+i)*6 + c);
+          // keep chests from touching so "close" stays useful
+          const touches = cells.some(x => t.has(x) || nbrs(x).some(n => t.has(n)));
+          if (!touches) { cells.forEach(x => t.add(x)); placed = true; }
+        }
+        if (!placed) { ok = false; break; }
+      }
+      if (ok) return t;
+    }
+    return new Set([0,1,2,14,20,27,33,9,22,35]);
+  }
+  function nbrs(i) { const r = Math.floor(i/6), c = i%6, out = [];
+    if (r>0) out.push(i-6); if (r<5) out.push(i+6); if (c>0) out.push(i-1); if (c<5) out.push(i+1); return out; }
+
+  function gridRound() {
+    treasure = placeTreasure(); found = 0; count = 0; done = false;
+    TOTAL = treasure.size;
+    $("count").textContent = "0";
+    $("question").innerHTML = '<span class="be-is">Is</span> he / she <span class="blank">&nbsp;</span> with <span class="blank">&nbsp;</span>?';
+    $("yes").innerHTML = 'Yes, he / she <span class="be-is">is</span>!';
+    $("no").innerHTML = 'No, he / she <span class="be-is">isn\'t</span>.';
+    setAnswer(null);
+    renderScore("");
+    const grid = $("grid");
+    grid.style.gridTemplateColumns = ""; grid.style.gridTemplateRows = "";
+    let h = '<div class="tg">' + '<div></div>';
+    gThings.forEach(t => { h += '<div class="hd col"><span class="pic">' + t[1] + '</span><span class="w">' + t[0] + '</span></div>'; });
+    gPeople.forEach((p, r) => {
+      h += '<div class="hd row"><span class="pic">' + p[2] + '</span><span><span class="pr">' + p[0] + '</span><br><span class="w">' + p[1] + '</span></span></div>';
+      for (let c = 0; c < 6; c++) h += '<button class="sq" data-i="' + (r*6+c) + '" aria-label="' + p[0] + ' ' + p[1] + ' with ' + gThings[c][0] + '"></button>';
+    });
+    grid.innerHTML = h + '</div>';
+    grid.querySelectorAll(".sq").forEach(b => b.addEventListener("click", () => dig(+b.dataset.i, b)));
+  }
+
+  function renderScore(lastHTML) {
+    const el = $("mystery"); el.classList.remove("found");
+    el.innerHTML = '<p class="who">Treasure found</p><p class="score">' + found + '<small> / ' + TOTAL + '</small></p>' +
+      '<p class="last">' + lastHTML + '</p>' +
+      '<p class="key"><span style="background:#1B998B"></span>Yes! 💎<br><span style="background:#F2B134"></span>No… but close!<br><span style="background:#F0C9C4"></span>No</p>';
+  }
+
+  function dig(i, btn) {
+    if (done || btn.disabled) return;
+    const p = gPeople[Math.floor(i/6)], t = gThings[i%6], S = p[0][0].toUpperCase() + p[0].slice(1);
+    count++; $("count").textContent = count;
+    $("question").innerHTML = '<span class="be-is">Is</span> ' + p[0] + ' ' + p[1] + ' with ' + t[0] + '?';
+    $("yes").innerHTML = 'Yes, ' + p[0] + ' <span class="be-is">is</span>!';
+    btn.disabled = true;
+    if (treasure.has(i)) {
+      found++; btn.classList.add("hit"); btn.textContent = "💎";
+      $("no").innerHTML = 'No, ' + p[0] + ' <span class="be-is">isn\'t</span>.';
+      const sent = S + ' <span class="be-is">is</span> ' + p[1] + ' with ' + t[0] + '.';
+      setAnswer("yes", sent);
+      renderScore(sent);
+      if (found === TOTAL) { done = true; $("mystery").classList.add("found");
+        $("mystery").innerHTML = '<p class="rpic">💎</p><p class="reveal">All treasure found!</p><p class="who">' + count + ' questions</p>'; }
+    } else {
+      const close = nbrs(i).some(n => treasure.has(n));
+      btn.classList.add(close ? "close" : "miss"); btn.textContent = close ? "!" : "✗";
+      $("no").innerHTML = 'No, ' + p[0] + ' <span class="be-is">isn\'t</span>.' + (close ? ' <span style="color:#9A6A00">…but close!</span>' : '');
+      setAnswer("no", S + ' <span class="be-is">isn\'t</span> ' + p[1] + ' with ' + t[0] + '.');
+      renderScore($("mystery").querySelector(".last").innerHTML);
+    }
+  }
+
   let mode = "you", items = [], secret = -1, count = 0, done = false;
   const $ = id => document.getElementById(id);
 
@@ -189,6 +297,7 @@
   }
 
   function newRound() {
+    if (mode === "grid") return gridRound();
     const m = modes[mode];
     items = itemsFor(m);
     secret = Math.floor(Math.random() * items.length);

@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Storm Strike — Speaking Game</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100%; height: 100%; overflow: hidden; }
+  body {
+    background: #121a2b;
+    color: #f3f6fb;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  .hidden { display: none !important; }
+
+  #app { display: grid; grid-template-columns: 1fr 29vw; width: 100vw; height: 100vh; }
+
+  /* ---------- map (hexagons) ---------- */
+  #mapWrap { display: flex; align-items: center; justify-content: center; padding: 1.5vh .8vw; min-width: 0; min-height: 0; }
+  #map { position: relative; }
+  .tile {
+    position: absolute; background: transparent;
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+  }
+  .hx {
+    position: absolute; inset: 4%; background: #33456a;
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+  }
+  .tile.cloud .hx { background: #56617f; }
+  .tile.gone .hx { background: #070a12; }
+  .bolt { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: calc(var(--cell) * .4); opacity: .22; }
+  .ci { position: absolute; top: 4%; left: 0; right: 0; text-align: center; font-size: calc(var(--cell) * .2); line-height: 1; }
+  .qt {
+    position: absolute; left: 9%; right: 9%; top: 27%; bottom: 21%;
+    display: flex; align-items: center; justify-content: center; text-align: center;
+    overflow: hidden; color: #fff; font-weight: 600; line-height: 1.12;
+  }
+  .qt span { display: block; width: 100%; overflow-wrap: break-word; }
+  .tile.move { background: #ffd54a; cursor: pointer; animation: pulse 1.1s infinite; z-index: 2; }
+  @keyframes pulse { 50% { filter: brightness(1.35); } }
+  .tile.move.far { background: #ff9f43; }
+  .tile.pend { background: #7dff9a; animation: none; z-index: 2; }
+  .cost {
+    position: absolute; left: 50%; bottom: 6%; transform: translateX(-50%); z-index: 2;
+    background: #1b2333; color: #ffb35c; font-weight: 800; font-size: calc(var(--cell) * .15);
+    padding: .05em .45em; border-radius: 999px; line-height: 1.2;
+  }
+  .tile.pend .hx { background: #3f6a57; }
+  .token {
+    position: absolute; z-index: 1; left: 6%; right: 6%; top: 54%; transform: translateY(-50%);
+    text-align: center; color: #fff; padding: .2em .1em; border-radius: 999px; font-weight: 700;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    box-shadow: 0 2px 6px rgba(0,0,0,.55);
+  }
+  .token.cur { outline: calc(var(--cell) * .03) solid #fff; animation: glow 1s infinite; }
+  @keyframes glow { 50% { box-shadow: 0 0 calc(var(--cell) * .25) #fff; } }
+  .tile.strike .hx { animation: zap .95s; }
+  .tile.strike .hx::after {
+    content: "\26A1"; position: absolute; z-index: 3; inset: 0; font-size: calc(var(--cell) * .8);
+    display: flex; align-items: center; justify-content: center;
+  }
+  @keyframes zap {
+    0% { background: #fff; }
+    20% { background: #ffe680; }
+    60% { background: #ffd54a; }
+    100% { background: #070a12; }
+  }
+
+  /* ---------- sidebar ---------- */
+  #side {
+    display: flex; flex-direction: column; gap: 1.5vh; padding: 2vh 1.1vw;
+    background: #1b2438; border-left: 2px solid #2a3652; min-height: 0; min-width: 0;
+  }
+  #head { display: flex; justify-content: space-between; align-items: baseline; }
+  #title { font-size: 3.4vh; font-weight: 800; letter-spacing: .5px; }
+  #roundLbl { font-size: 2.6vh; font-weight: 700; color: #ffd54a; }
+  #status { font-size: 2vh; color: #b9c4dc; line-height: 1.35; }
+  #turn {
+    flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; gap: 1.3vh;
+    background: #232e48; border-radius: 1.4vh; padding: 1.8vh 1vw;
+  }
+  .who { font-size: 4.2vh; font-weight: 800; line-height: 1.1; word-break: break-word; }
+  .sub { font-size: 2vh; color: #b9c4dc; }
+  .q {
+    font-size: 3.5vh; font-weight: 700; line-height: 1.2; background: #34446a;
+    border-radius: 1.2vh; padding: 1.4vh 1vw; word-break: break-word;
+  }
+  .hint { font-size: 2.4vh; line-height: 1.3; color: #e4ebf8; }
+  .trow { display: flex; align-items: center; justify-content: space-between; gap: .6vw; }
+  .gbtns { display: flex; gap: .4vw; }
+  .gbtns .ghost { padding: .8vh .6vw; font-size: 1.7vh; white-space: nowrap; }
+  .timer { font-size: 3.4vh; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .timer.low { color: #ff6b6b; }
+  .tbar-bg { height: .9vh; background: #34446a; border-radius: .5vh; overflow: hidden; margin-top: .6vh; }
+  #tbar { height: 100%; width: 100%; background: #4da3ff; }
+  .events { list-style: none; display: flex; flex-direction: column; gap: 1vh; }
+  .events li { font-size: 2.3vh; line-height: 1.25; background: #34446a; border-radius: 1vh; padding: 1vh .8vw; }
+  .events li.zap { background: #5a4a12; }
+  button {
+    font: inherit; cursor: pointer; border: 0; border-radius: 1.1vh; color: #fff;
+    background: #2f3f66; padding: 1.1vh 1vw; font-size: 2.1vh;
+  }
+  button:hover { filter: brightness(1.2); }
+  button:active { transform: scale(.98); }
+  button:disabled { opacity: .4; cursor: default; }
+  button.primary { background: #ffd54a; color: #1b2333; font-weight: 800; font-size: 3vh; padding: 1.6vh 1vw; }
+  button.danger { background: #ff8a3d; color: #1b2333; font-weight: 800; font-size: 3.2vh; padding: 1.8vh 1vw; }
+  button.ghost { background: transparent; border: 1px solid #4a5a82; color: #b9c4dc; font-size: 1.8vh; }
+  #board { display: grid; gap: .5vh .5vw; }
+  .row {
+    display: flex; align-items: center; gap: .6vw; padding: .3em .5em; border-radius: .5em;
+    background: #232e48; font-weight: 600;
+  }
+  .row.cur { background: #3c4e7a; box-shadow: inset 0 0 0 2px #ffd54a; }
+  .row i { width: .8em; height: .8em; border-radius: 50%; flex: none; }
+  .row .nm { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .row b { font-variant-numeric: tabular-nums; }
+  #foot { display: flex; gap: .5vw; flex-wrap: wrap; }
+  #foot button { flex: 1; font-size: 1.7vh; padding: 1vh .4vw; white-space: nowrap; }
+
+  @media (max-aspect-ratio: 3/2) {
+    #app { grid-template-columns: 1fr 36vw; }
+  }
+
+  /* ---------- overlays ---------- */
+  .overlay {
+    position: fixed; inset: 0; background: rgba(8,12,22,.88); z-index: 20;
+    display: flex; align-items: center; justify-content: center; padding: 3vh 3vw;
+  }
+  .box {
+    background: #1f2a44; border: 2px solid #3a4a72; border-radius: 2vh; padding: 3.5vh 3vw;
+    max-width: 90vw; max-height: 94vh; overflow: hidden; text-align: center;
+  }
+  .box h2 { font-size: 5vh; margin-bottom: 2.5vh; }
+  .rules { list-style: none; text-align: left; display: flex; flex-direction: column; gap: 2vh; margin-bottom: 3vh; }
+  .rules li { font-size: 3.4vh; line-height: 1.25; }
+  .rank { list-style: none; display: flex; flex-direction: column; gap: 1vh; margin-bottom: 3vh; text-align: left; }
+  .rank li {
+    display: flex; align-items: center; gap: 1vw; font-size: 3.4vh; font-weight: 700;
+    background: #2c3a5e; border-radius: 1vh; padding: 1vh 1.2vw;
+  }
+  .rank li.win { background: #6d5a12; box-shadow: inset 0 0 0 2px #ffd54a; }
+  .rank li span { flex: 1; }
+  .box .sub { font-size: 2.6vh; margin-bottom: 2vh; }
+  .box button.primary { font-size: 3.4vh; padding: 1.6vh 3vw; }
+  .box button + button { margin-left: 1vw; }
+
+  .roster-box { text-align: left; width: 46vw; max-width: 640px; }
+  .roster-list { display: flex; flex-direction: column; gap: 1vh; max-height: 55vh; overflow-y: auto; }
+  .rrow { display: flex; align-items: center; gap: .8vw; }
+  .rrow i { width: 1.1em; height: 1.1em; border-radius: 50%; flex: none; }
+  .rrow input {
+    flex: 1; min-width: 0; font: inherit; font-size: 2vh; color: #fff; background: #121a2b;
+    border: 1px solid #4a5a82; border-radius: .7vh; padding: .8vh .8vw;
+  }
+  .rrow .rpts { font-size: 1.8vh; color: #b9c4dc; width: 5.5vw; text-align: right; flex: none; }
+  .rrow .rdel {
+    background: #5a2a2a; padding: .7vh 1vw; font-size: 1.8vh; flex: none; line-height: 1;
+  }
+  .rrow .rdel:hover { background: #79372f; }
+
+  #modal .box { text-align: left; width: 82vw; overflow: auto; }
+  #modal h2 { font-size: 3.6vh; margin-bottom: 1.6vh; }
+  .mgrid { display: grid; grid-template-columns: 1fr 1.4fr; gap: 2vh 2vw; }
+  .mgrid label { display: flex; flex-direction: column; gap: .6vh; font-size: 1.9vh; color: #b9c4dc; }
+  .mgrid textarea, .mgrid input, .mgrid select {
+    font: inherit; font-size: 2vh; color: #fff; background: #121a2b;
+    border: 1px solid #4a5a82; border-radius: .8vh; padding: .8vh .8vw;
+  }
+  .mgrid textarea { height: 30vh; resize: none; }
+  .nums { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2vh 1vw; }
+  .mbtns { display: flex; gap: 1vw; margin-top: 2vh; justify-content: flex-end; }
+  .mbtns button { font-size: 2.1vh; }
+  .note { font-size: 1.7vh; color: #93a1c2; margin-top: 1vh; line-height: 1.3; }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <div id="mapWrap"><div id="map"></div></div>
+  <aside id="side">
+    <div id="head"><div id="title">&#9889; Storm Strike</div><div id="roundLbl"></div></div>
+    <div id="status"></div>
+    <div id="turn"></div>
+    <div id="board"></div>
+    <div id="foot">
+      <button id="btnRules">Rules</button>
+      <button id="btnPlayers">Players</button>
+      <button id="btnSettings">Settings</button>
+      <button id="btnNew">New game</button>
+      <button id="btnEnd">End game</button>
+    </div>
+  </aside>
+</div>
+
+<div id="intro" class="overlay">
+  <div class="box">
+    <h2>&#9889; Storm Strike</h2>
+    <ul class="rules" id="rulesList"></ul>
+    <button id="btnStart" class="primary">Start game</button>
+  </div>
+</div>
+
+<div id="over" class="overlay hidden">
+  <div class="box">
+    <h2 id="overTitle">Game over!</h2>
+    <p class="sub" id="overSub"></p>
+    <ul class="rank" id="overRank"></ul>
+    <button id="btnAgain" class="primary">Play again</button>
+    <button id="btnCloseOver">Close</button>
+  </div>
+</div>
+
+<div id="roster" class="overlay hidden">
+  <div class="box roster-box">
+    <h2>Edit players</h2>
+    <div class="note" style="margin-bottom:1.6vh">Changes apply right away, to this game only. A new game still uses the roster from Settings.</div>
+    <div id="rosterList" class="roster-list"></div>
+    <button id="btnAddPlayer" class="ghost" style="margin-top:1.6vh">+ Add player</button>
+    <div class="mbtns"><button id="btnRosterDone" class="primary">Done</button></div>
+  </div>
+</div>
+
+<div id="modal" class="overlay hidden">
+  <div class="box">
+    <h2>Settings</h2>
+    <div class="mgrid">
+      <label>Students (one name per line, 2&ndash;12)
+        <textarea id="fNames"></textarea>
+      </label>
+      <label>Questions (one per line)
+        <textarea id="fQs"></textarea>
+      </label>
+      <div class="nums">
+        <label>Starting points<input type="number" id="fStart" min="0" max="50"></label>
+        <label>Sentences start in round<input type="number" id="fSpeak" min="1" max="20"></label>
+        <label>Clouds in round 1<input type="number" id="fClouds" min="1" max="30"></label>
+        <label>New cloud every turn<input type="number" id="fGrow" min="0" max="3"></label>
+        <label>Max spaces per move<input type="number" id="fMax" min="1" max="6"></label>
+        <label>Cost per extra space (points)<input type="number" id="fExtra" min="0" max="3"></label>
+        <label>Turn timer, seconds (0 = off)<input type="number" id="fTimer" min="0" max="300"></label>
+      </div>
+      <div class="note">
+        The map size grows with the number of students.<br>
+        Saving starts a new game. Settings are stored in this browser.
+      </div>
+    </div>
+    <div class="mbtns">
+      <button id="btnDefaults" class="ghost">Reset to defaults</button>
+      <button id="btnCancel">Cancel</button>
+      <button id="btnSave" class="primary">Save &amp; start new game</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var ANIM = location.hash === "#fast" ? 20 : 1000;
+  var KEY = "stormGridSettings.v1";
+  var HEAT_WEIGHT = 1; // how much each round spent on a space raises its chance of being clouded and struck (hidden from students)
+
+  var DEFAULT_QUESTIONS = [
+    "What time do you wake up?",
+    "What time do you eat breakfast?",
+    "What time do you go to work?",
+    "What time do you eat dinner?",
+    "What time do you go to bed?",
+    "What do you do in the morning?",
+    "What do you do at night?",
+    "What do you do on Saturday?",
+    "What do you do on Sunday?",
+    "What do you do after class?",
+    "How often do you cook dinner?",
+    "How often do you go shopping?",
+    "How often do you clean your house?",
+    "How often do you watch TV?",
+    "How often do you drink water?",
+    "How often do you eat fruit?",
+    "How often do you call your family?",
+    "What is the weather like today?",
+    "What do you wear when it is cold?",
+    "What do you wear when it is raining?",
+    "What do you do when it is hot?",
+    "What do you like to do when it is sunny?",
+    "What is your favorite season?",
+    "What is your favorite food?",
+    "What do you eat for breakfast?",
+    "What do you eat for lunch?",
+    "Where do you live?",
+    "Who is in your family?",
+    "What do you do when you are tired?",
+    "What do you do when you are bored?",
+    "What do you do when you are happy?",
+    "How do you come to class?",
+    "What do you like to do on the weekend?",
+    "Where do you go shopping?",
+    "What do you do at work?",
+    "What is in your bag?",
+    "What is your favorite day?",
+    "What do you do on your birthday?",
+    "How often do you visit friends?",
+    "What do you do when it is snowing?"
+  ];
+
+  var DEFAULTS = {
+    names: ["Student 1", "Student 2", "Student 3", "Student 4", "Student 5", "Student 6"],
+    startPoints: 5,
+    startClouds: 4,
+    cloudPerTurn: 1,
+    speakFrom: 1,
+    maxMove: 3,
+    extraCost: 1,
+    timer: 30,
+    questions: DEFAULT_QUESTIONS
+  };
+
+  function clone(o) { return JSON.parse(JSON.stringify(o)); }
+  function num(v, lo, hi, dflt) {
+    v = parseInt(v, 10);
+    if (isNaN(v)) return dflt;
+    return Math.max(lo, Math.min(hi, v));
+  }
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (m) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m];
+    });
+  }
+  function $(id) { return document.getElementById(id); }
+
+  var S = loadSettings();
+  function loadSettings() {
+    var s = clone(DEFAULTS);
+    try {
+      var raw = localStorage.getItem(KEY);
+      if (raw) {
+        var o = JSON.parse(raw);
+        if (Array.isArray(o.names) && o.names.length >= 2) s.names = o.names.slice(0, 12).map(String);
+        if (Array.isArray(o.questions) && o.questions.length) s.questions = o.questions.map(String);
+        s.startPoints = num(o.startPoints, 0, 50, s.startPoints);
+        s.startClouds = num(o.startClouds, 1, 30, s.startClouds);
+        s.cloudPerTurn = num(o.cloudPerTurn, 0, 3, s.cloudPerTurn);
+        s.speakFrom = num(o.speakFrom, 1, 20, s.speakFrom);
+        s.maxMove = num(o.maxMove, 1, 6, s.maxMove);
+        s.extraCost = num(o.extraCost, 0, 3, s.extraCost);
+        s.timer = num(o.timer, 0, 300, s.timer);
+      }
+    } catch (e) {}
+    return s;
+  }
+  function saveSettings() {
+    try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {}
+  }
+
+  /* ---------- game state ---------- */
+  var G = null;
+  var timerHandle = null;
+  var deadline = 0;
+
+  function shuffle(a) {
+    a = a.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+
+  function weightedSample(ids, weights, k) {
+    var pool = ids.slice(), w = weights.slice(), out = [];
+    while (out.length < k && pool.length) {
+      var total = 0, i;
+      for (i = 0; i < w.length; i++) total += w[i];
+      var r = Math.random() * total, pick = 0;
+      for (i = 0; i < w.length; i++) {
+        r -= w[i];
+        if (r <= 0) { pick = i; break; }
+        pick = i;
+      }
+      out.push(pool[pick]);
+      pool.splice(pick, 1);
+      w.splice(pick, 1);
+    }
+    return out;
+  }
+
+  /* ---------- hex geometry (pointy-top, odd rows shifted right) ---------- */
+  function hexNeighbors(i) {
+    var c = G.cells[i], r = c.r, q = c.c;
+    var d = (r & 1)
+      ? [[0, -1], [0, 1], [-1, 0], [-1, 1], [1, 0], [1, 1]]
+      : [[0, -1], [0, 1], [-1, -1], [-1, 0], [1, -1], [1, 0]];
+    var out = [];
+    d.forEach(function (o) {
+      var nr = r + o[0], nc = q + o[1];
+      if (nr >= 0 && nr < G.rows && nc >= 0 && nc < G.cols) out.push(nr * G.cols + nc);
+    });
+    return out;
+  }
+  function cube(c) {
+    var x = c.c - (c.r - (c.r & 1)) / 2, z = c.r;
+    return { x: x, y: -x - z, z: z };
+  }
+  function hexDist(a, b) {
+    var p = cube(a), q = cube(b);
+    return (Math.abs(p.x - q.x) + Math.abs(p.y - q.y) + Math.abs(p.z - q.z)) / 2;
+  }
+
+  function newGame() {
+    stopTimer();
+    var n = S.names.length;
+    var target = Math.max(20, 3 * n);
+    var rows = target <= 24 ? 4 : (target <= 35 ? 5 : 6);
+    var cols = Math.ceil(target / rows);
+    var cells = [];
+    for (var r = 0; r < rows; r++) {
+      for (var c = 0; c < cols; c++) cells.push({ r: r, c: c, open: true, heat: 0, occ: null, q: "" });
+    }
+    var players = S.names.map(function (nm, i) {
+      return { name: nm, pts: S.startPoints, pos: null, color: "hsl(" + Math.round((i * 137.5) % 360) + ",68%,40%)" };
+    });
+    var spots = shuffle(cells.map(function (_, i) { return i; }));
+    players.forEach(function (p, i) { p.pos = spots[i]; cells[spots[i]].occ = i; });
+    G = {
+      rows: rows, cols: cols, cells: cells, players: players,
+      round: 0, phase: "turn", order: [], turnPos: 0, clouds: [], strikeCount: 0,
+      bag: [], pending: null, pendingCost: 0, events: [], over: false, finalNote: ""
+    };
+    cells.forEach(function (c) { c.q = drawQuestion(); });
+    $("over").classList.add("hidden");
+    startRound();
+  }
+
+  /* Every space carries a question. A question is never on two spaces at once
+     (when the deck is big enough), and a question that has just been answered
+     leaves the board until the class has been through the whole deck. */
+  function drawQuestion() {
+    var all = S.questions.length ? S.questions : ["Say one sentence about your day."];
+    if (!G.bag.length) {
+      var shown = {};
+      G.cells.forEach(function (c) { if (c.open && c.q) shown[c.q] = true; });
+      G.bag = shuffle(all.filter(function (q) { return !shown[q]; }));
+      if (!G.bag.length) G.bag = shuffle(all);
+    }
+    return G.bag.pop();
+  }
+
+  function openIds() {
+    var out = [];
+    G.cells.forEach(function (c, i) { if (c.open) out.push(i); });
+    return out;
+  }
+  function emptyOpenCount() {
+    var k = 0;
+    G.cells.forEach(function (c) { if (c.open && c.occ === null) k++; });
+    return k;
+  }
+
+  // Adds n new clouds, one at a time, to cells not already clouded. Weighted the
+  // same way as the initial batch, so heavily-visited spaces keep attracting them.
+  function growClouds(n) {
+    for (var i = 0; i < n; i++) {
+      var open = openIds().filter(function (id) { return G.clouds.indexOf(id) === -1; });
+      if (!open.length) return;
+      var weights = open.map(function (id) { return 1 + HEAT_WEIGHT * G.cells[id].heat; });
+      G.clouds.push(weightedSample(open, weights, 1)[0]);
+    }
+  }
+
+  // Half the current clouds get struck, rounded down, always at least 1
+  // (as long as there's a cloud at all) and never more than the board can hold.
+  // Capped so relocation can never fail: whatever gets struck (occupied or not) leaves
+  // the board, and every hit player needs a still-open cell to land on afterward.
+  // Keeping the strike count at or below the current free-cell count guarantees enough
+  // room remains no matter how the strikes happen to land.
+  function strikeCount() {
+    var cap = emptyOpenCount();
+    if (!G.clouds.length || cap <= 0) return 0;
+    return Math.max(1, Math.min(Math.floor(G.clouds.length / 2), G.clouds.length, cap));
+  }
+
+  function startRound() {
+    if (emptyOpenCount() === 0) { endGame("There are no free spaces left."); return; }
+    G.round++;
+    var n = G.players.length;
+    var start = (G.round - 1) % n;
+    G.order = [];
+    for (var i = 0; i < n; i++) G.order.push((start + i) % n);
+    G.turnPos = 0;
+    G.phase = "turn";
+    G.events = [];
+    G.pending = null;
+
+    var open = openIds();
+    var k = Math.min(open.length, S.startClouds);
+    G.clouds = weightedSample(open, open.map(function (id) { return 1 + HEAT_WEIGHT * G.cells[id].heat; }), k);
+    stopTimer();
+    render();
+  }
+
+  function needSpeak() { return G.round >= S.speakFrom; }
+  function curPlayerIndex() { return G.order[G.turnPos]; }
+
+  // Every free space the current player could move to: { id: { d: spaces moved, cost: points paid } }.
+  // Moving 1 space just skips the +1 for staying. Each extra space costs S.extraCost points,
+  // and a move is only offered if the player can pay for it. Players can pass over other
+  // players, but not over destroyed spaces.
+  function moveOptions() {
+    var out = {};
+    if (!G || G.phase !== "turn" || G.pending !== null) return out;
+    var p = G.players[curPlayerIndex()];
+    var seen = {};
+    seen[p.pos] = 0;
+    var frontier = [p.pos];
+    for (var d = 1; d <= S.maxMove; d++) {
+      var next = [];
+      frontier.forEach(function (id) {
+        hexNeighbors(id).forEach(function (nb) {
+          if (seen[nb] !== undefined || !G.cells[nb].open) return;
+          seen[nb] = d;
+          next.push(nb);
+          if (G.cells[nb].occ === null) {
+            var cost = (d - 1) * S.extraCost;
+            if (p.pts >= cost) out[nb] = { d: d, cost: cost };
+          }
+        });
+      });
+      frontier = next;
+    }
+    return out;
+  }
+
+  function endTurn() {
+    stopTimer();
+    G.pending = null;
+    G.pendingCost = 0;
+    growClouds(S.cloudPerTurn);
+    G.turnPos++;
+    if (G.turnPos >= G.order.length) G.phase = "strike";
+    render();
+  }
+
+  function doStay() {
+    G.players[curPlayerIndex()].pts += 1;
+    endTurn();
+  }
+
+  function doMove(cellId, cost) {
+    var pi = curPlayerIndex(), p = G.players[pi];
+    p.pts = Math.max(0, p.pts - (cost || 0));
+    G.cells[p.pos].occ = null;
+    p.pos = cellId;
+    G.cells[cellId].occ = pi;
+    if (needSpeak()) G.cells[cellId].q = drawQuestion();   // the answered question leaves the board
+    endTurn();
+  }
+
+  // From the speaking round on, tapping a space starts the move; it completes after the sentence.
+  function startPending(cellId, cost) {
+    G.pending = cellId;
+    G.pendingCost = cost || 0;
+    stopTimer();
+    if (S.timer > 0) startTimer();
+    render();
+  }
+  function cancelPending() {
+    stopTimer();
+    G.pending = null;
+    G.pendingCost = 0;
+    render();
+  }
+
+  /* ---------- timer ---------- */
+  function startTimer() {
+    deadline = Date.now() + S.timer * 1000;
+    timerHandle = setInterval(tickTimer, 250);
+  }
+  function stopTimer() {
+    if (timerHandle) clearInterval(timerHandle);
+    timerHandle = null;
+  }
+  function tickTimer() {
+    var el = $("tnum"), bar = $("tbar");
+    if (!el) return;
+    var left = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+    el.textContent = Math.floor(left / 60) + ":" + (left % 60 < 10 ? "0" : "") + (left % 60);
+    el.classList.toggle("low", left <= 10);
+    if (bar) bar.style.width = (left / S.timer * 100) + "%";
+  }
+
+  /* ---------- lightning ---------- */
+  function doStrike() {
+    var sc = strikeCount();
+    if (sc === 0) {
+      // The board is packed solid — nowhere for lightning to land or send anyone.
+      G.players.forEach(function (p) { p.pts += 3; });
+      G.events = [
+        { zap: false, text: "The board is full \u2014 no room left for lightning this round." },
+        { zap: false, text: "Everyone earns a +3 survival bonus." }
+      ];
+      G.phase = "results";
+      G.clouds = [];
+      if (emptyOpenCount() === 0) G.finalNote = "No free spaces left \u2014 the game is over!";
+      render();
+      return;
+    }
+    G.phase = "animating";
+    G.cells.forEach(function (c) { if (c.open && c.occ !== null) c.heat++; });
+    var picks = weightedSample(G.clouds, G.clouds.map(function (id) { return 1 + HEAT_WEIGHT * G.cells[id].heat; }), strikeCount());
+    render();
+    picks.forEach(function (id, i) {
+      setTimeout(function () {
+        var el = document.querySelector('.tile[data-id="' + id + '"]');
+        if (el) el.classList.add("strike");
+      }, i * ANIM);
+    });
+    setTimeout(function () { resolveStrike(picks); }, picks.length * ANIM + Math.round(ANIM * 0.6));
+  }
+
+  function nearestEmpty(fromId) {
+    var f = G.cells[fromId], best = [], bestD = Infinity;
+    var fx = f.c + (f.r & 1) * 0.5, fy = f.r * 0.866;
+    G.cells.forEach(function (c, i) {
+      if (!c.open || c.occ !== null) return;
+      var dx = c.c + (c.r & 1) * 0.5 - fx, dy = c.r * 0.866 - fy;
+      var d = hexDist(f, c) * 1000 + Math.round((dx * dx + dy * dy) * 10);
+      if (d < bestD) { bestD = d; best = [i]; }
+      else if (d === bestD) best.push(i);
+    });
+    return best[Math.floor(Math.random() * best.length)];
+  }
+
+  function resolveStrike(picks) {
+    var hit = [];
+    picks.forEach(function (id) {
+      var c = G.cells[id];
+      c.open = false;
+      if (c.occ !== null) { hit.push({ pi: c.occ, from: id }); c.occ = null; }
+    });
+    var events = [];
+    var gone = picks.length;
+    events.push({ zap: true, text: "\u26A1 " + gone + (gone === 1 ? " space is" : " spaces are") + " gone forever." });
+    var hitSet = {};
+    hit.forEach(function (h) {
+      hitSet[h.pi] = true;
+      var p = G.players[h.pi], old = p.pts;
+      p.pts = Math.floor(old / 2);
+      var dest = nearestEmpty(h.from);
+      G.cells[dest].occ = h.pi;
+      p.pos = dest;
+      events.push({ zap: false, text: p.name + " was struck! " + old + " \u2192 " + p.pts + " points. Moved to a new space." });
+    });
+    // Everybody left standing banks a +3 survival bonus — a reason to want the round to end.
+    var safe = 0;
+    G.players.forEach(function (p, i) { if (!hitSet[i]) { p.pts += 3; safe++; } });
+    if (!hit.length) events.push({ zap: false, text: "Nobody was struck! Everyone earns a +3 survival bonus." });
+    else if (safe) events.push({ zap: false, text: safe + (safe === 1 ? " player stays" : " players stay") + " safe and each earn a +3 survival bonus." });
+    G.events = events;
+    G.phase = "results";
+    G.clouds = [];
+    if (emptyOpenCount() === 0) G.finalNote = "No free spaces left \u2014 the game is over!";
+    render();
+  }
+
+  function nextRound() {
+    if (emptyOpenCount() === 0) endGame("There are no free spaces left.");
+    else startRound();
+  }
+
+  function endGame(reason) {
+    stopTimer();
+    G.over = true;
+    G.phase = "over";
+    var ranked = G.players.slice().sort(function (a, b) { return b.pts - a.pts; });
+    var top = ranked[0].pts;
+    $("overTitle").textContent = "Game over!";
+    $("overSub").textContent = reason;
+    $("overRank").innerHTML = ranked.map(function (p, i) {
+      var win = p.pts === top;
+      return '<li class="' + (win ? "win" : "") + '"><span>' + (win ? "\uD83C\uDFC6 " : (i + 1) + ". ") + esc(p.name) + "</span><b>" + p.pts + "</b></li>";
+    }).join("");
+    $("overRank").style.fontSize = Math.min(3.4, 46 / ranked.length) + "vh";
+    $("over").classList.remove("hidden");
+    render();
+  }
+
+  /* ---------- roster: add / remove / rename players mid-game ---------- */
+  // Renaming never touches indices, so it's just a direct write.
+  function renamePlayer(i, name) {
+    if (G.players[i]) G.players[i].name = name;
+  }
+
+  // Removing a player frees their space (it stays open, just empty — this
+  // is a roster change, not a lightning strike) and renumbers every reference
+  // to players after them: cell occupants and this round's turn order.
+  function removePlayer(i) {
+    if (!G || G.players.length <= 2) { alert("You need at least 2 players to keep playing."); return; }
+    stopTimer();
+    var removingCurrent = (G.phase === "turn" && G.order[G.turnPos] === i);
+    G.cells[G.players[i].pos].occ = null;
+    G.players.splice(i, 1);
+    G.cells.forEach(function (c) { if (c.occ !== null && c.occ > i) c.occ--; });
+
+    var oldOrder = G.order, oldPos = G.turnPos, before = 0;
+    var newOrder = [];
+    oldOrder.forEach(function (v, k) {
+      if (v === i) { if (k < oldPos) before++; return; }
+      newOrder.push(v > i ? v - 1 : v);
+    });
+    G.order = newOrder;
+    G.turnPos = Math.max(0, oldPos - before);
+    G.pending = null;
+    G.pendingCost = 0;
+    if (G.phase === "turn" && G.turnPos >= G.order.length) G.phase = "strike";
+    render();
+  }
+
+  // New players join on any free space with the class average score, so they
+  // aren't dropped in hopelessly behind. They wait for the next round to move,
+  // since this round's turn order was already set before they joined.
+  function addPlayer(name) {
+    var free = [];
+    G.cells.forEach(function (c, i) { if (c.open && c.occ === null) free.push(i); });
+    if (!free.length) { alert("There's no free space on the board right now. Try again after the next round."); return null; }
+    var cellId = free[Math.floor(Math.random() * free.length)];
+    var avg = G.players.length ? Math.round(G.players.reduce(function (s, p) { return s + p.pts; }, 0) / G.players.length) : S.startPoints;
+    var idx = G.players.length;
+    G.players.push({
+      name: name || ("Student " + (idx + 1)),
+      pts: avg, pos: cellId,
+      color: "hsl(" + Math.round((idx * 137.5) % 360) + ",68%,40%)"
+    });
+    G.cells[cellId].occ = idx;
+    render();
+    return idx;
+  }
+
+  function renderRoster() {
+    $("rosterList").innerHTML = G.players.map(function (p, i) {
+      return '<div class="rrow"><i style="background:' + p.color + '"></i>' +
+             '<input class="rname" data-i="' + i + '" value="' + esc(p.name) + '">' +
+             '<span class="rpts">' + p.pts + " pt" + (p.pts === 1 ? "" : "s") + '</span>' +
+             '<button class="rdel" data-i="' + i + '" title="Remove player">\u2715</button></div>';
+    }).join("");
+  }
+
+  /* ---------- rendering ---------- */
+  function render() {
+    renderMap();
+    renderSide();
+  }
+
+  function renderMap() {
+    var wrap = $("mapWrap"), map = $("map");
+    var aw = wrap.clientWidth * 0.98, ah = wrap.clientHeight * 0.98;
+    var W = Math.floor(Math.min(aw / (G.cols + 0.5), ah / (1.1547 + (G.rows - 1) * 0.866)));
+    var H = Math.round(W * 1.1547);
+    map.style.width = Math.round(W * (G.cols + 0.5)) + "px";
+    map.style.height = Math.round(H + (G.rows - 1) * 0.75 * H) + "px";
+    map.style.setProperty("--cell", W + "px");
+
+    var showClouds = G.phase === "turn" || G.phase === "strike" || G.phase === "animating";
+    var cloudSet = {};
+    if (showClouds) G.clouds.forEach(function (id) { cloudSet[id] = true; });
+    var opts = moveOptions();
+    var cur = (G.phase === "turn") ? curPlayerIndex() : -1;
+    var showQ = needSpeak();
+
+    map.innerHTML = G.cells.map(function (c, i) {
+      var cls = "tile", inner = "";
+      if (!c.open) {
+        cls += " gone";
+        inner = '<span class="bolt">\u26A1</span>';
+      } else {
+        if (cloudSet[i]) { cls += " cloud"; inner += '<span class="ci">\u2601\uFE0F</span>'; }
+        if (c.occ !== null) {
+          cls += " hasP";
+          var p = G.players[c.occ];
+          var f = Math.min(0.15, 1.05 / Math.max(4, p.name.length));
+          inner += '<div class="token' + (c.occ === cur ? " cur" : "") + '" style="background:' + p.color +
+                   ';font-size:calc(var(--cell) * ' + f.toFixed(3) + ')">' + esc(p.name) + "</div>";
+        } else if (showQ && c.q) {
+          inner += '<div class="qt"><span>' + esc(c.q) + "</span></div>";
+        }
+        if (opts[i]) {
+          cls += " move" + (opts[i].d > 1 ? " far" : "");
+          if (opts[i].cost > 0) inner += '<span class="cost">\u2212' + opts[i].cost + "</span>";
+        }
+        if (G.pending === i) {
+          cls += " pend";
+          if (G.pendingCost > 0) inner += '<span class="cost">\u2212' + G.pendingCost + "</span>";
+        }
+      }
+      var left = c.c * W + (c.r & 1) * W / 2, top = c.r * 0.75 * H;
+      return '<div class="' + cls + '" data-id="' + i + '" style="left:' + left.toFixed(1) + "px;top:" + top.toFixed(1) +
+             "px;width:" + W + "px;height:" + H + 'px"><div class="hx">' + inner + "</div></div>";
+    }).join("");
+    fitTiles(W);
+  }
+
+  // Shrinks each square's question until it fits inside the hexagon.
+  function fitTiles(W) {
+    var els = document.querySelectorAll("#map .qt");
+    for (var i = 0; i < els.length; i++) {
+      var box = els[i], sp = box.firstChild;
+      var fs = W * 0.15, min = W * 0.06, guard = 0;
+      box.style.fontSize = fs + "px";
+      while ((sp.offsetHeight > box.clientHeight + 1 || sp.scrollWidth > sp.clientWidth + 1) && fs > min && guard++ < 40) {
+        fs *= 0.94;
+        box.style.fontSize = fs + "px";
+      }
+    }
+  }
+
+  function renderSide() {
+    var n = G.players.length;
+    $("roundLbl").textContent = "Round " + G.round;
+
+    var free = emptyOpenCount();
+    var st = "";
+    if (G.phase === "turn" || G.phase === "strike" || G.phase === "animating") {
+      var sc = strikeCount();
+      st = "\u2601\uFE0F " + G.clouds.length + " clouds \u00B7 \u26A1 " + sc +
+           (sc === 1 ? " strike" : " strikes") + " coming (half the clouds)<br>Free spaces: " + free;
+    } else {
+      st = "Free spaces left: " + free;
+    }
+    $("status").innerHTML = st;
+
+    var html = "";
+    if (G.phase === "turn") {
+      var pi = curPlayerIndex(), p = G.players[pi];
+      html += '<div class="who" style="color:#fff">' + esc(p.name) + "\u2019s turn</div>";
+      html += '<div class="sub">Turn ' + (G.turnPos + 1) + " of " + G.order.length +
+              (needSpeak() ? "" : " \u00B7 warm-up round") +
+              (G.pending !== null && G.pendingCost > 0 ? " \u00B7 this move costs " + G.pendingCost + (G.pendingCost === 1 ? " point" : " points") : "") + "</div>";
+      if (G.pending !== null) {
+        html += '<div class="q">' + esc(G.cells[G.pending].q) + "</div>";
+        html += '<div class="trow">';
+        html += S.timer > 0
+          ? '<div class="timer" id="tnum">' + Math.floor(S.timer / 60) + ":" + (S.timer % 60 < 10 ? "0" : "") + (S.timer % 60) + "</div>"
+          : "<div></div>";
+        html += '<div class="gbtns"><button id="btnCancel2" class="ghost">Cancel move</button></div></div>';
+        if (S.timer > 0) html += '<div class="tbar-bg"><div id="tbar"></div></div>';
+        html += '<button id="btnSaid" class="primary">\u2713 Understood \u2192 move</button>';
+      } else {
+        var moves = Object.keys(moveOptions());
+        var msg;
+        if (!moves.length) msg = "No free space you can reach. Stay for +1 point.";
+        else if (needSpeak()) msg = "Stay for +1 point, or tap a glowing space and answer its question to move.";
+        else msg = "Warm-up: questions appear on the spaces starting round " + S.speakFrom + ". Stay for +1 point, or tap a glowing space to move.";
+        html += '<div class="hint">' + msg + "</div>";
+        if (moves.length && S.maxMove > 1) html += '<div class="sub">' + costLine() + "</div>";
+        html += '<button id="btnStay" class="primary">Stay &nbsp;+1 point</button>';
+      }
+    } else if (G.phase === "strike") {
+      html += '<div class="who">\u26A1 Lightning time</div>';
+      html += '<div class="hint">Everyone has had a turn. Watch the clouds!</div>';
+      html += '<button id="btnStrike" class="danger">Strike!</button>';
+    } else if (G.phase === "animating") {
+      html += '<div class="who">\u26A1 Lightning!</div>';
+    } else if (G.phase === "results") {
+      html += '<div class="who">Round ' + G.round + " results</div>";
+      html += '<ul class="events">' + G.events.map(function (e) {
+        return '<li class="' + (e.zap ? "zap" : "") + '">' + esc(e.text) + "</li>";
+      }).join("") + "</ul>";
+      if (G.finalNote) html += '<div class="hint">' + esc(G.finalNote) + "</div>";
+      html += '<button id="btnNext" class="primary">' + (emptyOpenCount() === 0 ? "See final results" : "Next round \u2192") + "</button>";
+    } else if (G.phase === "over") {
+      html += '<div class="who">Game over</div>';
+      html += '<button id="btnShowOver" class="primary">Show results</button>';
+    }
+    $("turn").innerHTML = html;
+    bind("btnSaid", function () { doMove(G.pending, G.pendingCost); });
+    bind("btnCancel2", cancelPending);
+    bind("btnStay", doStay);
+    bind("btnStrike", doStrike);
+    bind("btnNext", nextRound);
+    bind("btnShowOver", function () { $("over").classList.remove("hidden"); });
+    if (G.pending !== null && S.timer > 0) tickTimer();
+
+    var curIdx = (G.phase === "turn") ? curPlayerIndex() : -1;
+    var cloudSet = {};
+    G.clouds.forEach(function (id) { cloudSet[id] = true; });
+    var showC = G.phase === "turn" || G.phase === "strike" || G.phase === "animating";
+    var bcols = n > 8 ? 2 : 1;
+    var brows = Math.ceil(n / bcols);
+    $("board").style.gridTemplateColumns = "repeat(" + bcols + ", minmax(0, 1fr))";
+    $("board").style.fontSize = (Math.min(3, 32 / (1.85 * brows)) * (bcols === 2 ? 0.85 : 1)) + "vh";
+    $("board").innerHTML = G.players.map(function (p, i) {
+      var under = showC && cloudSet[p.pos] ? " \u2601\uFE0F" : "";
+      return '<div class="row' + (i === curIdx ? " cur" : "") + '"><i style="background:' + p.color + '"></i>' +
+             '<span class="nm">' + esc(p.name) + under + "</span><b>" + p.pts + "</b></div>";
+    }).join("");
+  }
+
+  function costLine() {
+    var parts = ["1 space: no point"];
+    for (var d = 2; d <= S.maxMove; d++) {
+      var c = (d - 1) * S.extraCost;
+      parts.push(d + " spaces: " + (c ? "\u2212" + c + (c === 1 ? " point" : " points") : "no point"));
+    }
+    return "Moving \u2014 " + parts.join(" \u00B7 ");
+  }
+
+  function bind(id, fn) {
+    var el = $(id);
+    if (el) el.onclick = fn;
+  }
+
+  $("map").addEventListener("click", function (e) {
+    var t = e.target.closest ? e.target.closest(".tile") : null;
+    if (!t || !G || G.phase !== "turn") return;
+    var id = parseInt(t.getAttribute("data-id"), 10);
+    var o = moveOptions()[id];
+    if (!o) return;
+    if (needSpeak()) startPending(id, o.cost);
+    else doMove(id, o.cost);
+  });
+
+  /* ---------- rules / settings / buttons ---------- */
+  function fillRules() {
+    $("rulesList").innerHTML = [
+      "\u2601\uFE0F Clouds show where lightning may strike.",
+      S.maxMove > 1
+        ? "\u2795 Stay = 1 point. Move 1 space = 0 points. Each extra space (up to " + S.maxMove + ") costs " + S.extraCost + (S.extraCost === 1 ? " point." : " points.")
+        : "\u2795 Stay = 1 point. Move to a free space next to you = 0 points.",
+      "\u2601\uFE0F A new cloud appears after every turn, and lightning strikes half of the clouds \u2014 so a round gets riskier the longer it runs.",
+      "\uD83D\uDEE1\uFE0F Make it through a round without being struck and you earn a +3 survival bonus.",
+      (S.speakFrom <= 1
+        ? "\uD83D\uDDE3\uFE0F Every space has a question. To move there, answer it with one sentence."
+        : "\uD83D\uDDE3\uFE0F From round " + S.speakFrom + ", every space has a question. To move there, answer it with one sentence."),
+      "\u26A1 Struck by lightning? You lose half your points and move to a new space.",
+      "\u2B1B A struck space is gone forever. One player per space.",
+      "\uD83C\uDFC1 No free spaces left? Game over. The most points wins!"
+    ].map(function (t) { return "<li>" + esc(t) + "</li>"; }).join("");
+  }
+
+  function openSettings() {
+    $("fNames").value = S.names.join("\n");
+    $("fQs").value = S.questions.join("\n");
+    fillNums(S);
+    $("modal").classList.remove("hidden");
+  }
+  function fillNums(o) {
+    $("fStart").value = o.startPoints;
+    $("fSpeak").value = o.speakFrom;
+    $("fClouds").value = o.startClouds;
+    $("fGrow").value = o.cloudPerTurn;
+    $("fMax").value = o.maxMove;
+    $("fExtra").value = o.extraCost;
+    $("fTimer").value = o.timer;
+  }
+  function splitLines(v) {
+    return v.split("\n").map(function (s) { return s.trim(); }).filter(Boolean);
+  }
+
+  $("btnSettings").onclick = openSettings;
+  $("btnCancel").onclick = function () { $("modal").classList.add("hidden"); };
+  $("btnDefaults").onclick = function () {
+    $("fNames").value = DEFAULTS.names.join("\n");
+    $("fQs").value = DEFAULTS.questions.join("\n");
+    fillNums(DEFAULTS);
+  };
+  $("btnSave").onclick = function () {
+    var names = splitLines($("fNames").value).slice(0, 12);
+    if (names.length < 2) { alert("Please enter at least 2 student names (one per line)."); return; }
+    var qs = splitLines($("fQs").value);
+    S.names = names;
+    S.questions = qs.length ? qs : DEFAULT_QUESTIONS.slice();
+    S.startPoints = num($("fStart").value, 0, 50, DEFAULTS.startPoints);
+    S.speakFrom = num($("fSpeak").value, 1, 20, DEFAULTS.speakFrom);
+    S.startClouds = num($("fClouds").value, 1, 30, DEFAULTS.startClouds);
+    S.cloudPerTurn = num($("fGrow").value, 0, 3, DEFAULTS.cloudPerTurn);
+    S.maxMove = num($("fMax").value, 1, 4, DEFAULTS.maxMove);
+    S.extraCost = num($("fExtra").value, 0, 3, DEFAULTS.extraCost);
+    S.timer = num($("fTimer").value, 0, 300, DEFAULTS.timer);
+    saveSettings();
+    fillRules();
+    $("modal").classList.add("hidden");
+    newGame();
+  };
+
+  $("btnPlayers").onclick = function () { renderRoster(); $("roster").classList.remove("hidden"); };
+  $("btnRosterDone").onclick = function () { $("roster").classList.add("hidden"); render(); };
+  $("btnAddPlayer").onclick = function () {
+    var idx = addPlayer();
+    if (idx === null) return;
+    renderRoster();
+    var inp = document.querySelector('.rname[data-i="' + idx + '"]');
+    if (inp) { inp.focus(); inp.select(); }
+  };
+  $("rosterList").addEventListener("input", function (e) {
+    if (!e.target.classList.contains("rname")) return;
+    renamePlayer(parseInt(e.target.getAttribute("data-i"), 10), e.target.value);
+    renderSide();
+  });
+  $("rosterList").addEventListener("click", function (e) {
+    var btn = e.target.closest(".rdel");
+    if (!btn) return;
+    var i = parseInt(btn.getAttribute("data-i"), 10);
+    if (G.players.length <= 2) { alert("You need at least 2 players to keep playing."); return; }
+    if (!confirm("Remove " + G.players[i].name + " from the game?")) return;
+    removePlayer(i);
+    renderRoster();
+  });
+
+  $("btnRules").onclick = function () { fillRules(); $("intro").classList.remove("hidden"); };
+  $("btnStart").onclick = function () { $("intro").classList.add("hidden"); };
+  $("btnNew").onclick = function () {
+    if (confirm("Start a new game? Current scores will be lost.")) newGame();
+  };
+  $("btnEnd").onclick = function () {
+    if (G && !G.over && confirm("End the game now and show final scores?")) endGame("The teacher ended the game.");
+  };
+  $("btnAgain").onclick = newGame;
+  $("btnCloseOver").onclick = function () { $("over").classList.add("hidden"); };
+
+  window.addEventListener("resize", function () { if (G) renderMap(); });
+
+  fillRules();
+  newGame();
+})();
+</script>
+</body>
+</html>

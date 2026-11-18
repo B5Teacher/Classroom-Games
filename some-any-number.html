@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Some, Any, or a Number?</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f5f5f0; color: #2c2c2a; display: flex; align-items: center; justify-content: center; padding: 2vh 2vw; }
+  .container { width: 100%; max-width: 1400px; height: 96vh; display: flex; flex-direction: column; }
+  h1 { font-size: clamp(24px, 4.2vh, 40px); font-weight: 600; text-align: center; }
+  .subtitle { text-align: center; color: #5f5e5a; font-size: clamp(13px, 2vh, 18px); margin-bottom: 1.2vh; }
+  .setup { background: white; border: 0.5px solid rgba(0,0,0,0.15); border-radius: 12px; padding: 3.5vh 3vw; text-align: left; margin: auto; max-width: 900px; }
+  .setup p { font-size: clamp(14px, 2.2vh, 20px); color: #5f5e5a; margin-bottom: 1.4vh; line-height: 1.5; }
+  .setup .c { text-align: center; }
+  button { font-family: inherit; font-size: clamp(14px, 2.2vh, 20px); padding: 1.1vh 1.6vw; border-radius: 8px; border: 0.5px solid rgba(0,0,0,0.25); background: white; color: #2c2c2a; cursor: pointer; }
+  button:hover { background: #f0eee7; }
+  button:disabled { opacity: .45; cursor: default; }
+  button.primary { background: #2c2c2a; color: white; border-color: #2c2c2a; }
+  .play { display: none; flex: 1; flex-direction: column; min-height: 0; gap: 1.2vh; }
+  .meta { display: flex; justify-content: space-between; font-size: clamp(14px, 2.3vh, 22px); color: #5f5e5a; }
+  .timer-bar-bg { height: 8px; background: #e2e0d8; border-radius: 4px; overflow: hidden; }
+  .timer-bar { height: 100%; background: #185FA5; width: 100%; transition: width 1s linear; }
+  .rows { flex: 1; display: flex; flex-direction: column; justify-content: space-evenly; min-height: 0; }
+  .row { background: white; border: 0.5px solid rgba(0,0,0,0.15); border-radius: 12px; padding: 1.2vh 1.6vw; font-size: clamp(22px, 4.4vh, 44px); display: flex; align-items: center; flex-wrap: wrap; gap: 0.4vw; }
+  .slot { display: inline-flex; min-width: 9vw; min-height: 6.4vh; border-bottom: 4px solid #2c2c2a; margin: 0 0.4vw; align-items: center; justify-content: center; padding: 0 0.8vh 0.6vh; }
+  .slot.over { background: #fff4e0; }
+  .bank { display: flex; justify-content: center; gap: 2vw; padding: 1.2vh; background: white; border: 2px dashed rgba(0,0,0,0.18); border-radius: 12px; }
+  .tile { font-size: clamp(22px, 4.4vh, 44px); font-weight: 700; padding: 0.6vh 1.6vw; border-radius: 10px; background: #2c2c2a; color: white; cursor: grab; user-select: none; touch-action: none; }
+  .slot .tile { background: white; color: #2c2c2a; border: 3px solid #2c2c2a; }
+  .tile.incorrect { border-color: #A32D2D !important; background: #FCEBEB !important; color: #A32D2D !important; }
+  .tile.dragging { position: fixed; z-index: 100; pointer-events: none; }
+  .controls { display: flex; gap: 1vw; justify-content: center; }
+  .feedback { text-align: center; font-size: clamp(14px, 2.3vh, 22px); min-height: 3vh; color: #5f5e5a; }
+  .feedback.win { color: #2E7D32; font-weight: 600; } .feedback.time { color: #A32D2D; font-weight: 600; }
+  .review { display: none; flex: 1; background: white; border-radius: 12px; padding: 2vh 2vw; min-height: 0; }
+  .review h2 { font-size: clamp(18px, 3vh, 30px); margin-bottom: 1.2vh; }
+  .review ol { columns: 2; column-gap: 3vw; padding-left: 2.2vw; font-size: clamp(15px, 2.6vh, 26px); line-height: 1.55; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Some, Any, or a Number?</h1>
+  <p class="subtitle">Drag a word from the bank into each blank</p>
+
+  <div id="setup" class="setup">
+    <p><strong>some</strong> — statements and offers ("I have some money." / "Would you like some coffee?")</p>
+    <p><strong>any</strong> — negatives and most questions ("I don't have any money." / "Do you have any money?")</p>
+    <p><strong>a number</strong> — a new number is picked each round. Any number works; the skill is knowing the sentence needs a number.</p>
+    <p>The bank has 3 words — <strong>some</strong>, <strong>any</strong>, and this round's number — and you can drag out as many copies as you need. Five sentences are on screen at a time; solve one and a new one takes its place. Finish the round and all the sentences are shown so you can write them down.</p>
+    <p class="c"><button id="startBtn" class="primary">Start round</button></p>
+  </div>
+
+  <div id="play" class="play">
+    <div class="meta"><span id="roundLabel">Round 1</span><span id="timerDisplay">5:00</span><span>Correct: <strong id="roundScoreLabel">0</strong>/<span id="targetLabel">15</span></span></div>
+    <div class="timer-bar-bg"><div id="timerBar" class="timer-bar"></div></div>
+    <div id="rows" class="rows"></div>
+    <div id="bank" class="bank"></div>
+    <div id="review" class="review"><h2>Round complete — write these down:</h2><ol id="reviewList"></ol></div>
+    <div class="controls">
+      <button id="checkBtn" class="primary">Check</button>
+      <button id="newRoundBtn">New round →</button>
+    </div>
+    <div id="feedback" class="feedback"></div>
+  </div>
+</div>
+
+<script>
+/* B5 content editor — shared by the Classroom-Games suite.
+   Saved per browser in localStorage. Supports several named lists,
+   a table editor, a "paste many" text box, and Reset to defaults. */
+(function () {
+  var CSS = '' +
+  '.b5e-btn{position:fixed;right:12px;bottom:12px;z-index:9000;font:600 14px/1 -apple-system,"Segoe UI",sans-serif;background:#fff;color:#2c2c2a;border:1px solid rgba(0,0,0,.25);border-radius:20px;padding:9px 14px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.12);opacity:.85}' +
+  '.b5e-btn:hover{opacity:1}' +
+  '.b5e-ov{position:fixed;inset:0;z-index:9500;background:rgba(20,20,18,.55);display:none;align-items:center;justify-content:center;font:15px/1.4 -apple-system,"Segoe UI",Roboto,sans-serif;color:#2c2c2a}' +
+  '.b5e-ov.open{display:flex}' +
+  '.b5e-box{background:#fff;border-radius:14px;width:min(1000px,96vw);height:min(760px,94vh);display:flex;flex-direction:column;box-shadow:0 10px 40px rgba(0,0,0,.3)}' +
+  '.b5e-head{padding:14px 18px 10px;border-bottom:1px solid #e6e4dd}' +
+  '.b5e-head h2{font-size:20px;font-weight:600;margin:0 0 8px}' +
+  '.b5e-lists{display:flex;flex-wrap:wrap;gap:6px;align-items:center}' +
+  '.b5e-lists select,.b5e-lists input{font:inherit;padding:5px 8px;border:1px solid #c9c6bd;border-radius:6px}' +
+  '.b5e-lists input{width:220px}' +
+  '.b5e-help{font-size:13px;color:#66645e;margin-top:6px}' +
+  '.b5e-body{flex:1;overflow:auto;padding:10px 18px}' +
+  '.b5e-set{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:10px;padding:8px 10px;background:#f6f5f0;border-radius:8px}' +
+  '.b5e-set label{font-size:13px;display:flex;gap:6px;align-items:center}' +
+  '.b5e-set input,.b5e-set select{font:inherit;padding:3px 6px;border:1px solid #c9c6bd;border-radius:5px}' +
+  '.b5e-tbl{width:100%;border-collapse:collapse}' +
+  '.b5e-tbl th{text-align:left;font-size:12px;letter-spacing:.5px;color:#66645e;padding:4px;position:sticky;top:-10px;background:#fff}' +
+  '.b5e-tbl td{padding:3px 4px;vertical-align:top}' +
+  '.b5e-tbl td.n{color:#99968e;font-size:12px;width:26px;padding-top:9px}' +
+  '.b5e-tbl input,.b5e-tbl select,.b5e-tbl textarea{width:100%;font:inherit;padding:5px 7px;border:1px solid #d4d1c8;border-radius:5px;background:#fff}' +
+  '.b5e-tbl textarea{min-height:34px;resize:vertical}' +
+  '.b5e-x{border:none;background:none;color:#a33;font-size:18px;cursor:pointer;padding:4px 6px}' +
+  '.b5e-act{font:inherit;font-size:12px;padding:5px 8px;border:1px solid #c9c6bd;border-radius:5px;background:#f6f5f0;cursor:pointer;white-space:nowrap}' +
+  '.b5e-bulk{width:100%;height:100%;min-height:360px;font:14px/1.5 ui-monospace,Consolas,monospace;padding:10px;border:1px solid #c9c6bd;border-radius:8px}' +
+  '.b5e-foot{padding:10px 18px;border-top:1px solid #e6e4dd;display:flex;flex-wrap:wrap;gap:8px;align-items:center}' +
+  '.b5e-foot .sp{flex:1}' +
+  '.b5e-b{font:inherit;font-size:14px;padding:8px 14px;border-radius:8px;border:1px solid #c9c6bd;background:#fff;cursor:pointer}' +
+  '.b5e-b.pri{background:#1a5fa8;border-color:#1a5fa8;color:#fff;font-weight:600}' +
+  '.b5e-b.warn{color:#a33}' +
+  '.b5e-msg{font-size:13px;color:#a33;min-height:18px}' +
+  '.b5e-msg.ok{color:#1a6b3a}';
+
+  function el(tag, attrs, kids) {
+    var e = document.createElement(tag);
+    if (attrs) for (var k in attrs) {
+      if (k === 'text') e.textContent = attrs[k];
+      else if (k === 'html') e.innerHTML = attrs[k];
+      else if (k.slice(0, 2) === 'on') e.addEventListener(k.slice(2), attrs[k]);
+      else e.setAttribute(k, attrs[k]);
+    }
+    (kids || []).forEach(function (c) { if (c) e.appendChild(c); });
+    return e;
+  }
+  function clone(x) { return JSON.parse(JSON.stringify(x)); }
+
+  function B5Edit(cfg) {
+    var self = this;
+    this.cfg = cfg;
+    this.cols = cfg.columns;
+    this.key = 'b5edit:' + cfg.key;
+    this.defaultName = cfg.defaultName || 'Default list';
+    this.listeners = [];
+    if (cfg.onChange) this.listeners.push(cfg.onChange);
+    this.state = this._load();
+    if (!document.getElementById('b5e-css')) {
+      var st = el('style', { id: 'b5e-css' }); st.textContent = CSS; document.head.appendChild(st);
+    }
+    this._build();
+    if (cfg.button !== false) {
+      var host = cfg.buttonHost ? (typeof cfg.buttonHost === 'string' ? document.querySelector(cfg.buttonHost) : cfg.buttonHost) : null;
+      var b = el('button', { 'class': host ? (cfg.buttonClass || '') : 'b5e-btn', type: 'button', text: cfg.buttonLabel || '⚙ Edit content', onclick: function () { self.open(); } });
+      if (host) host.appendChild(b); else document.body.appendChild(b);
+      this.button = b;
+    }
+  }
+
+  B5Edit.prototype._defaults = function () {
+    var s = {};
+    (this.cfg.settings || []).forEach(function (f) { s[f.key] = f.default; });
+    return { v: 1, current: 'default', settings: s,
+      lists: [{ id: 'default', name: this.defaultName, rows: clone(this.cfg.defaults) }] };
+  };
+  B5Edit.prototype._load = function () {
+    var d = this._defaults();
+    try {
+      var raw = localStorage.getItem(this.key);
+      if (raw) {
+        var s = JSON.parse(raw);
+        if (s && Array.isArray(s.lists) && s.lists.length) {
+          s.settings = Object.assign({}, d.settings, s.settings || {});
+          if (!s.lists.some(function (l) { return l.id === s.current; })) s.current = s.lists[0].id;
+          return s;
+        }
+      }
+    } catch (e) {}
+    return d;
+  };
+  B5Edit.prototype._save = function () {
+    try { localStorage.setItem(this.key, JSON.stringify(this.state)); } catch (e) {}
+  };
+  B5Edit.prototype._cur = function () {
+    var st = this.state;
+    return st.lists.filter(function (l) { return l.id === st.current; })[0] || st.lists[0];
+  };
+  /* public API */
+  B5Edit.prototype.rows = function () { return clone(this._cur().rows); };
+  B5Edit.prototype.listName = function () { return this._cur().name; };
+  B5Edit.prototype.settings = function () { return clone(this.state.settings); };
+  B5Edit.prototype.onChange = function (fn) { this.listeners.push(fn); };
+  B5Edit.prototype.listNames = function () { return this.state.lists.map(function (l) { return { id: l.id, name: l.name }; }); };
+  B5Edit.prototype.useList = function (id) {
+    if (this.state.lists.some(function (l) { return l.id === id; })) { this.state.current = id; this._save(); this._fire(); }
+  };
+  B5Edit.prototype._fire = function () {
+    var self = this;
+    this.listeners.forEach(function (fn) { try { fn(self.rows(), self.settings(), self.listName()); } catch (e) { console.error(e); } });
+  };
+
+  /* ---------- UI ---------- */
+  B5Edit.prototype._build = function () {
+    var self = this, cfg = this.cfg;
+    this.ov = el('div', { 'class': 'b5e-ov' });
+    this.sel = el('select', { onchange: function () { self._pull(); self.work.current = self.sel.value; self._render(); } });
+    this.nameIn = el('input', { placeholder: 'List name', oninput: function () { self._curW().name = self.nameIn.value; self._fillSel(); } });
+    var lists = el('div', { 'class': 'b5e-lists' }, [
+      el('span', { text: 'List:' }), this.sel, this.nameIn,
+      el('button', { 'class': 'b5e-act', type: 'button', text: '+ New list', onclick: function () { self._newList(false); } }),
+      el('button', { 'class': 'b5e-act', type: 'button', text: 'Copy list', onclick: function () { self._newList(true); } }),
+      el('button', { 'class': 'b5e-act', type: 'button', text: 'Delete list', onclick: function () { self._delList(); } })
+    ]);
+    var help = el('div', { 'class': 'b5e-help', html: cfg.help || '' });
+    this.body = el('div', { 'class': 'b5e-body' });
+    this.msg = el('div', { 'class': 'b5e-msg' });
+    this.bulkBtn = el('button', { 'class': 'b5e-b', type: 'button', text: 'Paste many', onclick: function () { self._toggleBulk(); } });
+    var foot = el('div', { 'class': 'b5e-foot' }, [
+      el('button', { 'class': 'b5e-b', type: 'button', text: '+ Add row', onclick: function () { self._pull(); self._curW().rows.push(self._blank()); self._render(); self.body.scrollTop = 1e6; } }),
+      this.bulkBtn,
+      el('button', { 'class': 'b5e-b warn', type: 'button', text: 'Reset to defaults', onclick: function () { self._reset(); } }),
+      el('div', { 'class': 'sp' }, [this.msg]),
+      el('button', { 'class': 'b5e-b', type: 'button', text: 'Cancel', onclick: function () { self.close(); } }),
+      el('button', { 'class': 'b5e-b pri', type: 'button', text: 'Save', onclick: function () { self._commit(); } })
+    ]);
+    this.box = el('div', { 'class': 'b5e-box' }, [
+      el('div', { 'class': 'b5e-head' }, [el('h2', { text: cfg.title || 'Edit content' }), lists, help]),
+      this.body, foot
+    ]);
+    this.ov.appendChild(this.box);
+    this.ov.addEventListener('keydown', function (e) { e.stopPropagation(); if (e.key === 'Escape') self.close(); });
+    this.ov.addEventListener('keyup', function (e) { e.stopPropagation(); });
+    this.ov.addEventListener('keypress', function (e) { e.stopPropagation(); });
+    document.body.appendChild(this.ov);
+  };
+  B5Edit.prototype._blank = function () { var r = {}; this.cols.forEach(function (c) { r[c.key] = c.options ? c.options[0].value !== undefined ? c.options[0].value : c.options[0] : ''; }); return r; };
+  B5Edit.prototype._curW = function () { var w = this.work; return w.lists.filter(function (l) { return l.id === w.current; })[0]; };
+  B5Edit.prototype._fillSel = function () {
+    var w = this.work, sel = this.sel; sel.innerHTML = '';
+    w.lists.forEach(function (l) { sel.appendChild(el('option', { value: l.id, text: l.name || '(no name)' })); });
+    sel.value = w.current;
+  };
+  B5Edit.prototype.open = function () {
+    this.work = clone(this.state); this.bulk = false; this.bulkBtn.textContent = 'Paste many';
+    this.msg.textContent = ''; this._render(); this.ov.classList.add('open');
+    if (this.cfg.onOpen) this.cfg.onOpen();
+  };
+  B5Edit.prototype.close = function () { this.ov.classList.remove('open'); if (this.cfg.onClose) this.cfg.onClose(); };
+  B5Edit.prototype._optVal = function (o) { return o && o.value !== undefined ? o.value : o; };
+  B5Edit.prototype._render = function () {
+    var self = this, cfg = this.cfg, L = this._curW();
+    this._fillSel(); this.nameIn.value = L.name;
+    this.body.innerHTML = '';
+    if ((cfg.settings || []).length) {
+      var set = el('div', { 'class': 'b5e-set' });
+      cfg.settings.forEach(function (f) {
+        var v = self.work.settings[f.key], inp;
+        if (f.type === 'select') {
+          inp = el('select', { 'data-k': f.key });
+          f.options.forEach(function (o) { inp.appendChild(el('option', { value: String(self._optVal(o)), text: o.label || String(o) })); });
+          inp.value = String(v);
+        } else if (f.type === 'checkbox') {
+          inp = el('input', { type: 'checkbox', 'data-k': f.key }); inp.checked = !!v;
+        } else {
+          inp = el('input', { type: f.type || 'text', 'data-k': f.key, value: v == null ? '' : v, style: 'width:' + (f.width || 90) + 'px' });
+          if (f.min != null) inp.min = f.min; if (f.max != null) inp.max = f.max;
+        }
+        set.appendChild(el('label', {}, [el('span', { text: f.label }), inp]));
+      });
+      this.body.appendChild(set);
+      this.setBox = set;
+    } else this.setBox = null;
+    if (this.bulk) {
+      var fmt = this.cols.map(function (c) { return c.label; }).join(' | ');
+      this.body.appendChild(el('div', { 'class': 'b5e-help', text: 'One row per line. ' + (this.cols.length > 1 ? 'Separate the boxes with | like this:  ' + fmt : '') }));
+      this.ta = el('textarea', { 'class': 'b5e-bulk' });
+      this.ta.value = L.rows.map(function (r) { return self.cols.map(function (c) { return r[c.key] == null ? '' : String(r[c.key]); }).join(' | '); }).join('\n');
+      this.body.appendChild(this.ta);
+      return;
+    }
+    var tbl = el('table', { 'class': 'b5e-tbl' });
+    var hr = el('tr', {}, [el('th', { text: '#' })]);
+    this.cols.forEach(function (c) { hr.appendChild(el('th', { text: c.label, style: c.width ? 'width:' + c.width : '' })); });
+    if (cfg.rowAction) hr.appendChild(el('th'));
+    hr.appendChild(el('th'));
+    tbl.appendChild(hr);
+    L.rows.forEach(function (r, i) {
+      var tr = el('tr', {}, [el('td', { 'class': 'n', text: String(i + 1) })]);
+      self.cols.forEach(function (c) {
+        var inp, v = r[c.key] == null ? '' : r[c.key];
+        if (c.options) {
+          inp = el('select');
+          c.options.forEach(function (o) { inp.appendChild(el('option', { value: String(self._optVal(o)), text: o.label || String(o) })); });
+          inp.value = String(v);
+        } else if (c.multiline) { inp = el('textarea', { placeholder: c.placeholder || '' }); inp.value = v; }
+        else inp = el('input', { value: v, placeholder: c.placeholder || '' });
+        inp.setAttribute('data-k', c.key);
+        tr.appendChild(el('td', {}, [inp]));
+      });
+      if (cfg.rowAction) tr.appendChild(el('td', {}, [el('button', { 'class': 'b5e-act', type: 'button', text: cfg.rowAction.label, onclick: function () { self._rowAct(i); } })]));
+      tr.appendChild(el('td', {}, [el('button', { 'class': 'b5e-x', type: 'button', title: 'Delete row', text: '×', onclick: function () { self._pull(); self._curW().rows.splice(i, 1); self._render(); } })]));
+      tbl.appendChild(tr);
+    });
+    this.body.appendChild(tbl);
+    this.tbl = tbl;
+  };
+  B5Edit.prototype._pull = function () {
+    var self = this, L = this._curW();
+    if (!L) return;
+    if (this.setBox) {
+      [].forEach.call(this.setBox.querySelectorAll('[data-k]'), function (inp) {
+        var k = inp.getAttribute('data-k'), f = self.cfg.settings.filter(function (s) { return s.key === k; })[0];
+        var v = inp.type === 'checkbox' ? inp.checked : inp.value;
+        if (f && (f.type === 'number' || typeof f.default === 'number') && inp.type !== 'checkbox') v = Number(v);
+        self.work.settings[k] = v;
+      });
+    }
+    if (this.bulk) {
+      L.rows = this.ta.value.split('\n').map(function (line) { return line.trim(); }).filter(Boolean).map(function (line) {
+        var parts = self.cols.length > 1 ? line.split('|') : [line], r = {};
+        self.cols.forEach(function (c, i) { r[c.key] = (parts[i] || '').trim(); });
+        return r;
+      });
+      return;
+    }
+    var trs = this.tbl ? this.tbl.querySelectorAll('tr') : [];
+    var rows = [];
+    for (var i = 1; i < trs.length; i++) {
+      var r = {};
+      [].forEach.call(trs[i].querySelectorAll('[data-k]'), function (inp) { r[inp.getAttribute('data-k')] = inp.value.trim(); });
+      rows.push(r);
+    }
+    L.rows = rows;
+  };
+  B5Edit.prototype._toggleBulk = function () {
+    this._pull(); this.bulk = !this.bulk;
+    this.bulkBtn.textContent = this.bulk ? 'Table view' : 'Paste many';
+    this._render();
+  };
+  B5Edit.prototype._newList = function (copy) {
+    this._pull();
+    var cur = this._curW(), id = 'l' + Date.now();
+    var L = { id: id, name: copy ? cur.name + ' (copy)' : 'New list', rows: copy ? clone(cur.rows) : [this._blank()] };
+    this.work.lists.push(L); this.work.current = id; this._render(); this.nameIn.focus(); this.nameIn.select();
+  };
+  B5Edit.prototype._delList = function () {
+    if (this.work.lists.length < 2) { this._say('You need at least one list.'); return; }
+    if (!confirm('Delete the list "' + this._curW().name + '"?')) return;
+    var w = this.work; w.lists = w.lists.filter(function (l) { return l.id !== w.current; });
+    w.current = w.lists[0].id; this._render();
+  };
+  B5Edit.prototype._reset = function () {
+    if (!confirm('Bring back the original list and settings? Your other lists stay.')) return;
+    var d = this._defaults(), w = this.work;
+    var has = w.lists.filter(function (l) { return l.id === 'default'; })[0];
+    if (has) { has.rows = d.lists[0].rows; has.name = d.lists[0].name; } else w.lists.unshift(d.lists[0]);
+    w.settings = d.settings; w.current = 'default'; this._render(); this._say('Defaults restored. Press Save to use them.', true);
+  };
+  B5Edit.prototype._rowAct = function (i) {
+    var self = this; this._pull();
+    var L = this._curW(), r = L.rows[i];
+    this._say('Working…', true);
+    Promise.resolve(this.cfg.rowAction.run(clone(r))).then(function (nr) {
+      if (nr) { L.rows[i] = nr; self._render(); }
+      self._say('', true);
+    }).catch(function (e) { self._say(String(e && e.message || e)); });
+  };
+  B5Edit.prototype._say = function (t, ok) { this.msg.textContent = t; this.msg.className = 'b5e-msg' + (ok ? ' ok' : ''); };
+  B5Edit.prototype._commit = function () {
+    this._pull();
+    var self = this, w = this.work;
+    // drop fully empty rows
+    w.lists.forEach(function (L) {
+      L.rows = L.rows.filter(function (r) { return self.cols.some(function (c) { return !c.options && String(r[c.key] || '').trim() !== ''; }) || self.cols.every(function (c) { return c.options; }); });
+      if (self.cfg.clean) L.rows = L.rows.map(self.cfg.clean);
+      if (!L.name) L.name = 'Untitled list';
+    });
+    var L = this._curW();
+    var err = this.cfg.validate ? this.cfg.validate(L.rows, w.settings) : '';
+    if (!err && this.cfg.min && L.rows.length < this.cfg.min) err = 'This list needs at least ' + this.cfg.min + ' rows.';
+    if (err) { this._say(err); this._render(); return; }
+    this.state = w; this._save(); this.close(); this._fire();
+  };
+
+  window.B5Edit = B5Edit;
+})();
+
+</script>
+<script>
+(function () {
+  const DEF = [
+    ["I have ", " money in my pocket.", "some"], ["We have ", " homework tonight.", "some"], ["Would you like ", " coffee?", "some"], ["Would you like ", " water?", "some"], ["There is ", " milk in the fridge.", "some"],
+    ["I need ", " help with this form.", "some"], ["He gave me ", " advice about the interview.", "some"], ["I found ", " information about the job.", "some"], ["She has ", " experience with computers.", "some"], ["We have ", " time before the bus comes.", "some"],
+    ["There is ", " traffic on the highway today.", "some"], ["I have ", " good news for you.", "some"], ["She bought ", " bread at the store.", "some"], ["He has ", " brothers.", "some"], ["She has ", " good ideas for the project.", "some"],
+    ["I don't have ", " money in my pocket.", "any"], ["Do you have ", " money?", "any"], ["There isn't ", " coffee left in the pot.", "any"], ["He doesn't have ", " brothers.", "any"], ["Are there ", " apples in the basket?", "any"],
+    ["I don't have ", " time to talk right now.", "any"], ["She doesn't have ", " experience with this software.", "any"], ["Do you have ", " questions?", "any"], ["There isn't ", " milk in the fridge.", "any"], ["We don't have ", " homework tonight.", "any"],
+    ["Is there ", " information about the schedule?", "any"], ["He didn't give me ", " advice.", "any"], ["I don't have ", " good ideas right now.", "any"], ["Do you need ", " help with that?", "any"], ["There isn't ", " traffic this morning.", "any"],
+    ["I am ", " years old.", "number"], ["My son is ", " years old.", "number"], ["My grandmother is ", " years old.", "number"], ["She is ", " feet tall.", "number"], ["He is ", " inches taller than me.", "number"],
+    ["This box weighs ", " pounds.", "number"], ["This suitcase weighs ", " kilograms.", "number"], ["It's ", " o'clock.", "number"], ["My flight leaves at ", " o'clock.", "number"], ["This movie is ", " hours long.", "number"],
+    ["The bus comes every ", " minutes.", "number"], ["The train leaves every ", " minutes.", "number"], ["I wear a size ", " shoe.", "number"], ["My PIN has ", " digits.", "number"], ["My apartment number is ", ".", "number"]
+  ];
+  const ED = new B5Edit({ key: "some-any-number", title: "Some / any / number sentences", defaultName: "Everyday sentences",
+    help: "Write ___ (three underscores) where the blank goes. Make sure only ONE answer is possible: number sentences should not also work with some or any.",
+    columns: [{ key: "text", label: "Sentence with ___" }, { key: "category", label: "Answer", width: "150px", options: ["some", "any", "number"] }],
+    settings: [{ key: "perCat", label: "Sentences per answer, per round", type: "number", default: 5, min: 1, max: 15, width: 70 },
+               { key: "seconds", label: "Round time", type: "select", default: 300, options: [{ value: 180, label: "3 minutes" }, { value: 300, label: "5 minutes" }, { value: 420, label: "7 minutes" }, { value: 600, label: "10 minutes" }] },
+               { key: "numbers", label: "Number words", default: "two, three, five, six, seven, eight, nine, ten, eleven, twelve", width: 380 }],
+    defaults: DEF.map(function (d) { return { text: d[0] + "___" + d[1], category: d[2] }; }),
+    validate: function (rows) { var bad = rows.filter(function (r) { return r.text.indexOf("___") < 0; }); if (bad.length) return "Every sentence needs ___ for the blank."; return ["some", "any", "number"].some(function (c) { return rows.some(function (r) { return r.category === c; }); }) ? "" : "Add some sentences."; },
+    onChange: function () { location.reload(); } });
+  const SET = ED.settings();
+  const SENTENCES = ED.rows().map(function (r) { const i = r.text.indexOf("___"); return { before: r.text.slice(0, i), after: r.text.slice(i + 3), category: r.category }; });
+  const NUMBER_WORDS = String(SET.numbers).split(",").map(function (s) { return s.trim(); }).filter(Boolean);
+  const PER_CAT = Math.max(1, Number(SET.perCat) || 5);
+  const VISIBLE = 5, ROUND_SECONDS = Number(SET.seconds) || 300;
+  const CAT_IDX = { some: [], any: [], number: [] };
+  SENTENCES.forEach(function (s, i) { if (CAT_IDX[s.category]) CAT_IDX[s.category].push(i); });
+  const catDecks = { some: [], any: [], number: [] };
+
+  let deck = [], rowEls = [], done = [], roundScore = 0, target = 0, roundNumber = 0, timeLeft = ROUND_SECONDS, timer = null, locked = false;
+
+  function shuffle(arr) { const a = arr.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+  function drawCat(cat, n) {
+    const out = [];
+    n = Math.min(n, CAT_IDX[cat].length);
+    for (let i = 0; i < n; i++) { if (!catDecks[cat].length) catDecks[cat] = shuffle(CAT_IDX[cat]).filter(function (x) { return out.indexOf(x) < 0; }); out.push(catDecks[cat].pop()); }
+    return out;
+  }
+
+  function buildRow(idx) {
+    const s = SENTENCES[idx], row = document.createElement("div");
+    row.className = "row"; row.dataset.index = idx;
+    row.appendChild(document.createTextNode(s.before));
+    const slot = document.createElement("span"); slot.className = "slot"; slot.dataset.category = s.category;
+    row.appendChild(slot);
+    row.appendChild(document.createTextNode(s.after));
+    return row;
+  }
+  function makeTile(word, cat, stamp) {
+    const t = document.createElement("span");
+    t.className = "tile"; t.textContent = word; t.dataset.category = cat; t.dataset.word = word;
+    if (stamp) t.dataset.stamp = "1";
+    t.addEventListener("pointerdown", startDrag);
+    return t;
+  }
+
+  let drag = null;
+  function startDrag(e) {
+    if (locked) return;
+    e.preventDefault();
+    let t = e.currentTarget;
+    const r = t.getBoundingClientRect();
+    if (t.dataset.stamp) t = makeTile(t.dataset.word, t.dataset.category, false);
+    t.classList.remove("incorrect");
+    drag = { tile: t, dx: e.clientX - r.left, dy: e.clientY - r.top };
+    t.classList.add("dragging"); document.body.appendChild(t);
+    move(e.clientX, e.clientY);
+    window.addEventListener("pointermove", onMove); window.addEventListener("pointerup", onUp);
+  }
+  function move(x, y) { drag.tile.style.left = (x - drag.dx) + "px"; drag.tile.style.top = (y - drag.dy) + "px"; }
+  function slotAt(x, y) { const el = document.elementFromPoint(x, y); if (!el) return null; const row = el.closest(".row"); return el.closest(".slot") || (row ? row.querySelector(".slot") : null); }
+  function onMove(e) { move(e.clientX, e.clientY); document.querySelectorAll(".slot").forEach(function (s) { s.classList.remove("over"); }); const s = slotAt(e.clientX, e.clientY); if (s) s.classList.add("over"); }
+  function onUp(e) {
+    window.removeEventListener("pointermove", onMove); window.removeEventListener("pointerup", onUp);
+    document.querySelectorAll(".slot").forEach(function (s) { s.classList.remove("over"); });
+    const t = drag.tile, s = slotAt(e.clientX, e.clientY);
+    t.classList.remove("dragging"); t.style.left = t.style.top = "";
+    if (s) { s.innerHTML = ""; s.appendChild(t); } else t.remove();
+    drag = null;
+  }
+
+  function fmt(sec) { return Math.floor(sec / 60) + ":" + String(sec % 60).padStart(2, "0"); }
+  function updateTimer() { document.getElementById("timerDisplay").textContent = fmt(Math.max(0, timeLeft)); document.getElementById("timerBar").style.width = (100 * timeLeft / ROUND_SECONDS) + "%"; }
+  function refill() { const rows = document.getElementById("rows"); while (rowEls.length < VISIBLE && deck.length) { const r = buildRow(deck.pop()); rows.appendChild(r); rowEls.push(r); } }
+
+  function renderRound() {
+    roundNumber++; roundScore = 0; done = []; timeLeft = ROUND_SECONDS; locked = false;
+    deck = shuffle(drawCat("some", PER_CAT).concat(drawCat("any", PER_CAT), drawCat("number", PER_CAT)));
+    target = deck.length;
+    document.getElementById("roundLabel").textContent = "Round " + roundNumber;
+    document.getElementById("roundScoreLabel").textContent = "0";
+    document.getElementById("targetLabel").textContent = target;
+    document.getElementById("feedback").textContent = ""; document.getElementById("feedback").className = "feedback";
+    document.getElementById("checkBtn").disabled = false;
+    ["rows", "bank"].forEach(function (id) { document.getElementById(id).style.display = ""; });
+    document.getElementById("review").style.display = "none";
+    document.getElementById("rows").innerHTML = ""; rowEls = []; refill();
+    const bank = document.getElementById("bank"); bank.innerHTML = "";
+    const num = NUMBER_WORDS[Math.floor(Math.random() * NUMBER_WORDS.length)] || "three";
+    [["some", "some"], ["any", "any"], [num, "number"]].forEach(function (p) { bank.appendChild(makeTile(p[0], p[1], true)); });
+    updateTimer();
+    clearInterval(timer);
+    timer = setInterval(function () { timeLeft--; updateTimer(); if (timeLeft <= 0) { clearInterval(timer); timeUp(); } }, 1000);
+  }
+  function timeUp() {
+    locked = true; document.getElementById("checkBtn").disabled = true;
+    const fb = document.getElementById("feedback"); fb.className = "feedback time";
+    fb.textContent = "Time's up — " + roundScore + " of " + target + " correct this round.";
+  }
+  function showReview() {
+    locked = true; document.getElementById("checkBtn").disabled = true;
+    ["rows", "bank"].forEach(function (id) { document.getElementById(id).style.display = "none"; });
+    const list = document.getElementById("reviewList"); list.innerHTML = "";
+    done.forEach(function (t) { const li = document.createElement("li"); li.textContent = t; list.appendChild(li); });
+    document.getElementById("review").style.display = "block";
+    const fb = document.getElementById("feedback"); fb.className = "feedback win";
+    fb.textContent = "All " + target + " correct! Write these down, then start a new round.";
+  }
+  function check() {
+    if (locked) return;
+    const keep = [];
+    rowEls.forEach(function (row) {
+      const slot = row.querySelector(".slot"), t = slot.querySelector(".tile");
+      if (!t) { keep.push(row); return; }
+      if (t.dataset.category === slot.dataset.category) { const s = SENTENCES[+row.dataset.index]; done.push(s.before + t.dataset.word + s.after); roundScore++; row.remove(); }
+      else { t.classList.add("incorrect"); keep.push(row); }
+    });
+    rowEls = keep; refill();
+    document.getElementById("roundScoreLabel").textContent = roundScore;
+    if (roundScore >= target) { clearInterval(timer); showReview(); }
+    else { const fb = document.getElementById("feedback"); fb.className = "feedback"; fb.textContent = roundScore + " of " + target + " correct so far — fix the red ones and check again."; }
+  }
+
+  document.getElementById("startBtn").addEventListener("click", function () { document.getElementById("setup").style.display = "none"; document.getElementById("play").style.display = "flex"; renderRound(); });
+  document.getElementById("checkBtn").addEventListener("click", check);
+  document.getElementById("newRoundBtn").addEventListener("click", renderRound);
+})();
+</script>
+</body>
+</html>

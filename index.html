@@ -186,6 +186,9 @@ body {
   .game-card { padding: 14px 14px; gap: 12px; }
   .game-icon { font-size: 24px; width: 36px; }
 }
+.tag.editable { background: #fff8e0; color: #7a5a00; border-color: #e8d48a; }
+.tag.quick { background: #eef0ff; color: #3a40a0; border-color: #c0c4f0; }
+.section-note { font-size: 12px; color: var(--ink-soft); margin: -6px 0 12px; line-height: 1.5; }
 </style>
 </head>
 <body>
@@ -193,160 +196,351 @@ body {
 <header class="site-header">
   <div class="eyebrow">B5 FAMILY LEARNING CENTER</div>
   <h1>Classroom Games</h1>
-  <p>Interactive English learning activities for ESL students. Open any game on your phone or tablet.</p>
+  <p>Interactive English learning activities for ESL students. Open any game on the big screen, a phone, or a tablet. Games marked EDITABLE have a ✎/⚙ button to change the words.</p>
 </header>
 
 <main class="main">
-
-<div class="section-label">VOCABULARY &amp; SPELLING</div>
+  <div class="section-label">VOCABULARY &amp; SPELLING</div>
   <div class="game-grid">
-
     <a class="game-card" href="taboo-game.html">
       <div class="game-icon">🚫</div>
       <div class="game-info">
         <div class="game-title">Taboo</div>
-        <div class="game-desc">Describe a word without using the forbidden clue words. Covers weather, emotions, and everyday topics.</div>
-        <div class="game-tags">
-          <span class="tag vocab">VOCAB</span>
-          <span class="tag solo">SOLO</span>
-        </div>
+        <div class="game-desc">Describe the word without saying the "can't say" words. Three rounds get harder. Make your own word lists, with Suggest to fill the can't-say words.</div>
+        <div class="game-tags"><span class="tag vocab">VOCAB</span><span class="tag speaking">SPEAKING</span><span class="tag editable">EDITABLE</span></div>
       </div>
       <div class="arrow">›</div>
     </a>
-
     <a class="game-card" href="missing-vowels-game.html">
       <div class="game-icon">🔤</div>
       <div class="game-info">
         <div class="game-title">Missing Vowels</div>
-        <div class="game-desc">Fill in the missing vowels to complete each word. Good for spelling practice at any level.</div>
-        <div class="game-tags">
-          <span class="tag spelling">SPELLING</span>
-          <span class="tag solo">SOLO</span>
-        </div>
+        <div class="game-desc">Type the missing vowels to finish each word. A simple hint helps.</div>
+        <div class="game-tags"><span class="tag spelling">SPELLING</span><span class="tag editable">EDITABLE</span></div>
       </div>
       <div class="arrow">›</div>
     </a>
-
     <a class="game-card" href="unscramble-game.html">
       <div class="game-icon">🔀</div>
       <div class="game-info">
         <div class="game-title">Word Unscramble</div>
-        <div class="game-desc">Rearrange the letters to find the hidden word. Timed rounds keep it fast and fun.</div>
-        <div class="game-tags">
-          <span class="tag spelling">SPELLING</span>
-          <span class="tag solo">SOLO</span>
-        </div>
+        <div class="game-desc">Put the letters in order to find the word.</div>
+        <div class="game-tags"><span class="tag spelling">SPELLING</span><span class="tag editable">EDITABLE</span></div>
       </div>
       <div class="arrow">›</div>
     </a>
-
     <a class="game-card" href="word-chain-game.html">
       <div class="game-icon">⛓️</div>
       <div class="game-info">
         <div class="game-title">Word Chain</div>
-        <div class="game-desc">Each word must start with the last letter of the previous word. How long can you keep the chain going?</div>
-        <div class="game-tags">
-          <span class="tag spelling">SPELLING</span>
-          <span class="tag solo">SOLO</span>
-        </div>
+        <div class="game-desc">Each word starts with the last letter of the word before it.</div>
+        <div class="game-tags"><span class="tag spelling">SPELLING</span><span class="tag editable">EDITABLE</span></div>
       </div>
       <div class="arrow">›</div>
     </a>
-
   </div>
-
-  <div class="section-label">READING &amp; FORMS</div>
+  <div class="section-label">PHONICS</div>
   <div class="game-grid">
-
-    <a class="game-card" href="classroom-teacher.html">
-      <div class="game-icon">🏫</div>
+    <a class="game-card" href="long-short-e-betting-game.html">
+      <div class="game-icon">🐝</div>
       <div class="game-info">
-        <div class="game-title">Fill the Form — Classroom (Teacher)</div>
-        <div class="game-desc">Live multiplayer. Pick a passage, share the room code, students join on their phones and compete on the leaderboard.</div>
-        <div class="game-tags">
-          <span class="tag reading">READING</span>
-          <span class="tag multiplayer">MULTIPLAYER</span>
-        </div>
+        <div class="game-title">Long E or Short E?</div>
+        <div class="game-desc">See the word, decide long or short, then reveal. Bonus round of tricky ea words.</div>
+        <div class="game-tags"><span class="tag phonics">PHONICS</span><span class="tag editable">EDITABLE</span></div>
       </div>
       <div class="arrow">›</div>
     </a>
-
-    <a class="game-card" href="classroom-student.html">
-      <div class="game-icon">📱</div>
+    <a class="game-card" href="vowel-treasure-hunt.html">
+      <div class="game-icon">🗺️</div>
       <div class="game-info">
-        <div class="game-title">Fill the Form — Classroom (Student)</div>
-        <div class="game-desc">Student view. Enter the room code from the board, fill in the form using chip selectors, and see your score.</div>
-        <div class="game-tags">
-          <span class="tag reading">READING</span>
-          <span class="tag multiplayer">MULTIPLAYER</span>
-        </div>
+        <div class="game-title">Vowel Treasure Hunt</div>
+        <div class="game-desc">Pick a word, say if the vowel is long or short, and find stars, treasure, or bombs.</div>
+        <div class="game-tags"><span class="tag phonics">PHONICS</span><span class="tag solo">TEAMS</span><span class="tag editable">EDITABLE</span></div>
       </div>
       <div class="arrow">›</div>
     </a>
-
-    <a class="game-card" href="form-filling-practice.html">
-      <div class="game-icon">📝</div>
+    <a class="game-card" href="vowel-treasure-hunt-spellings.html">
+      <div class="game-icon">🏴‍☠️</div>
       <div class="game-info">
-        <div class="game-title">Form-Filling Practice</div>
-        <div class="game-desc">Practice real-world forms: driver's license/ID, doctor and dentist intake, school enrollment, and job application.</div>
-        <div class="game-tags">
-          <span class="tag reading">READING</span>
-        </div>
+        <div class="game-title">Vowel Treasure Hunt — Spellings</div>
+        <div class="game-desc">30 words, one per spelling pattern. Name the pattern to open the square.</div>
+        <div class="game-tags"><span class="tag phonics">PHONICS</span><span class="tag solo">TEAMS</span><span class="tag editable">EDITABLE</span></div>
       </div>
       <div class="arrow">›</div>
     </a>
-
+    <a class="game-card" href="vowel-sequence-review.html">
+      <div class="game-icon">🃏</div>
+      <div class="game-info">
+        <div class="game-title">Vowel Sequence</div>
+        <div class="game-desc">Draw a card, claim a matching word, and get five in a row.</div>
+        <div class="game-tags"><span class="tag phonics">PHONICS</span><span class="tag solo">TEAMS</span><span class="tag editable">EDITABLE</span></div>
+      </div>
+      <div class="arrow">›</div>
+    </a>
+    <a class="game-card" href="purple-shirt-concentration.html">
+      <div class="game-icon">🟣</div>
+      <div class="game-info">
+        <div class="game-title">Concentration — PURPLE SHIRT</div>
+        <div class="game-desc">Memory game with er / ir / ur / ear words.</div>
+        <div class="game-tags"><span class="tag phonics">PHONICS</span><span class="tag solo">TEAMS</span><span class="tag editable">EDITABLE</span></div>
+      </div>
+      <div class="arrow">›</div>
+    </a>
+    <a class="game-card" href="missing-vowel-diphthong.html">
+      <div class="game-icon">🔊</div>
+      <div class="game-info">
+        <div class="game-title">Missing Vowel — Diphthongs</div>
+        <div class="game-desc">Pick the right spelling: oi/oy, ou/ow, au/aw.</div>
+        <div class="game-tags"><span class="tag phonics">PHONICS</span><span class="tag editable">EDITABLE</span></div>
+      </div>
+      <div class="arrow">›</div>
+    </a>
+    <a class="game-card" href="short-vowel-endings.html">
+      <div class="game-icon">🦆</div>
+      <div class="game-info">
+        <div class="game-title">Short Vowel "Backup" Endings</div>
+        <div class="game-desc">Sort -ck / -tch / -dge / floss words, then hop vs. hope suffix pairs.</div>
+        <div class="game-tags"><span class="tag phonics">PHONICS</span><span class="tag editable">EDITABLE</span></div>
+      </div>
+      <div class="arrow">›</div>
+    </a>
+    <a class="game-card" href="blends-game.html">
+      <div class="game-icon">🧩</div>
+      <div class="game-info">
+        <div class="game-title">Consonant Blends — Fill the Blank</div>
+        <div class="game-desc">Choose the blend that makes the right word for the sentence.</div>
+        <div class="game-tags"><span class="tag phonics">PHONICS</span><span class="tag editable">EDITABLE</span></div>
+      </div>
+      <div class="arrow">›</div>
+    </a>
+    <a class="game-card" href="color-vowel-sound-hunt.html">
+      <div class="game-icon">🎨</div>
+      <div class="game-info">
+        <div class="game-title">Color Vowel Sound Hunt</div>
+        <div class="game-desc">Click words to reveal their Color Vowel. Find every word with the hidden color.</div>
+        <div class="game-tags"><span class="tag phonics">PHONICS</span><span class="tag editable">EDITABLE</span></div>
+      </div>
+      <div class="arrow">›</div>
+    </a>
   </div>
-
-<div class="section-label">GRAMMAR</div>
+  <div class="section-label">GRAMMAR</div>
   <div class="game-grid">
-
     <a class="game-card" href="treasure-hunt.html">
       <div class="game-icon">🗺️</div>
       <div class="game-info">
-        <div class="game-title">Treasure Hunt</div>
-        <div class="game-desc">Grid-based grammar game focused on present simple tense. Navigate the map by answering correctly.</div>
-        <div class="game-tags">
-          <span class="tag grammar">GRAMMAR</span>
-          <span class="tag solo">SOLO</span>
-        </div>
+        <div class="game-title">Treasure Hunt — Present Simple</div>
+        <div class="game-desc">Say the sentence for the square to win its prize. Bombs take half your points.</div>
+        <div class="game-tags"><span class="tag grammar">GRAMMAR</span><span class="tag solo">TEAMS</span><span class="tag editable">EDITABLE</span></div>
       </div>
       <div class="arrow">›</div>
     </a>
-
+    <a class="game-card" href="treasure-hunt-tenses.html">
+      <div class="game-icon">⏳</div>
+      <div class="game-info">
+        <div class="game-title">Treasure Hunt — Present &amp; Past</div>
+        <div class="game-desc">Six columns: present and past, statement, negative, question. Bombs take half your points.</div>
+        <div class="game-tags"><span class="tag grammar">GRAMMAR</span><span class="tag solo">TEAMS</span><span class="tag editable">EDITABLE</span></div>
+      </div>
+      <div class="arrow">›</div>
+    </a>
     <a class="game-card" href="verb-betting.html">
       <div class="game-icon">🎰</div>
       <div class="game-info">
-        <div class="game-title">Verb Betting</div>
-        <div class="game-desc">Bet on whether a verb is regular or irregular. The bigger the bet, the bigger the reward — or loss.</div>
-        <div class="game-tags">
-          <span class="tag grammar">GRAMMAR</span>
-          <span class="tag solo">SOLO</span>
-        </div>
+        <div class="game-title">Verb Betting — Past Tense</div>
+        <div class="game-desc">Bet on whether a verb is regular or irregular.</div>
+        <div class="game-tags"><span class="tag grammar">GRAMMAR</span><span class="tag editable">EDITABLE</span></div>
       </div>
       <div class="arrow">›</div>
     </a>
-
+    <a class="game-card" href="present-simple-verb-betting.html">
+      <div class="game-icon">🎲</div>
+      <div class="game-info">
+        <div class="game-title">Present Simple Verb Betting</div>
+        <div class="game-desc">No change, +S, +ES, or irregular? Bet on the he/she/it ending.</div>
+        <div class="game-tags"><span class="tag grammar">GRAMMAR</span><span class="tag editable">EDITABLE</span></div>
+      </div>
+      <div class="arrow">›</div>
+    </a>
+  </div>
+  <div class="section-label">SPEAKING GAMES</div>
+  <div class="game-grid">
+    <a class="game-card" href="storm-grid.html">
+      <div class="game-icon">⚡</div>
+      <div class="game-info">
+        <div class="game-title">Storm Strike</div>
+        <div class="game-desc">Hex-map speaking game. Answer the question on a space to move there before lightning strikes.</div>
+        <div class="game-tags"><span class="tag speaking">SPEAKING</span><span class="tag solo">TEAMS</span><span class="tag editable">EDITABLE</span></div>
+      </div>
+      <div class="arrow">›</div>
+    </a>
+    <a class="game-card" href="connect-four-esl.html">
+      <div class="game-icon">🔴</div>
+      <div class="game-info">
+        <div class="game-title">Connect Four — Sentences</div>
+        <div class="game-desc">Make a sentence with the prompt to drop your piece.</div>
+        <div class="game-tags"><span class="tag speaking">SPEAKING</span><span class="tag solo">TEAMS</span><span class="tag editable">EDITABLE</span></div>
+      </div>
+      <div class="arrow">›</div>
+    </a>
+  </div>
+  <div class="section-label">QUICK GAMES</div>
+  <div class="section-note">Small one-screen games for warm-ups, fillers, and review. Most take 5–15 minutes.</div>
+  <div class="game-grid">
+    <a class="game-card" href="wordle-blends.html">
+      <div class="game-icon">🟩</div>
+      <div class="game-info">
+        <div class="game-title">Wordle — Blends &amp; Digraphs</div>
+        <div class="game-desc">Guess the 5-letter word in six tries.</div>
+        <div class="game-tags"><span class="tag quick">QUICK</span><span class="tag spelling">SPELLING</span><span class="tag editable">EDITABLE</span></div>
+      </div>
+      <div class="arrow">›</div>
+    </a>
+    <a class="game-card" href="question-or-statement.html">
+      <div class="game-icon">❓</div>
+      <div class="game-info">
+        <div class="game-title">Question or Statement?</div>
+        <div class="game-desc">Period or question mark? Worksheet and present modes.</div>
+        <div class="game-tags"><span class="tag quick">QUICK</span><span class="tag grammar">GRAMMAR</span><span class="tag editable">EDITABLE</span></div>
+      </div>
+      <div class="arrow">›</div>
+    </a>
+    <a class="game-card" href="comparative-ranking-game.html">
+      <div class="game-icon">📏</div>
+      <div class="game-info">
+        <div class="game-title">Ranking Game</div>
+        <div class="game-desc">Rank five objects with comparatives and superlatives.</div>
+        <div class="game-tags"><span class="tag quick">QUICK</span><span class="tag grammar">GRAMMAR</span><span class="tag editable">EDITABLE</span></div>
+      </div>
+      <div class="arrow">›</div>
+    </a>
+    <a class="game-card" href="countable-uncountable-sort.html">
+      <div class="game-icon">🥛</div>
+      <div class="game-info">
+        <div class="game-title">Countable or Uncountable?</div>
+        <div class="game-desc">Drag six words to the right side, then lock your answers.</div>
+        <div class="game-tags"><span class="tag quick">QUICK</span><span class="tag grammar">GRAMMAR</span><span class="tag editable">EDITABLE</span></div>
+      </div>
+      <div class="arrow">›</div>
+    </a>
+    <a class="game-card" href="some-any-number.html">
+      <div class="game-icon">🔢</div>
+      <div class="game-info">
+        <div class="game-title">Some, Any, or a Number?</div>
+        <div class="game-desc">Drag some, any, or a number into each sentence.</div>
+        <div class="game-tags"><span class="tag quick">QUICK</span><span class="tag grammar">GRAMMAR</span><span class="tag editable">EDITABLE</span></div>
+      </div>
+      <div class="arrow">›</div>
+    </a>
+    <a class="game-card" href="heads-up-verbs-game.html">
+      <div class="game-icon">🙆</div>
+      <div class="game-info">
+        <div class="game-title">Heads Up — Present Simple Verbs</div>
+        <div class="game-desc">Act out the verb; the guesser says the word.</div>
+        <div class="game-tags"><span class="tag quick">QUICK</span><span class="tag speaking">SPEAKING</span><span class="tag editable">EDITABLE</span></div>
+      </div>
+      <div class="arrow">›</div>
+    </a>
+    <a class="game-card" href="heads-up-present-continuous.html">
+      <div class="game-icon">🏃</div>
+      <div class="game-info">
+        <div class="game-title">Heads Up — Present Continuous</div>
+        <div class="game-desc">Act out the sentence: "She is cooking."</div>
+        <div class="game-tags"><span class="tag quick">QUICK</span><span class="tag speaking">SPEAKING</span><span class="tag editable">EDITABLE</span></div>
+      </div>
+      <div class="arrow">›</div>
+    </a>
+    <a class="game-card" href="fix-the-words.html">
+      <div class="game-icon">🧠</div>
+      <div class="game-info">
+        <div class="game-title">Fix the Words</div>
+        <div class="game-desc">A scrambled paragraph. Students fix their numbered words.</div>
+        <div class="game-tags"><span class="tag quick">QUICK</span><span class="tag spelling">SPELLING</span><span class="tag editable">EDITABLE</span></div>
+      </div>
+      <div class="arrow">›</div>
+    </a>
+    <a class="game-card" href="ar-or-dictation.html">
+      <div class="game-icon">🎧</div>
+      <div class="game-info">
+        <div class="game-title">Listening Dictation</div>
+        <div class="game-desc">Hear the sentence, write the target words, then check the chart.</div>
+        <div class="game-tags"><span class="tag quick">QUICK</span><span class="tag phonics">PHONICS</span><span class="tag editable">EDITABLE</span></div>
+      </div>
+      <div class="arrow">›</div>
+    </a>
+  </div>
+  <div class="section-label">B5 FALL CLASS — WEEKS 1–8</div>
+  <div class="section-note">Games made for specific weeks of the fall class.</div>
+  <div class="game-grid">
     <a class="game-card" href="be-questions-mystery.html">
       <div class="game-icon">🕵️</div>
       <div class="game-info">
         <div class="game-title">Mystery Card: Questions with Be</div>
-        <div class="game-desc">Ask yes/no questions with am, is, and are to guess the hidden person or thing.</div>
-        <div class="game-tags">
-          <span class="tag grammar">GRAMMAR</span>
-          <span class="tag speaking">SPEAKING</span>
-        </div>
+        <div class="game-desc">Week 2. Ask yes/no questions with am, is, and are to find the hidden card.</div>
+        <div class="game-tags"><span class="tag grammar">GRAMMAR</span><span class="tag speaking">SPEAKING</span></div>
       </div>
       <div class="arrow">›</div>
     </a>
-
+    <a class="game-card" href="family-mystery.html">
+      <div class="game-icon">👪</div>
+      <div class="game-info">
+        <div class="game-title">Family Mystery</div>
+        <div class="game-desc">Week 3. Use the clues to build the family tree.</div>
+        <div class="game-tags"><span class="tag reading">READING</span><span class="tag solo">TEAMS</span></div>
+      </div>
+      <div class="arrow">›</div>
+    </a>
+    <a class="game-card" href="routine-race-screen.html">
+      <div class="game-icon">🏁</div>
+      <div class="game-info">
+        <div class="game-title">Routine Race</div>
+        <div class="game-desc">Week 4. Spin the wheel and answer daily-routine questions to race around the track.</div>
+        <div class="game-tags"><span class="tag grammar">GRAMMAR</span><span class="tag speaking">SPEAKING</span><span class="tag solo">TEAMS</span></div>
+      </div>
+      <div class="arrow">›</div>
+    </a>
+    <a class="game-card" href="heads-up-at-home.html">
+      <div class="game-icon">🏠</div>
+      <div class="game-info">
+        <div class="game-title">Heads Up — At Home</div>
+        <div class="game-desc">Week 6. Present continuous actions at home. The class acts it out for the guesser.</div>
+        <div class="game-tags"><span class="tag speaking">SPEAKING</span><span class="tag solo">TEAMS</span></div>
+      </div>
+      <div class="arrow">›</div>
+    </a>
   </div>
-
+  <div class="section-label">READING &amp; FORMS</div>
+  <div class="game-grid">
+    <a class="game-card" href="classroom-teacher.html">
+      <div class="game-icon">🏫</div>
+      <div class="game-info">
+        <div class="game-title">Fill the Form — Classroom (Teacher)</div>
+        <div class="game-desc">Live multiplayer. Pick a passage, share the room code, students join on their phones.</div>
+        <div class="game-tags"><span class="tag reading">READING</span><span class="tag multiplayer">MULTIPLAYER</span></div>
+      </div>
+      <div class="arrow">›</div>
+    </a>
+    <a class="game-card" href="classroom-student.html">
+      <div class="game-icon">📱</div>
+      <div class="game-info">
+        <div class="game-title">Fill the Form — Classroom (Student)</div>
+        <div class="game-desc">Student view. Enter the room code and fill in the form.</div>
+        <div class="game-tags"><span class="tag reading">READING</span><span class="tag multiplayer">MULTIPLAYER</span></div>
+      </div>
+      <div class="arrow">›</div>
+    </a>
+    <a class="game-card" href="form-filling-practice.html">
+      <div class="game-icon">📝</div>
+      <div class="game-info">
+        <div class="game-title">Form-Filling Practice</div>
+        <div class="game-desc">Driver's license/ID, doctor and dentist intake, school enrollment, and job application.</div>
+        <div class="game-tags"><span class="tag reading">READING</span></div>
+      </div>
+      <div class="arrow">›</div>
+    </a>
+  </div>
 </main>
-
 <footer class="site-footer">
   B5 Family Learning Center · Tri-Cities, WA · ESL/EFL Classroom Tools
 </footer>
-
 </body>
 </html>

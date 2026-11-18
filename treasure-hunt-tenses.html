@@ -1,0 +1,1263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Treasure Hunt — Present &amp; Past Simple</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    height: 100%;
+    overflow: hidden;
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #f5f5f0;
+    color: #2c2c2a;
+  }
+  .screen {
+    display: none;
+    height: 100vh;
+    width: 100vw;
+    padding: 2vh 2vw;
+    flex-direction: column;
+  }
+  .screen.active { display: flex; }
+
+  h1 {
+    font-size: 3.2vh;
+    font-weight: 500;
+    text-align: center;
+    margin-bottom: 0.5vh;
+  }
+  .subtitle {
+    text-align: center;
+    color: #5f5e5a;
+    font-size: 1.7vh;
+    margin-bottom: 2vh;
+  }
+
+  /* ---------- Setup ---------- */
+  #setup { align-items: center; justify-content: center; }
+  .setup-card {
+    background: white;
+    border: 0.5px solid rgba(0,0,0,0.15);
+    border-radius: 12px;
+    padding: 4vh 4vw;
+    max-width: 640px;
+    width: 100%;
+    text-align: center;
+  }
+  .setup-card p { color: #5f5e5a; font-size: 1.8vh; margin-bottom: 2vh; line-height: 1.6; }
+  .team-stepper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin: 2vh 0 3vh;
+  }
+  .team-stepper button {
+    width: 44px; height: 44px; border-radius: 50%;
+    font-size: 20px; font-weight: 600;
+  }
+  .team-count { font-size: 3vh; font-weight: 600; min-width: 40px; }
+  .team-names {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 3vh;
+  }
+  .team-names input {
+    font-family: inherit;
+    font-size: 1.6vh;
+    padding: 8px 10px;
+    border: 0.5px solid rgba(0,0,0,0.3);
+    border-radius: 8px;
+  }
+  button {
+    font-family: inherit;
+    font-size: 1.6vh;
+    padding: 10px 18px;
+    background: white;
+    color: #2c2c2a;
+    border: 0.5px solid rgba(0,0,0,0.3);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.05s;
+  }
+  button:hover { background: #f0eee7; }
+  button:active { transform: scale(0.97); }
+  button.primary {
+    background: #2c2c2a;
+    color: white;
+    border-color: #2c2c2a;
+    font-size: 2vh;
+    padding: 1.4vh 3vw;
+  }
+  button.primary:hover { background: #444441; }
+  button:disabled { opacity: 0.35; cursor: default; }
+
+  /* ---------- Play screen ---------- */
+  #play { flex-direction: column; }
+  .topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1vh;
+  }
+  .goal-banner {
+    background: #2c2c2a;
+    color: white;
+    font-weight: 700;
+    font-size: 3.2vh;
+    border-radius: 10px;
+    padding: 1.2vh 2vw;
+    text-align: center;
+    flex: 1;
+    margin: 0 1vw;
+  }
+  .map-progress { font-size: 2.2vh; color: #5f5e5a; white-space: nowrap; }
+
+  .main-area {
+    display: flex;
+    gap: 1.2vw;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .board-wrap { flex: 3; display: flex; flex-direction: column; min-height: 0; }
+
+  .grid-scroller { flex: 1; min-height: 0; }
+
+  table.board {
+    border-collapse: separate;
+    border-spacing: 4px;
+    width: 100%;
+    height: 100%;
+    table-layout: fixed;
+  }
+  table.board th, table.board td {
+    text-align: center;
+    vertical-align: middle;
+  }
+  th.colhead {
+    font-size: 2.9vh;
+    font-weight: 700;
+    color: white;
+    background: #185FA5;
+    border-radius: 8px;
+    padding: 0.9vh 0.3vw;
+    line-height: 1.2;
+  }
+  th.colhead.neg { background: #A32D2D; }
+  th.colhead.q { background: #BA7517; }
+  th.rowhead {
+    font-size: 2.6vh;
+    font-weight: 600;
+    color: #2c2c2a;
+    background: #ece9de;
+    border-radius: 8px;
+    padding: 0.5vh 0.7vw;
+    text-align: left;
+    width: 20%;
+  }
+  th.rowhead .subj { color: #185FA5; font-weight: 700; }
+  th.rowhead span[style] { font-size: 2.2vh !important; }
+
+  td.cell {
+    background: white;
+    border: 0.5px solid rgba(0,0,0,0.15);
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 4.4vh;
+    font-weight: 700;
+    position: relative;
+    transition: transform 0.1s;
+  }
+  td.cell:hover:not(.used) { background: #f0eee7; transform: scale(1.03); }
+  td.cell.used { cursor: default; }
+  td.cell.star-common { background: #FFF6DC; color: #BA7517; }
+  td.cell.star-silver { background: #EFEFF2; color: #6b6b70; }
+  td.cell.star-gold   { background: #FFF0C2; color: #9a6d00; }
+  td.cell.bomb        { background: #FCEBEB; color: #A32D2D; }
+  td.cell.blank       { background: #f5f5f0; color: #c9c7bd; }
+
+  /* ---------- Side panel ---------- */
+  .side-panel {
+    flex: 1.15;
+    display: flex;
+    flex-direction: column;
+    gap: 1.2vh;
+    min-height: 0;
+  }
+
+  .panel-box {
+    background: white;
+    border: 0.5px solid rgba(0,0,0,0.15);
+    border-radius: 12px;
+    padding: 1.4vh 1.4vw;
+  }
+
+  .reveal-box { flex: 0 0 auto; min-height: 14vh; display: flex; flex-direction: column; }
+  .reveal-empty { color: #5f5e5a; font-size: 2.2vh; margin: auto; text-align: center; }
+  .reveal-cell-label { font-size: 2vh; color: #5f5e5a; margin-bottom: 0.6vh; }
+  .reveal-sentence-wrap {
+    background: #ece9de;
+    border-radius: 8px;
+    padding: 1.2vh 1vw;
+    text-align: center;
+    margin-bottom: 1vh;
+    min-height: 5vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .reveal-sentence-wrap.hidden-sentence { color: #a3a19a; font-style: italic; font-size: 2.1vh; }
+  .reveal-sentence-wrap.shown-sentence { color: #185FA5; font-weight: 700; font-size: 3.2vh; }
+  .reveal-actions { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+  .reveal-actions button.correct { border-color: #1f7a3f; color: #1f7a3f; }
+  .reveal-actions button.correct:hover { background: #e9f7ee; }
+  .reveal-actions button.wrong { border-color: #A32D2D; color: #A32D2D; }
+  .reveal-actions button.wrong:hover { background: #FCEBEB; }
+
+  .prize-announce { text-align: center; font-size: 1.9vh; font-weight: 700; }
+
+  .teams-box { flex: 1; overflow: hidden; display: flex; flex-direction: column; min-height: 0; }
+  .teams-box h2, .prob-box h2, .reveal-box h2 { font-size: 2vh; letter-spacing: 0.5px; color: #5f5e5a; margin-bottom: 0.8vh; font-weight: 600; }
+  .team-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
+  .team-row {
+    border-radius: 8px;
+    padding: 0.7vh 0.8vw;
+    background: #f5f5f0;
+    border: 2px solid transparent;
+  }
+  .team-row.active { border-color: #185FA5; background: #EAF2FA; }
+  .team-row-top { display: flex; justify-content: space-between; align-items: baseline; }
+  .team-row-name { font-weight: 600; font-size: 2.3vh; }
+  .team-row-score { font-weight: 700; font-size: 2.7vh; color: #185FA5; }
+  .team-row-history { font-size: 1.7vh; color: #8a887f; margin-top: 2px; min-height: 1.4vh; }
+
+  .prob-box { flex: 0 0 auto; }
+  .prob-row { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; font-size: 1.9vh; }
+  .prob-label { width: 88px; flex-shrink: 0; }
+  .prob-bar-bg { flex: 1; height: 12px; background: #ece9de; border-radius: 6px; overflow: hidden; }
+  .prob-bar { height: 100%; transition: width 0.4s ease; }
+  .prob-bar.star { background: #BA7517; }
+  .prob-bar.blank { background: #c9c7bd; }
+  .prob-bar.bomb { background: #A32D2D; }
+  .prob-pct { width: 50px; text-align: right; flex-shrink: 0; font-variant-numeric: tabular-nums; }
+
+  .bottom-controls {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 1vh;
+  }
+
+  /* ---------- Map complete / final ---------- */
+  #mapComplete, #finalScreen { align-items: center; justify-content: center; text-align: center; }
+  .complete-card {
+    background: white;
+    border: 0.5px solid rgba(0,0,0,0.15);
+    border-radius: 12px;
+    padding: 5vh 5vw;
+  }
+  .complete-card h2 { font-size: 3.4vh; margin-bottom: 1.5vh; }
+  .complete-card p { color: #5f5e5a; font-size: 1.8vh; margin-bottom: 2.5vh; }
+  .final-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 2.5vh; }
+  .final-row { display: flex; justify-content: space-between; font-size: 2vh; padding: 6px 20px; background: #f5f5f0; border-radius: 8px; min-width: 260px; }
+  .final-row.winner { background: #FFF6DC; font-weight: 700; }
+
+  canvas#fx {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    pointer-events: none;
+    z-index: 50;
+  }
+  .shake { animation: shakeAnim 0.4s; }
+  @keyframes shakeAnim {
+    0%, 100% { transform: translate(0,0); }
+    20% { transform: translate(-8px,4px); }
+    40% { transform: translate(8px,-4px); }
+    60% { transform: translate(-6px,-2px); }
+    80% { transform: translate(6px,2px); }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="fx"></canvas>
+
+<!-- ===== SETUP ===== -->
+<div id="setup" class="screen active">
+  <div class="setup-card">
+    <h1>Treasure Hunt</h1>
+    <p class="subtitle">Present &amp; Past Simple</p>
+    <p>4 maps — <strong>I</strong> · <strong>You</strong> · <strong>He/She</strong> · <strong>We/They</strong><br>
+    Each map: 6 grammar columns × 5 verbs. Say the sentence correctly to win the square.</p>
+    <div>
+      <p style="margin-bottom:0.8vh;">Number of teams</p>
+      <div class="team-stepper">
+        <button id="teamMinus">−</button>
+        <div class="team-count" id="teamCount">2</div>
+        <button id="teamPlus">+</button>
+      </div>
+    </div>
+    <div class="team-names" id="teamNames"></div>
+    <button id="startBtn" class="primary">Start game</button>
+  </div>
+</div>
+
+<!-- ===== PLAY ===== -->
+<div id="play" class="screen">
+  <div class="topbar">
+    <div class="map-progress" id="mapProgress">Map 1 of 4</div>
+    <div class="goal-banner" id="goalBanner">GOAL</div>
+    <div class="map-progress" id="cellsLeft">30 squares left</div>
+  </div>
+
+  <div class="main-area">
+    <div class="board-wrap">
+      <div class="grid-scroller">
+        <table class="board" id="board"></table>
+      </div>
+    </div>
+
+    <div class="side-panel">
+      <div class="panel-box reveal-box" id="revealBox">
+        <h2>SQUARE</h2>
+        <div class="reveal-empty" id="revealEmpty">Click a square on the board to begin.</div>
+        <div id="revealContent" style="display:none;">
+          <div class="reveal-cell-label" id="revealCellLabel"></div>
+          <div class="reveal-sentence-wrap hidden-sentence" id="revealSentence">Teacher: tap to check the sentence</div>
+          <div class="reveal-actions" id="revealActions"></div>
+        </div>
+      </div>
+
+      <div class="panel-box teams-box">
+        <h2>TEAMS</h2>
+        <div class="team-list" id="teamList"></div>
+      </div>
+
+      <div class="panel-box prob-box">
+        <h2>WHAT'S LEFT ON THIS MAP</h2>
+        <div id="probRows"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-controls">
+    <button id="restartFromPlayBtn">Restart game</button>
+  </div>
+</div>
+
+<!-- ===== MAP COMPLETE ===== -->
+<div id="mapComplete" class="screen">
+  <div class="complete-card">
+    <h2 id="mapCompleteTitle">Map complete!</h2>
+    <p id="mapCompleteSub"></p>
+    <button id="nextMapBtn" class="primary">Next map →</button>
+  </div>
+</div>
+
+<!-- ===== FINAL ===== -->
+<div id="finalScreen" class="screen">
+  <div class="complete-card">
+    <h2>Game over!</h2>
+    <div class="final-list" id="finalList"></div>
+    <button id="playAgainBtn" class="primary">Play again</button>
+  </div>
+</div>
+
+<script>
+/* B5 content editor — shared by the Classroom-Games suite.
+   Saved per browser in localStorage. Supports several named lists,
+   a table editor, a "paste many" text box, and Reset to defaults. */
+(function () {
+  var CSS = '' +
+  '.b5e-btn{position:fixed;right:12px;bottom:12px;z-index:9000;font:600 14px/1 -apple-system,"Segoe UI",sans-serif;background:#fff;color:#2c2c2a;border:1px solid rgba(0,0,0,.25);border-radius:20px;padding:9px 14px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.12);opacity:.85}' +
+  '.b5e-btn:hover{opacity:1}' +
+  '.b5e-ov{position:fixed;inset:0;z-index:9500;background:rgba(20,20,18,.55);display:none;align-items:center;justify-content:center;font:15px/1.4 -apple-system,"Segoe UI",Roboto,sans-serif;color:#2c2c2a}' +
+  '.b5e-ov.open{display:flex}' +
+  '.b5e-box{background:#fff;border-radius:14px;width:min(1000px,96vw);height:min(760px,94vh);display:flex;flex-direction:column;box-shadow:0 10px 40px rgba(0,0,0,.3)}' +
+  '.b5e-head{padding:14px 18px 10px;border-bottom:1px solid #e6e4dd}' +
+  '.b5e-head h2{font-size:20px;font-weight:600;margin:0 0 8px}' +
+  '.b5e-lists{display:flex;flex-wrap:wrap;gap:6px;align-items:center}' +
+  '.b5e-lists select,.b5e-lists input{font:inherit;padding:5px 8px;border:1px solid #c9c6bd;border-radius:6px}' +
+  '.b5e-lists input{width:220px}' +
+  '.b5e-help{font-size:13px;color:#66645e;margin-top:6px}' +
+  '.b5e-body{flex:1;overflow:auto;padding:10px 18px}' +
+  '.b5e-set{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:10px;padding:8px 10px;background:#f6f5f0;border-radius:8px}' +
+  '.b5e-set label{font-size:13px;display:flex;gap:6px;align-items:center}' +
+  '.b5e-set input,.b5e-set select{font:inherit;padding:3px 6px;border:1px solid #c9c6bd;border-radius:5px}' +
+  '.b5e-tbl{width:100%;border-collapse:collapse}' +
+  '.b5e-tbl th{text-align:left;font-size:12px;letter-spacing:.5px;color:#66645e;padding:4px;position:sticky;top:-10px;background:#fff}' +
+  '.b5e-tbl td{padding:3px 4px;vertical-align:top}' +
+  '.b5e-tbl td.n{color:#99968e;font-size:12px;width:26px;padding-top:9px}' +
+  '.b5e-tbl input,.b5e-tbl select,.b5e-tbl textarea{width:100%;font:inherit;padding:5px 7px;border:1px solid #d4d1c8;border-radius:5px;background:#fff}' +
+  '.b5e-tbl textarea{min-height:34px;resize:vertical}' +
+  '.b5e-x{border:none;background:none;color:#a33;font-size:18px;cursor:pointer;padding:4px 6px}' +
+  '.b5e-act{font:inherit;font-size:12px;padding:5px 8px;border:1px solid #c9c6bd;border-radius:5px;background:#f6f5f0;cursor:pointer;white-space:nowrap}' +
+  '.b5e-bulk{width:100%;height:100%;min-height:360px;font:14px/1.5 ui-monospace,Consolas,monospace;padding:10px;border:1px solid #c9c6bd;border-radius:8px}' +
+  '.b5e-foot{padding:10px 18px;border-top:1px solid #e6e4dd;display:flex;flex-wrap:wrap;gap:8px;align-items:center}' +
+  '.b5e-foot .sp{flex:1}' +
+  '.b5e-b{font:inherit;font-size:14px;padding:8px 14px;border-radius:8px;border:1px solid #c9c6bd;background:#fff;cursor:pointer}' +
+  '.b5e-b.pri{background:#1a5fa8;border-color:#1a5fa8;color:#fff;font-weight:600}' +
+  '.b5e-b.warn{color:#a33}' +
+  '.b5e-msg{font-size:13px;color:#a33;min-height:18px}' +
+  '.b5e-msg.ok{color:#1a6b3a}';
+
+  function el(tag, attrs, kids) {
+    var e = document.createElement(tag);
+    if (attrs) for (var k in attrs) {
+      if (k === 'text') e.textContent = attrs[k];
+      else if (k === 'html') e.innerHTML = attrs[k];
+      else if (k.slice(0, 2) === 'on') e.addEventListener(k.slice(2), attrs[k]);
+      else e.setAttribute(k, attrs[k]);
+    }
+    (kids || []).forEach(function (c) { if (c) e.appendChild(c); });
+    return e;
+  }
+  function clone(x) { return JSON.parse(JSON.stringify(x)); }
+
+  function B5Edit(cfg) {
+    var self = this;
+    this.cfg = cfg;
+    this.cols = cfg.columns;
+    this.key = 'b5edit:' + cfg.key;
+    this.defaultName = cfg.defaultName || 'Default list';
+    this.listeners = [];
+    if (cfg.onChange) this.listeners.push(cfg.onChange);
+    this.state = this._load();
+    if (!document.getElementById('b5e-css')) {
+      var st = el('style', { id: 'b5e-css' }); st.textContent = CSS; document.head.appendChild(st);
+    }
+    this._build();
+    if (cfg.button !== false) {
+      var host = cfg.buttonHost ? (typeof cfg.buttonHost === 'string' ? document.querySelector(cfg.buttonHost) : cfg.buttonHost) : null;
+      var b = el('button', { 'class': host ? (cfg.buttonClass || '') : 'b5e-btn', type: 'button', text: cfg.buttonLabel || '⚙ Edit content', onclick: function () { self.open(); } });
+      if (host) host.appendChild(b); else document.body.appendChild(b);
+      this.button = b;
+    }
+  }
+
+  B5Edit.prototype._defaults = function () {
+    var s = {};
+    (this.cfg.settings || []).forEach(function (f) { s[f.key] = f.default; });
+    return { v: 1, current: 'default', settings: s,
+      lists: [{ id: 'default', name: this.defaultName, rows: clone(this.cfg.defaults) }] };
+  };
+  B5Edit.prototype._load = function () {
+    var d = this._defaults();
+    try {
+      var raw = localStorage.getItem(this.key);
+      if (raw) {
+        var s = JSON.parse(raw);
+        if (s && Array.isArray(s.lists) && s.lists.length) {
+          s.settings = Object.assign({}, d.settings, s.settings || {});
+          if (!s.lists.some(function (l) { return l.id === s.current; })) s.current = s.lists[0].id;
+          return s;
+        }
+      }
+    } catch (e) {}
+    return d;
+  };
+  B5Edit.prototype._save = function () {
+    try { localStorage.setItem(this.key, JSON.stringify(this.state)); } catch (e) {}
+  };
+  B5Edit.prototype._cur = function () {
+    var st = this.state;
+    return st.lists.filter(function (l) { return l.id === st.current; })[0] || st.lists[0];
+  };
+  /* public API */
+  B5Edit.prototype.rows = function () { return clone(this._cur().rows); };
+  B5Edit.prototype.listName = function () { return this._cur().name; };
+  B5Edit.prototype.settings = function () { return clone(this.state.settings); };
+  B5Edit.prototype.onChange = function (fn) { this.listeners.push(fn); };
+  B5Edit.prototype.listNames = function () { return this.state.lists.map(function (l) { return { id: l.id, name: l.name }; }); };
+  B5Edit.prototype.useList = function (id) {
+    if (this.state.lists.some(function (l) { return l.id === id; })) { this.state.current = id; this._save(); this._fire(); }
+  };
+  B5Edit.prototype._fire = function () {
+    var self = this;
+    this.listeners.forEach(function (fn) { try { fn(self.rows(), self.settings(), self.listName()); } catch (e) { console.error(e); } });
+  };
+
+  /* ---------- UI ---------- */
+  B5Edit.prototype._build = function () {
+    var self = this, cfg = this.cfg;
+    this.ov = el('div', { 'class': 'b5e-ov' });
+    this.sel = el('select', { onchange: function () { self._pull(); self.work.current = self.sel.value; self._render(); } });
+    this.nameIn = el('input', { placeholder: 'List name', oninput: function () { self._curW().name = self.nameIn.value; self._fillSel(); } });
+    var lists = el('div', { 'class': 'b5e-lists' }, [
+      el('span', { text: 'List:' }), this.sel, this.nameIn,
+      el('button', { 'class': 'b5e-act', type: 'button', text: '+ New list', onclick: function () { self._newList(false); } }),
+      el('button', { 'class': 'b5e-act', type: 'button', text: 'Copy list', onclick: function () { self._newList(true); } }),
+      el('button', { 'class': 'b5e-act', type: 'button', text: 'Delete list', onclick: function () { self._delList(); } })
+    ]);
+    var help = el('div', { 'class': 'b5e-help', html: cfg.help || '' });
+    this.body = el('div', { 'class': 'b5e-body' });
+    this.msg = el('div', { 'class': 'b5e-msg' });
+    this.bulkBtn = el('button', { 'class': 'b5e-b', type: 'button', text: 'Paste many', onclick: function () { self._toggleBulk(); } });
+    var foot = el('div', { 'class': 'b5e-foot' }, [
+      el('button', { 'class': 'b5e-b', type: 'button', text: '+ Add row', onclick: function () { self._pull(); self._curW().rows.push(self._blank()); self._render(); self.body.scrollTop = 1e6; } }),
+      this.bulkBtn,
+      el('button', { 'class': 'b5e-b warn', type: 'button', text: 'Reset to defaults', onclick: function () { self._reset(); } }),
+      el('div', { 'class': 'sp' }, [this.msg]),
+      el('button', { 'class': 'b5e-b', type: 'button', text: 'Cancel', onclick: function () { self.close(); } }),
+      el('button', { 'class': 'b5e-b pri', type: 'button', text: 'Save', onclick: function () { self._commit(); } })
+    ]);
+    this.box = el('div', { 'class': 'b5e-box' }, [
+      el('div', { 'class': 'b5e-head' }, [el('h2', { text: cfg.title || 'Edit content' }), lists, help]),
+      this.body, foot
+    ]);
+    this.ov.appendChild(this.box);
+    this.ov.addEventListener('keydown', function (e) { e.stopPropagation(); if (e.key === 'Escape') self.close(); });
+    this.ov.addEventListener('keyup', function (e) { e.stopPropagation(); });
+    this.ov.addEventListener('keypress', function (e) { e.stopPropagation(); });
+    document.body.appendChild(this.ov);
+  };
+  B5Edit.prototype._blank = function () { var r = {}; this.cols.forEach(function (c) { r[c.key] = c.options ? c.options[0].value !== undefined ? c.options[0].value : c.options[0] : ''; }); return r; };
+  B5Edit.prototype._curW = function () { var w = this.work; return w.lists.filter(function (l) { return l.id === w.current; })[0]; };
+  B5Edit.prototype._fillSel = function () {
+    var w = this.work, sel = this.sel; sel.innerHTML = '';
+    w.lists.forEach(function (l) { sel.appendChild(el('option', { value: l.id, text: l.name || '(no name)' })); });
+    sel.value = w.current;
+  };
+  B5Edit.prototype.open = function () {
+    this.work = clone(this.state); this.bulk = false; this.bulkBtn.textContent = 'Paste many';
+    this.msg.textContent = ''; this._render(); this.ov.classList.add('open');
+    if (this.cfg.onOpen) this.cfg.onOpen();
+  };
+  B5Edit.prototype.close = function () { this.ov.classList.remove('open'); if (this.cfg.onClose) this.cfg.onClose(); };
+  B5Edit.prototype._optVal = function (o) { return o && o.value !== undefined ? o.value : o; };
+  B5Edit.prototype._render = function () {
+    var self = this, cfg = this.cfg, L = this._curW();
+    this._fillSel(); this.nameIn.value = L.name;
+    this.body.innerHTML = '';
+    if ((cfg.settings || []).length) {
+      var set = el('div', { 'class': 'b5e-set' });
+      cfg.settings.forEach(function (f) {
+        var v = self.work.settings[f.key], inp;
+        if (f.type === 'select') {
+          inp = el('select', { 'data-k': f.key });
+          f.options.forEach(function (o) { inp.appendChild(el('option', { value: String(self._optVal(o)), text: o.label || String(o) })); });
+          inp.value = String(v);
+        } else if (f.type === 'checkbox') {
+          inp = el('input', { type: 'checkbox', 'data-k': f.key }); inp.checked = !!v;
+        } else {
+          inp = el('input', { type: f.type || 'text', 'data-k': f.key, value: v == null ? '' : v, style: 'width:' + (f.width || 90) + 'px' });
+          if (f.min != null) inp.min = f.min; if (f.max != null) inp.max = f.max;
+        }
+        set.appendChild(el('label', {}, [el('span', { text: f.label }), inp]));
+      });
+      this.body.appendChild(set);
+      this.setBox = set;
+    } else this.setBox = null;
+    if (this.bulk) {
+      var fmt = this.cols.map(function (c) { return c.label; }).join(' | ');
+      this.body.appendChild(el('div', { 'class': 'b5e-help', text: 'One row per line. ' + (this.cols.length > 1 ? 'Separate the boxes with | like this:  ' + fmt : '') }));
+      this.ta = el('textarea', { 'class': 'b5e-bulk' });
+      this.ta.value = L.rows.map(function (r) { return self.cols.map(function (c) { return r[c.key] == null ? '' : String(r[c.key]); }).join(' | '); }).join('\n');
+      this.body.appendChild(this.ta);
+      return;
+    }
+    var tbl = el('table', { 'class': 'b5e-tbl' });
+    var hr = el('tr', {}, [el('th', { text: '#' })]);
+    this.cols.forEach(function (c) { hr.appendChild(el('th', { text: c.label, style: c.width ? 'width:' + c.width : '' })); });
+    if (cfg.rowAction) hr.appendChild(el('th'));
+    hr.appendChild(el('th'));
+    tbl.appendChild(hr);
+    L.rows.forEach(function (r, i) {
+      var tr = el('tr', {}, [el('td', { 'class': 'n', text: String(i + 1) })]);
+      self.cols.forEach(function (c) {
+        var inp, v = r[c.key] == null ? '' : r[c.key];
+        if (c.options) {
+          inp = el('select');
+          c.options.forEach(function (o) { inp.appendChild(el('option', { value: String(self._optVal(o)), text: o.label || String(o) })); });
+          inp.value = String(v);
+        } else if (c.multiline) { inp = el('textarea', { placeholder: c.placeholder || '' }); inp.value = v; }
+        else inp = el('input', { value: v, placeholder: c.placeholder || '' });
+        inp.setAttribute('data-k', c.key);
+        tr.appendChild(el('td', {}, [inp]));
+      });
+      if (cfg.rowAction) tr.appendChild(el('td', {}, [el('button', { 'class': 'b5e-act', type: 'button', text: cfg.rowAction.label, onclick: function () { self._rowAct(i); } })]));
+      tr.appendChild(el('td', {}, [el('button', { 'class': 'b5e-x', type: 'button', title: 'Delete row', text: '×', onclick: function () { self._pull(); self._curW().rows.splice(i, 1); self._render(); } })]));
+      tbl.appendChild(tr);
+    });
+    this.body.appendChild(tbl);
+    this.tbl = tbl;
+  };
+  B5Edit.prototype._pull = function () {
+    var self = this, L = this._curW();
+    if (!L) return;
+    if (this.setBox) {
+      [].forEach.call(this.setBox.querySelectorAll('[data-k]'), function (inp) {
+        var k = inp.getAttribute('data-k'), f = self.cfg.settings.filter(function (s) { return s.key === k; })[0];
+        var v = inp.type === 'checkbox' ? inp.checked : inp.value;
+        if (f && (f.type === 'number' || typeof f.default === 'number') && inp.type !== 'checkbox') v = Number(v);
+        self.work.settings[k] = v;
+      });
+    }
+    if (this.bulk) {
+      L.rows = this.ta.value.split('\n').map(function (line) { return line.trim(); }).filter(Boolean).map(function (line) {
+        var parts = self.cols.length > 1 ? line.split('|') : [line], r = {};
+        self.cols.forEach(function (c, i) { r[c.key] = (parts[i] || '').trim(); });
+        return r;
+      });
+      return;
+    }
+    var trs = this.tbl ? this.tbl.querySelectorAll('tr') : [];
+    var rows = [];
+    for (var i = 1; i < trs.length; i++) {
+      var r = {};
+      [].forEach.call(trs[i].querySelectorAll('[data-k]'), function (inp) { r[inp.getAttribute('data-k')] = inp.value.trim(); });
+      rows.push(r);
+    }
+    L.rows = rows;
+  };
+  B5Edit.prototype._toggleBulk = function () {
+    this._pull(); this.bulk = !this.bulk;
+    this.bulkBtn.textContent = this.bulk ? 'Table view' : 'Paste many';
+    this._render();
+  };
+  B5Edit.prototype._newList = function (copy) {
+    this._pull();
+    var cur = this._curW(), id = 'l' + Date.now();
+    var L = { id: id, name: copy ? cur.name + ' (copy)' : 'New list', rows: copy ? clone(cur.rows) : [this._blank()] };
+    this.work.lists.push(L); this.work.current = id; this._render(); this.nameIn.focus(); this.nameIn.select();
+  };
+  B5Edit.prototype._delList = function () {
+    if (this.work.lists.length < 2) { this._say('You need at least one list.'); return; }
+    if (!confirm('Delete the list "' + this._curW().name + '"?')) return;
+    var w = this.work; w.lists = w.lists.filter(function (l) { return l.id !== w.current; });
+    w.current = w.lists[0].id; this._render();
+  };
+  B5Edit.prototype._reset = function () {
+    if (!confirm('Bring back the original list and settings? Your other lists stay.')) return;
+    var d = this._defaults(), w = this.work;
+    var has = w.lists.filter(function (l) { return l.id === 'default'; })[0];
+    if (has) { has.rows = d.lists[0].rows; has.name = d.lists[0].name; } else w.lists.unshift(d.lists[0]);
+    w.settings = d.settings; w.current = 'default'; this._render(); this._say('Defaults restored. Press Save to use them.', true);
+  };
+  B5Edit.prototype._rowAct = function (i) {
+    var self = this; this._pull();
+    var L = this._curW(), r = L.rows[i];
+    this._say('Working…', true);
+    Promise.resolve(this.cfg.rowAction.run(clone(r))).then(function (nr) {
+      if (nr) { L.rows[i] = nr; self._render(); }
+      self._say('', true);
+    }).catch(function (e) { self._say(String(e && e.message || e)); });
+  };
+  B5Edit.prototype._say = function (t, ok) { this.msg.textContent = t; this.msg.className = 'b5e-msg' + (ok ? ' ok' : ''); };
+  B5Edit.prototype._commit = function () {
+    this._pull();
+    var self = this, w = this.work;
+    // drop fully empty rows
+    w.lists.forEach(function (L) {
+      L.rows = L.rows.filter(function (r) { return self.cols.some(function (c) { return !c.options && String(r[c.key] || '').trim() !== ''; }) || self.cols.every(function (c) { return c.options; }); });
+      if (self.cfg.clean) L.rows = L.rows.map(self.cfg.clean);
+      if (!L.name) L.name = 'Untitled list';
+    });
+    var L = this._curW();
+    var err = this.cfg.validate ? this.cfg.validate(L.rows, w.settings) : '';
+    if (!err && this.cfg.min && L.rows.length < this.cfg.min) err = 'This list needs at least ' + this.cfg.min + ' rows.';
+    if (err) { this._say(err); this._render(); return; }
+    this.state = w; this._save(); this.close(); this._fire();
+  };
+
+  window.B5Edit = B5Edit;
+})();
+
+</script>
+<script>
+(function () {
+
+/* ================= DATA ================= */
+// Column order: present-aff, present-neg, present-q, past-aff, past-neg, past-q
+const COLS = [
+  { key: "pAff",  label: "Present\n✓ statement", cls: "" },
+  { key: "pNeg",  label: "Present\n✗ negative",  cls: "neg" },
+  { key: "pQ",    label: "Present\n? question",  cls: "q" },
+  { key: "kAff",  label: "Past\n✓ statement",    cls: "" },
+  { key: "kNeg",  label: "Past\n✗ negative",     cls: "neg" },
+  { key: "kQ",    label: "Past\n? question",     cls: "q" }
+];
+
+const DEF_MAPS = [
+  {
+    title: "Map 1 — I",
+    goal: "Practice: I + present & past simple",
+    rows: [
+      { subj: "I", verb: "work", context: "at a warehouse",
+        pAff: "I work at a warehouse.", pNeg: "I don't work at a warehouse.", pQ: "Do I work at a warehouse?",
+        kAff: "I worked at a warehouse.", kNeg: "I didn't work at a warehouse.", kQ: "Did I work at a warehouse?" },
+      { subj: "I", verb: "clean", context: "the house every weekend",
+        pAff: "I clean the house every weekend.", pNeg: "I don't clean the house every weekend.", pQ: "Do I clean the house every weekend?",
+        kAff: "I cleaned the house every weekend.", kNeg: "I didn't clean the house every weekend.", kQ: "Did I clean the house every weekend?" },
+      { subj: "I", verb: "go", context: "to work by bus",
+        pAff: "I go to work by bus.", pNeg: "I don't go to work by bus.", pQ: "Do I go to work by bus?",
+        kAff: "I went to work by bus.", kNeg: "I didn't go to work by bus.", kQ: "Did I go to work by bus?" },
+      { subj: "I", verb: "eat", context: "breakfast at 7am",
+        pAff: "I eat breakfast at 7am.", pNeg: "I don't eat breakfast at 7am.", pQ: "Do I eat breakfast at 7am?",
+        kAff: "I ate breakfast at 7am.", kNeg: "I didn't eat breakfast at 7am.", kQ: "Did I eat breakfast at 7am?" },
+      { subj: "I", verb: "have", context: "two children",
+        pAff: "I have two children.", pNeg: "I don't have two children.", pQ: "Do I have two children?",
+        kAff: "I had two children.", kNeg: "I didn't have two children.", kQ: "Did I have two children?" }
+    ]
+  },
+  {
+    title: "Map 2 — You",
+    goal: "Practice: You + present & past simple",
+    rows: [
+      { subj: "You", verb: "study", context: "English at night",
+        pAff: "You study English at night.", pNeg: "You don't study English at night.", pQ: "Do you study English at night?",
+        kAff: "You studied English at night.", kNeg: "You didn't study English at night.", kQ: "Did you study English at night?" },
+      { subj: "You", verb: "wash", context: "the dishes after dinner",
+        pAff: "You wash the dishes after dinner.", pNeg: "You don't wash the dishes after dinner.", pQ: "Do you wash the dishes after dinner?",
+        kAff: "You washed the dishes after dinner.", kNeg: "You didn't wash the dishes after dinner.", kQ: "Did you wash the dishes after dinner?" },
+      { subj: "You", verb: "drink", context: "coffee in the morning",
+        pAff: "You drink coffee in the morning.", pNeg: "You don't drink coffee in the morning.", pQ: "Do you drink coffee in the morning?",
+        kAff: "You drank coffee in the morning.", kNeg: "You didn't drink coffee in the morning.", kQ: "Did you drink coffee in the morning?" },
+      { subj: "You", verb: "do", context: "your homework",
+        pAff: "You do your homework.", pNeg: "You don't do your homework.", pQ: "Do you do your homework?",
+        kAff: "You did your homework.", kNeg: "You didn't do your homework.", kQ: "Did you do your homework?" },
+      { subj: "You", verb: "take", context: "the bus to school",
+        pAff: "You take the bus to school.", pNeg: "You don't take the bus to school.", pQ: "Do you take the bus to school?",
+        kAff: "You took the bus to school.", kNeg: "You didn't take the bus to school.", kQ: "Did you take the bus to school?" }
+    ]
+  },
+  {
+    title: "Map 3 — He / She",
+    goal: "Practice: He/She + present (-s / -es) & past simple",
+    rows: [
+      { subj: "She", verb: "cook", context: "dinner for the family",
+        pAff: "She cooks dinner for the family.", pNeg: "She doesn't cook dinner for the family.", pQ: "Does she cook dinner for the family?",
+        kAff: "She cooked dinner for the family.", kNeg: "She didn't cook dinner for the family.", kQ: "Did she cook dinner for the family?" },
+      { subj: "He", verb: "watch", context: "TV after work",
+        pAff: "He watches TV after work.", pNeg: "He doesn't watch TV after work.", pQ: "Does he watch TV after work?",
+        kAff: "He watched TV after work.", kNeg: "He didn't watch TV after work.", kQ: "Did he watch TV after work?" },
+      { subj: "She", verb: "go", context: "to the store on Saturdays",
+        pAff: "She goes to the store on Saturdays.", pNeg: "She doesn't go to the store on Saturdays.", pQ: "Does she go to the store on Saturdays?",
+        kAff: "She went to the store on Saturdays.", kNeg: "She didn't go to the store on Saturdays.", kQ: "Did she go to the store on Saturdays?" },
+      { subj: "He", verb: "get", context: "up at 6am",
+        pAff: "He gets up at 6am.", pNeg: "He doesn't get up at 6am.", pQ: "Does he get up at 6am?",
+        kAff: "He got up at 6am.", kNeg: "He didn't get up at 6am.", kQ: "Did he get up at 6am?" },
+      { subj: "She", verb: "make", context: "the bed every morning",
+        pAff: "She makes the bed every morning.", pNeg: "She doesn't make the bed every morning.", pQ: "Does she make the bed every morning?",
+        kAff: "She made the bed every morning.", kNeg: "She didn't make the bed every morning.", kQ: "Did she make the bed every morning?" }
+    ]
+  },
+  {
+    title: "Map 4 — We / They",
+    goal: "Practice: We/They + present & past simple",
+    rows: [
+      { subj: "We", verb: "clean", context: "the classroom together",
+        pAff: "We clean the classroom together.", pNeg: "We don't clean the classroom together.", pQ: "Do we clean the classroom together?",
+        kAff: "We cleaned the classroom together.", kNeg: "We didn't clean the classroom together.", kQ: "Did we clean the classroom together?" },
+      { subj: "They", verb: "play", context: "soccer on weekends",
+        pAff: "They play soccer on weekends.", pNeg: "They don't play soccer on weekends.", pQ: "Do they play soccer on weekends?",
+        kAff: "They played soccer on weekends.", kNeg: "They didn't play soccer on weekends.", kQ: "Did they play soccer on weekends?" },
+      { subj: "We", verb: "eat", context: "lunch at noon",
+        pAff: "We eat lunch at noon.", pNeg: "We don't eat lunch at noon.", pQ: "Do we eat lunch at noon?",
+        kAff: "We ate lunch at noon.", kNeg: "We didn't eat lunch at noon.", kQ: "Did we eat lunch at noon?" },
+      { subj: "They", verb: "have", context: "a meeting on Monday",
+        pAff: "They have a meeting on Monday.", pNeg: "They don't have a meeting on Monday.", pQ: "Do they have a meeting on Monday?",
+        kAff: "They had a meeting on Monday.", kNeg: "They didn't have a meeting on Monday.", kQ: "Did they have a meeting on Monday?" },
+      { subj: "We", verb: "do", context: "the laundry on Sunday",
+        pAff: "We do the laundry on Sunday.", pNeg: "We don't do the laundry on Sunday.", pQ: "Do we do the laundry on Sunday?",
+        kAff: "We did the laundry on Sunday.", kNeg: "We didn't do the laundry on Sunday.", kQ: "Did we do the laundry on Sunday?" }
+    ]
+  }
+];
+
+function thirdS(v) {
+  if (v === "have") return "has";
+  if (/(ch|sh|s|x|z|o)$/.test(v)) return v + "es";
+  if (/[^aeiou]y$/.test(v)) return v.slice(0, -1) + "ies";
+  return v + "s";
+}
+function buildRow(r) {
+  var subj = r.subj, verb = r.verb, ctx = r.context, past = r.past || verb + "ed";
+  var low = ["You", "He", "She", "We", "They", "It"].indexOf(subj) >= 0 ? subj.toLowerCase() : subj;
+  var third = ["I", "You", "We", "They"].indexOf(subj) < 0 && !/ and /i.test(subj);
+  var pres = third ? (r.third || thirdS(verb)) : verb;
+  var t = ctx ? " " + ctx : "";
+  return { subj: subj, verb: verb, context: ctx,
+    pAff: subj + " " + pres + t + ".", pNeg: subj + " " + (third ? "doesn't" : "don't") + " " + verb + t + ".", pQ: (third ? "Does" : "Do") + " " + low + " " + verb + t + "?",
+    kAff: subj + " " + past + t + ".", kNeg: subj + " didn't " + verb + t + ".", kQ: "Did " + low + " " + verb + t + "?" };
+}
+const ED = new B5Edit({ key: "treasure-hunt-tenses", title: "Treasure Hunt — present & past verbs", defaultName: "Present & past simple",
+  help: "Rows with the same Map name make one map, in order. Each map uses 5 rows (with more, 5 are picked at random). The six sentences are built for you. Fill \"He/she form\" only for unusual verbs.",
+  columns: [{ key: "map", label: "Map", width: "150px" }, { key: "subj", label: "Subject", width: "90px" }, { key: "verb", label: "Verb", width: "100px" }, { key: "past", label: "Past form", width: "110px" }, { key: "context", label: "Rest of the sentence" }, { key: "third", label: "He/she form", width: "110px" }],
+  defaults: (function () { var out = []; DEF_MAPS.forEach(function (mp) { mp.rows.forEach(function (r) { var past = r.kAff.slice(r.subj.length + 1, r.kAff.length - (r.context ? r.context.length + 2 : 1)); out.push({ map: mp.title, subj: r.subj, verb: r.verb, past: past, context: r.context, third: "" }); }); }); return out; })(),
+  validate: function (rows) { var c = {}; rows.forEach(function (r) { c[r.map] = (c[r.map] || 0) + 1; }); var bad = Object.keys(c).filter(function (k) { return c[k] < 5; }); return bad.length ? "Each map needs at least 5 rows: " + bad.join(", ") : ""; },
+  min: 5, onChange: function () { location.reload(); } });
+const MAPS = (function () {
+  var order = [], by = {};
+  ED.rows().forEach(function (r) { if (!by[r.map]) { by[r.map] = []; order.push(r.map); } by[r.map].push(r); });
+  return order.map(function (name) {
+    var rows = by[name].slice();
+    for (var i = rows.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var x = rows[i]; rows[i] = rows[j]; rows[j] = x; }
+    rows = rows.slice(0, 5).map(buildRow);
+    var subs = []; rows.forEach(function (r) { if (subs.indexOf(r.subj) < 0) subs.push(r.subj); });
+    var def = DEF_MAPS.filter(function (d) { return d.title === name; })[0];
+    return { title: name, goal: def ? def.goal : "Practice: " + subs.join("/") + " + present & past simple", rows: rows };
+  });
+})();
+
+/* ================= STATE ================= */
+let teamCount = 2;
+let teams = [];
+let currentTeamIndex = 0;
+let currentMapIndex = 0;
+let board = []; // 30 cells: {row, col, prize:{type,points}, used:bool}
+let activeCell = null; // {row,col} currently open in side panel
+let revealedSentenceShown = false;
+
+/* ================= SETUP SCREEN ================= */
+function renderTeamNameInputs() {
+  const wrap = document.getElementById("teamNames");
+  wrap.innerHTML = "";
+  for (let i = 0; i < teamCount; i++) {
+    const input = document.createElement("input");
+    input.type = "text";
+    input.placeholder = "Team " + (i + 1);
+    input.value = (teams[i] && teams[i].name) ? teams[i].name : "";
+    input.dataset.idx = i;
+    wrap.appendChild(input);
+  }
+}
+
+document.getElementById("teamMinus").addEventListener("click", function () {
+  if (teamCount > 2) { teamCount--; renderTeamNameInputs(); document.getElementById("teamCount").textContent = teamCount; }
+});
+document.getElementById("teamPlus").addEventListener("click", function () {
+  if (teamCount < 6) { teamCount++; renderTeamNameInputs(); document.getElementById("teamCount").textContent = teamCount; }
+});
+renderTeamNameInputs();
+
+document.getElementById("startBtn").addEventListener("click", function () {
+  const inputs = document.querySelectorAll("#teamNames input");
+  teams = [];
+  inputs.forEach(function (inp, i) {
+    teams.push({
+      name: inp.value.trim() || ("Team " + (i + 1)),
+      score: 0,
+      history: [] // last 5: {label, outcome} outcome: 'gold'|'silver'|'common'|'bomb'|'blank'|'wrong'
+    });
+  });
+  currentTeamIndex = 0;
+  currentMapIndex = 0;
+  startMap(0);
+  showScreen("play");
+});
+
+/* ================= BOARD BUILD ================= */
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function buildPrizePool() {
+  // 30 cells total: 15 stars (8 common/+1, 4 silver/+3, 3 gold/+5), 9 blank, 6 bomb
+  const pool = [];
+  for (let i = 0; i < 8; i++) pool.push({ type: "star-common", points: 1 });
+  for (let i = 0; i < 4; i++) pool.push({ type: "star-silver", points: 3 });
+  for (let i = 0; i < 3; i++) pool.push({ type: "star-gold", points: 5 });
+  for (let i = 0; i < 9; i++) pool.push({ type: "blank", points: 0 });
+  for (let i = 0; i < 6; i++) pool.push({ type: "bomb", points: 0 });
+  return shuffle(pool);
+}
+
+function startMap(mapIdx) {
+  currentMapIndex = mapIdx;
+  const map = MAPS[mapIdx];
+  const prizes = buildPrizePool();
+  board = [];
+  let p = 0;
+  for (let r = 0; r < map.rows.length; r++) {
+    for (let c = 0; c < COLS.length; c++) {
+      board.push({ row: r, col: c, prize: prizes[p++], used: false });
+    }
+  }
+  activeCell = null;
+  document.getElementById("mapProgress").textContent = "Map " + (mapIdx + 1) + " of " + MAPS.length;
+  document.getElementById("goalBanner").textContent = map.goal;
+  renderBoard();
+  renderReveal();
+  renderTeams();
+  renderProbabilities();
+}
+
+function renderBoard() {
+  const map = MAPS[currentMapIndex];
+  const table = document.getElementById("board");
+  table.innerHTML = "";
+
+  const headRow = document.createElement("tr");
+  headRow.appendChild(document.createElement("th"));
+  COLS.forEach(function (col) {
+    const th = document.createElement("th");
+    th.className = "colhead " + col.cls;
+    th.innerHTML = col.label.replace("\n", "<br>");
+    headRow.appendChild(th);
+  });
+  table.appendChild(headRow);
+
+  map.rows.forEach(function (rowData, r) {
+    const tr = document.createElement("tr");
+    const rh = document.createElement("th");
+    rh.className = "rowhead";
+    rh.innerHTML = '<span class="subj">' + rowData.subj + "</span> · " + rowData.verb + "<br><span style='font-weight:400;color:#5f5e5a;'>" + rowData.context + "</span>";
+    tr.appendChild(rh);
+
+    for (let c = 0; c < COLS.length; c++) {
+      const cellData = board.find(function (x) { return x.row === r && x.col === c; });
+      const td = document.createElement("td");
+      td.className = "cell";
+      td.dataset.row = r;
+      td.dataset.col = c;
+      if (cellData.used) {
+        td.classList.add("used", cellData.prize.type);
+        td.textContent = prizeIcon(cellData.prize.type);
+      } else {
+        td.textContent = "?";
+      }
+      td.addEventListener("click", function () { onCellClick(r, c); });
+      tr.appendChild(td);
+    }
+    table.appendChild(tr);
+  });
+}
+
+function prizeIcon(type) {
+  if (type === "star-common") return "★";
+  if (type === "star-silver") return "★";
+  if (type === "star-gold") return "★";
+  if (type === "bomb") return "💣";
+  return "—";
+}
+
+/* ================= CELL / REVEAL FLOW ================= */
+function onCellClick(r, c) {
+  const cellData = board.find(function (x) { return x.row === r && x.col === c; });
+  if (cellData.used) return;
+  activeCell = { row: r, col: c };
+  revealedSentenceShown = false;
+  renderReveal();
+}
+
+function renderReveal() {
+  const empty = document.getElementById("revealEmpty");
+  const content = document.getElementById("revealContent");
+  if (!activeCell) {
+    empty.style.display = "block";
+    content.style.display = "none";
+    return;
+  }
+  empty.style.display = "none";
+  content.style.display = "block";
+
+  const map = MAPS[currentMapIndex];
+  const rowData = map.rows[activeCell.row];
+  const col = COLS[activeCell.col];
+  const sentence = rowData[col.key];
+
+  document.getElementById("revealCellLabel").textContent =
+    rowData.subj + " · " + rowData.verb + " · " + col.label.replace("\n", " ");
+
+  const sWrap = document.getElementById("revealSentence");
+  const actions = document.getElementById("revealActions");
+  actions.innerHTML = "";
+
+  if (!revealedSentenceShown) {
+    sWrap.className = "reveal-sentence-wrap hidden-sentence";
+    sWrap.textContent = "Teacher: tap to check the sentence";
+    sWrap.style.cursor = "pointer";
+    sWrap.onclick = function () {
+      revealedSentenceShown = true;
+      renderReveal();
+    };
+    const cancelBtn = document.createElement("button");
+    cancelBtn.textContent = "Cancel";
+    cancelBtn.addEventListener("click", function () { activeCell = null; renderReveal(); });
+    actions.appendChild(cancelBtn);
+  } else {
+    sWrap.className = "reveal-sentence-wrap shown-sentence";
+    sWrap.style.cursor = "default";
+    sWrap.onclick = null;
+    sWrap.textContent = sentence;
+
+    const correctBtn = document.createElement("button");
+    correctBtn.className = "correct";
+    correctBtn.textContent = "✓ Correct";
+    correctBtn.addEventListener("click", function () { resolveCell(true); });
+
+    const wrongBtn = document.createElement("button");
+    wrongBtn.className = "wrong";
+    wrongBtn.textContent = "✗ Wrong";
+    wrongBtn.addEventListener("click", function () { resolveCell(false); });
+
+    const cancelBtn = document.createElement("button");
+    cancelBtn.textContent = "Cancel";
+    cancelBtn.addEventListener("click", function () { activeCell = null; renderReveal(); });
+
+    actions.appendChild(correctBtn);
+    actions.appendChild(wrongBtn);
+    actions.appendChild(cancelBtn);
+  }
+}
+
+function resolveCell(wasCorrect) {
+  const cellData = board.find(function (x) { return x.row === activeCell.row && x.col === activeCell.col; });
+  const map = MAPS[currentMapIndex];
+  const rowData = map.rows[activeCell.row];
+  const col = COLS[activeCell.col];
+  const label = rowData.subj + "/" + rowData.verb + " · " + col.label.replace("\n", " ");
+  const team = teams[currentTeamIndex];
+
+  cellData.used = true;
+
+  if (!wasCorrect) {
+    logMove(team, label, "wrong");
+    playTone("wrong");
+  } else {
+    const prize = cellData.prize;
+    if (prize.type === "bomb") team.score = Math.floor(team.score / 2);
+    else team.score += prize.points;
+    logMove(team, label, prize.type);
+    if (prize.type === "bomb") {
+      playTone("bomb");
+      triggerShake();
+    } else if (prize.type === "star-gold") {
+      playTone("gold");
+      launchConfetti(30);
+    } else if (prize.type === "star-silver") {
+      playTone("silver");
+    } else if (prize.type === "star-common") {
+      playTone("common");
+    }
+  }
+
+  activeCell = null;
+  advanceTurn();
+  renderBoard();
+  renderReveal();
+  renderTeams();
+  renderProbabilities();
+  checkMapComplete();
+}
+
+function logMove(team, label, outcome) {
+  team.history.unshift({ label: label, outcome: outcome });
+  if (team.history.length > 5) team.history.pop();
+}
+
+function advanceTurn() {
+  currentTeamIndex = (currentTeamIndex + 1) % teams.length;
+}
+
+/* ================= TEAMS PANEL ================= */
+function outcomeSymbol(outcome) {
+  if (outcome === "star-gold") return "★ gold";
+  if (outcome === "star-silver") return "★ silver";
+  if (outcome === "star-common") return "★";
+  if (outcome === "bomb") return "💣";
+  if (outcome === "wrong") return "✗";
+  return "—";
+}
+
+function renderTeams() {
+  const list = document.getElementById("teamList");
+  list.innerHTML = "";
+  teams.forEach(function (team, i) {
+    const row = document.createElement("div");
+    row.className = "team-row" + (i === currentTeamIndex ? " active" : "");
+    const historyStr = team.history.map(function (h) { return outcomeSymbol(h.outcome); }).join("  ");
+    row.innerHTML =
+      '<div class="team-row-top"><span class="team-row-name">' + (i === currentTeamIndex ? "▶ " : "") + team.name +
+      '</span><span class="team-row-score">' + team.score + '</span></div>' +
+      '<div class="team-row-history">' + (historyStr || "no moves yet") + '</div>';
+    list.appendChild(row);
+  });
+}
+
+/* ================= PROBABILITY PANEL ================= */
+function renderProbabilities() {
+  const remaining = board.filter(function (c) { return !c.used; });
+  const total = remaining.length;
+  const wrap = document.getElementById("probRows");
+  wrap.innerHTML = "";
+
+  if (total === 0) {
+    wrap.innerHTML = '<div style="font-size:1.3vh;color:#5f5e5a;">Map complete.</div>';
+    return;
+  }
+
+  const starCount = remaining.filter(function (c) { return c.prize.type.indexOf("star") === 0; }).length;
+  const blankCount = remaining.filter(function (c) { return c.prize.type === "blank"; }).length;
+  const bombCount = remaining.filter(function (c) { return c.prize.type === "bomb"; }).length;
+
+  [
+    { label: "★ Star", count: starCount, cls: "star" },
+    { label: "— Nothing", count: blankCount, cls: "blank" },
+    { label: "💣 Bomb", count: bombCount, cls: "bomb" }
+  ].forEach(function (item) {
+    const pct = Math.round((item.count / total) * 100);
+    const row = document.createElement("div");
+    row.className = "prob-row";
+    row.innerHTML =
+      '<div class="prob-label">' + item.label + '</div>' +
+      '<div class="prob-bar-bg"><div class="prob-bar ' + item.cls + '" style="width:' + pct + '%;"></div></div>' +
+      '<div class="prob-pct">' + pct + '%</div>';
+    wrap.appendChild(row);
+  });
+
+  document.getElementById("cellsLeft").textContent = total + " square" + (total === 1 ? "" : "s") + " left";
+}
+
+/* ================= MAP / GAME PROGRESSION ================= */
+function checkMapComplete() {
+  const allUsed = board.every(function (c) { return c.used; });
+  if (!allUsed) return;
+
+  launchConfetti(60);
+  playTone("mapwin");
+
+  if (currentMapIndex < MAPS.length - 1) {
+    document.getElementById("mapCompleteTitle").textContent = MAPS[currentMapIndex].title + " complete!";
+    document.getElementById("mapCompleteSub").textContent = "Next up: " + MAPS[currentMapIndex + 1].title;
+    document.getElementById("nextMapBtn").textContent = "Next map →";
+    showScreen("mapComplete");
+  } else {
+    document.getElementById("mapCompleteTitle").textContent = "Final map complete!";
+    document.getElementById("mapCompleteSub").textContent = "Let's see the final scores.";
+    document.getElementById("nextMapBtn").textContent = "See final scores →";
+    showScreen("mapComplete");
+  }
+}
+
+document.getElementById("nextMapBtn").addEventListener("click", function () {
+  if (currentMapIndex < MAPS.length - 1) {
+    startMap(currentMapIndex + 1);
+    showScreen("play");
+  } else {
+    showFinal();
+  }
+});
+
+function showFinal() {
+  const sorted = teams.slice().sort(function (a, b) { return b.score - a.score; });
+  const topScore = sorted.length ? sorted[0].score : 0;
+  const list = document.getElementById("finalList");
+  list.innerHTML = "";
+  sorted.forEach(function (team) {
+    const row = document.createElement("div");
+    row.className = "final-row" + (team.score === topScore ? " winner" : "");
+    row.innerHTML = "<span>" + team.name + "</span><span>" + team.score + "</span>";
+    list.appendChild(row);
+  });
+  showScreen("finalScreen");
+}
+
+document.getElementById("playAgainBtn").addEventListener("click", function () { showScreen("setup"); });
+document.getElementById("restartFromPlayBtn").addEventListener("click", function () { showScreen("setup"); });
+
+/* ================= SCREEN SWITCH ================= */
+function showScreen(id) {
+  document.querySelectorAll(".screen").forEach(function (s) { s.classList.remove("active"); });
+  document.getElementById(id).classList.add("active");
+}
+
+/* ================= SOUND (Web Audio API) ================= */
+let audioCtx = null;
+function getCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+function tone(freq, start, dur, type, gainVal) {
+  const ctx = getCtx();
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = type || "sine";
+  osc.frequency.value = freq;
+  gain.gain.setValueAtTime(gainVal || 0.15, ctx.currentTime + start);
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + start + dur);
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start(ctx.currentTime + start);
+  osc.stop(ctx.currentTime + start + dur);
+}
+function playTone(kind) {
+  try {
+    if (kind === "common") { tone(660, 0, 0.15, "sine"); }
+    else if (kind === "silver") { tone(660, 0, 0.12, "sine"); tone(880, 0.1, 0.18, "sine"); }
+    else if (kind === "gold") { tone(660, 0, 0.1, "sine"); tone(880, 0.1, 0.1, "sine"); tone(1100, 0.2, 0.25, "sine"); }
+    else if (kind === "wrong") { tone(220, 0, 0.25, "sawtooth", 0.08); }
+    else if (kind === "bomb") { tone(300, 0, 0.15, "sawtooth", 0.12); tone(220, 0.12, 0.15, "sawtooth", 0.12); tone(140, 0.24, 0.3, "sawtooth", 0.12); }
+    else if (kind === "mapwin") { tone(523, 0, 0.15, "sine"); tone(659, 0.15, 0.15, "sine"); tone(784, 0.3, 0.15, "sine"); tone(1047, 0.45, 0.35, "sine"); }
+  } catch (e) { /* audio unavailable, ignore */ }
+}
+
+/* ================= SCREEN SHAKE ================= */
+function triggerShake() {
+  const el = document.getElementById("play");
+  el.classList.add("shake");
+  setTimeout(function () { el.classList.remove("shake"); }, 400);
+}
+
+/* ================= CONFETTI ================= */
+const fxCanvas = document.getElementById("fx");
+const fxCtx = fxCanvas.getContext("2d");
+function resizeCanvas() {
+  fxCanvas.width = window.innerWidth;
+  fxCanvas.height = window.innerHeight;
+}
+window.addEventListener("resize", resizeCanvas);
+resizeCanvas();
+
+let particles = [];
+const CONFETTI_COLORS = ["#185FA5", "#BA7517", "#A32D2D", "#2c2c2a", "#e8b923"];
+
+function launchConfetti(count) {
+  for (let i = 0; i < count; i++) {
+    particles.push({
+      x: Math.random() * fxCanvas.width,
+      y: -10 - Math.random() * 100,
+      vx: (Math.random() - 0.5) * 3,
+      vy: 2 + Math.random() * 3,
+      size: 4 + Math.random() * 5,
+      color: CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
+      rot: Math.random() * Math.PI,
+      vrot: (Math.random() - 0.5) * 0.3,
+      life: 120 + Math.random() * 60
+    });
+  }
+}
+
+function animateFx() {
+  fxCtx.clearRect(0, 0, fxCanvas.width, fxCanvas.height);
+  particles.forEach(function (p) {
+    p.x += p.vx; p.y += p.vy; p.rot += p.vrot; p.life--;
+    fxCtx.save();
+    fxCtx.translate(p.x, p.y);
+    fxCtx.rotate(p.rot);
+    fxCtx.fillStyle = p.color;
+    fxCtx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
+    fxCtx.restore();
+  });
+  particles = particles.filter(function (p) { return p.life > 0 && p.y < fxCanvas.height + 20; });
+  requestAnimationFrame(animateFx);
+}
+animateFx();
+
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Heads Up — At Home</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body { font-family: "Segoe UI", Arial, sans-serif; background: #12385f; color: #fff; display: flex; flex-direction: column; overflow: hidden; user-select: none; }
+  header { display: flex; align-items: center; justify-content: space-between; padding: 2vh 3vw; gap: 2vw; }
+  .team { background: rgba(255,255,255,.12); border-radius: 2vh; padding: 1vh 2.5vw; text-align: center; cursor: pointer; border: .5vh solid transparent; min-width: 16vw; }
+  .team.on { border-color: #f2b33d; background: rgba(242,179,61,.18); }
+  .team p { font-size: 3vh; font-weight: 700; opacity: .85; }
+  .team b { font-size: 8vh; line-height: 1; }
+  .time { font-size: 12vh; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .time.low { color: #ff8a80; }
+  .bar { height: 1.2vh; background: rgba(255,255,255,.15); margin: 0 3vw; border-radius: 1vh; overflow: hidden; }
+  .bar div { height: 100%; width: 100%; background: #f2b33d; transition: width 1s linear; }
+  main { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 0 3vw; }
+  .hint { font-size: 3.4vh; opacity: .75; margin-bottom: 2vh; }
+  #word { font-size: 17vh; font-weight: 800; line-height: 1.05; letter-spacing: -.02em; text-shadow: 0 .6vh 0 rgba(0,0,0,.25); }
+  #word.small { font-size: 9vh; }
+  #word.flash-g { color: #9be59f; } #word.flash-s { color: #ffd27a; }
+  .rule { margin-top: 3vh; font-size: 3.6vh; background: rgba(255,255,255,.1); padding: 1.2vh 3vw; border-radius: 99px; }
+  footer { display: flex; justify-content: center; gap: 1.5vw; padding: 2.5vh; flex-wrap: wrap; }
+  button { font: inherit; font-size: 3.2vh; font-weight: 700; padding: 1.4vh 2.6vw; border-radius: 99px; border: .4vh solid #fff; background: transparent; color: #fff; cursor: pointer; }
+  button:hover { background: rgba(255,255,255,.15); }
+  #got { background: #2f7d32; border-color: #2f7d32; font-size: 4vh; }
+  #skip { border-color: #f2b33d; color: #f2b33d; }
+  .keys { font-size: 2.2vh; opacity: .55; text-align: center; padding-bottom: 1.5vh; }
+  #gotlist { font-size: 2.6vh; opacity: .8; margin-top: 2vh; max-width: 90vw; }
+  .edit { position: fixed; inset: 5vh 10vw; background: #fff; color: #222; border-radius: 2vh; padding: 3vh; display: none; flex-direction: column; gap: 1.5vh; z-index: 5; }
+  .edit.open { display: flex; }
+  .edit textarea { flex: 1; font: inherit; font-size: 2.4vh; padding: 1.5vh; border: 2px solid #ccc; border-radius: 1vh; }
+  .edit button { color: #12385f; border-color: #12385f; font-size: 2.4vh; }
+</style></head>
+<body>
+<header>
+  <div class="team on" data-t="0"><p>Team 1</p><b id="s0">0</b></div>
+  <div class="time" id="time">2:00</div>
+  <div class="team" data-t="1"><p>Team 2</p><b id="s1">0</b></div>
+</header>
+<div class="bar"><div id="bar"></div></div>
+<main>
+  <p class="hint" id="hint">The guesser stands with their back to the screen.</p>
+  <div id="word" class="small">Ready?</div>
+  <p class="rule" id="rule">Act it out or describe it. Don't say the word!</p>
+  <p id="gotlist"></p>
+</main>
+<footer>
+  <button id="start">▶ Start 2:00</button>
+  <button id="got">✓ Got it +1</button>
+  <button id="skip">Skip ↷</button>
+  <button id="pause">Pause</button>
+  <button id="editBtn">Words</button>
+</footer>
+<p class="keys">Space / → = Got it &nbsp;·&nbsp; ← / S = Skip &nbsp;·&nbsp; Enter = Start &nbsp;·&nbsp; P = Pause &nbsp;·&nbsp; T = switch team &nbsp;·&nbsp; F = full screen</p>
+
+<div class="edit" id="edit">
+  <h2>Words (one per line)</h2>
+  <textarea id="wordsBox"></textarea>
+  <div style="display:flex;gap:1vw"><button id="saveW">Save</button><button id="resetW">Reset to default</button><button id="closeW">Close</button></div>
+</div>
+
+<script>
+const DEFAULT = ["cooking","washing the dishes","sleeping","watching TV","reading","talking on the phone","brushing your teeth","taking a shower","vacuuming","sweeping the floor","ironing","folding clothes","cutting the grass","fixing the car","eating spaghetti","drinking coffee","doing homework","playing a video game","feeding the cat","making the bed","washing the car","taking out the trash","watering the plants","painting a wall","looking for your keys"];
+let WORDS = DEFAULT.slice();
+try { const s = localStorage.getItem('headsup-athome-words'); if (s) WORDS = JSON.parse(s); } catch (e) {}
+let deck = [], word = '', left = 120, timer = null, running = false, paused = false, team = 0, got = [];
+const $ = id => document.getElementById(id);
+const W = $('word');
+
+function draw() {
+  $('time').textContent = Math.floor(left / 60) + ':' + String(left % 60).padStart(2, '0');
+  $('bar').style.width = (left / 120 * 100) + '%';
+  $('time').classList.toggle('low', left <= 15);
+}
+function next() {
+  if (!deck.length) deck = WORDS.slice().sort(() => Math.random() - .5);
+  word = deck.pop();
+  W.textContent = word; W.className = word.length > 16 ? 'small' : '';
+}
+function flash(c) { W.classList.add(c); setTimeout(() => W.classList.remove(c), 350); }
+function start() {
+  clearInterval(timer); left = 120; running = true; paused = false; got = [];
+  $('gotlist').textContent = ''; $('pause').textContent = 'Pause';
+  $('hint').textContent = 'Team ' + (team + 1) + ' is guessing'; $('rule').style.display = '';
+  draw(); next();
+  timer = setInterval(() => {
+    if (paused) return;
+    left--; draw();
+    if (left <= 0) end();
+  }, 1000);
+}
+function end() {
+  clearInterval(timer); running = false; word = '';
+  W.textContent = "Time's up!"; W.className = 'small';
+  $('rule').style.display = 'none';
+  $('hint').textContent = 'Team ' + (team + 1) + ' got ' + got.length + '!';
+  $('gotlist').textContent = got.length ? got.join(' · ') : '';
+  beep(220, .4);
+}
+function gotIt() {
+  if (!running || paused) return;
+  const s = $('s' + team); s.textContent = +s.textContent + 1;
+  got.push(word); beep(880, .12); next(); flash('flash-g');
+}
+function skip() { if (!running || paused) return; beep(440, .08); next(); flash('flash-s'); }
+function pause() { if (!running) return; paused = !paused; $('pause').textContent = paused ? 'Resume' : 'Pause'; W.style.opacity = paused ? .25 : 1; }
+function setTeam(t) { if (running) return; team = t; document.querySelectorAll('.team').forEach((x, i) => x.classList.toggle('on', i === t)); $('hint').textContent = 'Team ' + (t + 1) + ': the guesser stands with their back to the screen.'; }
+let ac = null;
+function beep(f, d) { try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); const o = ac.createOscillator(), g = ac.createGain(); o.frequency.value = f; g.gain.setValueAtTime(.2, ac.currentTime); g.gain.exponentialRampToValueAtTime(.001, ac.currentTime + d); o.connect(g); g.connect(ac.destination); o.start(); o.stop(ac.currentTime + d); } catch (e) {} }
+
+$('start').onclick = start; $('got').onclick = gotIt; $('skip').onclick = skip; $('pause').onclick = pause;
+document.querySelectorAll('.team').forEach((x, i) => x.onclick = () => setTeam(i));
+$('editBtn').onclick = () => { $('wordsBox').value = WORDS.join('\n'); $('edit').classList.add('open'); };
+$('closeW').onclick = () => $('edit').classList.remove('open');
+$('saveW').onclick = () => { const w = $('wordsBox').value.split('\n').map(s => s.trim()).filter(Boolean); if (w.length) { WORDS = w; deck = []; try { localStorage.setItem('headsup-athome-words', JSON.stringify(w)); } catch (e) {} } $('edit').classList.remove('open'); };
+$('resetW').onclick = () => { $('wordsBox').value = DEFAULT.join('\n'); };
+document.addEventListener('keydown', e => {
+  if ($('edit').classList.contains('open')) return;
+  const k = e.key;
+  if (k === ' ' || k === 'ArrowRight' || k === 'PageDown') { e.preventDefault(); running ? gotIt() : start(); }
+  else if (k === 'ArrowLeft' || k === 'PageUp' || k === 's' || k === 'S') { e.preventDefault(); skip(); }
+  else if (k === 'Enter') { e.preventDefault(); if (!running) start(); }
+  else if (k === 'p' || k === 'P') pause();
+  else if (k === 't' || k === 'T') setTeam(1 - team);
+  else if (k === 'f' || k === 'F') { if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {}); else document.exitFullscreen(); }
+});
+draw();
+</script>
+</body></html>

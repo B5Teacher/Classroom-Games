@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Routine Race</title>
+<style>
+:root{
+  --navy:#2B3A67; --ink:#1F2A44; --pale:#E8EDF5; --muted:#6B7A99;
+  --say:#F2A541; --ask:#2E86AB; --answer:#5B3E96; --change:#C8553D; --tell:#2F9E62;
+  --serif:"Bookman Old Style",Bookman,Georgia,serif; --sans:Calibri,"Segoe UI",Arial,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;background:#11172a;font-family:var(--sans);color:var(--ink)}
+#viewport{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+.stage{width:1600px;height:900px;position:relative;flex:none;overflow:hidden;
+  background:radial-gradient(circle at 20% 15%,#FFF6E3 0,#FDEFD3 35%,#E9F3EC 100%)}
+#road{position:absolute;inset:0}
+.title{position:absolute;left:40px;top:14px;font-family:var(--serif);font-size:44px;font-weight:700;color:var(--navy)}
+.title small{font-family:var(--sans);font-size:20px;color:var(--muted);font-weight:400;margin-left:14px}
+.node{position:absolute;width:104px;text-align:center;transform:translateX(-52px)}
+.circ{width:96px;height:96px;margin:0 auto;border-radius:50%;border:5px solid #fff;box-shadow:0 4px 10px rgba(0,0,0,.25);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;position:relative;transition:transform .2s}
+.circ .t{font-weight:700;font-size:15px;letter-spacing:.5px}
+.circ .n{font-size:12px;opacity:.9}
+.circ svg{width:30px;height:30px;fill:#fff}
+.node .p{font-size:13.5px;line-height:1.15;margin-top:5px;color:var(--ink);background:rgba(255,255,255,.82);border-radius:8px;padding:2px 4px;min-height:32px}
+.node.fin .circ{border-color:#1F2A44}
+.node.target .circ{box-shadow:0 0 0 6px #fff,0 0 0 12px var(--navy);animation:pulse 1s ease-in-out infinite alternate}
+@keyframes pulse{from{box-shadow:0 0 0 6px #fff,0 0 0 12px var(--navy)}to{box-shadow:0 0 0 6px #fff,0 0 0 17px rgba(43,58,103,.55)}}
+.node.start .circ{background:var(--navy);width:92px;height:92px}
+.node.start .circ .t{font-size:18px}
+.finish{position:absolute;left:18px;top:600px;width:104px;height:150px;border-radius:16px;
+  background:repeating-conic-gradient(#1F2A44 0 25%,#fff 0 50%) 0 0/26px 26px;display:flex;align-items:center;justify-content:center}
+.finish span{background:#fff;color:var(--navy);font-weight:700;font-size:20px;padding:6px 8px;border-radius:10px;border:3px solid var(--navy);writing-mode:vertical-rl;transform:rotate(180deg)}
+.lanelabel{position:absolute;font-weight:700;color:var(--navy);font-size:16px;letter-spacing:1px;background:#fff;border:2px solid var(--navy);border-radius:20px;padding:2px 12px}
+.tok{position:absolute;width:44px;height:58px;transition:left .24s ease-in-out,top .24s ease-in-out;z-index:3;filter:drop-shadow(0 3px 3px rgba(0,0,0,.35))}
+.tok svg{width:100%;height:100%;display:block}
+.tok.hop svg{animation:hop .24s ease-out}
+@keyframes hop{0%{transform:translateY(0)}45%{transform:translateY(-18px)}100%{transform:translateY(0)}}
+.wheelbox{display:flex;align-items:center;gap:14px}
+.wheelwrap{position:relative;width:200px;height:200px;flex:none}
+#wheel{width:200px;height:200px;display:block}
+.pointer{position:absolute;left:50%;top:-6px;transform:translateX(-50%);width:0;height:0;border-left:15px solid transparent;border-right:15px solid transparent;border-top:30px solid var(--ink);filter:drop-shadow(0 2px 2px rgba(0,0,0,.4));transform-origin:50% 0}
+.pointer.flick{animation:flick .09s}
+@keyframes flick{50%{transform:translateX(-50%) rotate(-14deg)}}
+.spinbtn{font-size:30px;padding:18px 10px}
+.mute{position:absolute;top:22px;right:440px;font-size:26px;background:#fff;border:2px solid var(--navy);border-radius:50%;width:48px;height:48px;cursor:pointer}
+
+/* panel */
+.panel{position:absolute;right:20px;top:20px;bottom:20px;width:400px;background:#fff;border-radius:24px;box-shadow:0 8px 30px rgba(0,0,0,.18);
+  padding:20px 22px;display:flex;flex-direction:column;gap:12px}
+.teams{display:flex;gap:8px}
+.team{flex:1;border-radius:12px;padding:6px 4px;text-align:center;color:#fff;font-weight:700;font-size:16px;opacity:.45;border:3px solid transparent}
+.team.on{opacity:1;border-color:var(--ink)}
+.team .pos{font-size:13px;font-weight:400}
+.turn{font-size:22px;font-weight:700;color:var(--navy)}
+.diebox{display:flex;align-items:center;gap:14px}
+.die_unused{width:86px;height:86px;border-radius:18px;background:var(--navy);color:#fff;font-family:var(--serif);font-size:46px;font-weight:700;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 0 #11172a}
+.die.roll{animation:shake .45s}
+@keyframes shake{0%,100%{transform:rotate(0)}25%{transform:rotate(-14deg)}75%{transform:rotate(14deg)}}
+.btn{font:700 20px var(--sans);border:none;border-radius:14px;padding:12px 16px;cursor:pointer;color:#fff;background:var(--navy)}
+.btn:disabled{opacity:.35;cursor:default}
+.types{display:grid;grid-template-columns:repeat(5,1fr);gap:5px}
+.types button{font:700 12px var(--sans);color:#fff;border:none;border-radius:8px;padding:6px 0;cursor:pointer}
+.types button:disabled{opacity:.35;cursor:default}
+.small{font-size:13px;color:var(--muted)}
+.card{flex:1;border-radius:20px;padding:18px 20px;color:#fff;display:flex;flex-direction:column;background:#ccd3e0}
+.card .ct{font-size:30px;font-weight:700;letter-spacing:1px}
+.card .ch{font-size:20px;opacity:.95;margin-top:2px}
+.card .cp{flex:1;display:flex;align-items:center;justify-content:center;text-align:center;font-family:var(--serif);font-size:38px;line-height:1.25;background:rgba(255,255,255,.95);color:var(--ink);border-radius:14px;margin-top:12px;padding:12px}
+.card .tries{margin-top:8px;font-size:18px;min-height:22px}
+.judge{display:flex;gap:10px}
+.judge .btn{flex:1;font-size:24px}
+.ok{background:#2F9E62}.no{background:#C8553D}
+.foot{display:flex;gap:6px;justify-content:space-between}
+.foot button{font:13px var(--sans);border:1px solid #aab;background:#fff;border-radius:8px;padding:5px 8px;cursor:pointer;color:var(--ink)}
+.win{position:absolute;inset:0;background:rgba(17,23,42,.55);display:none;align-items:center;justify-content:center;z-index:9}
+.win.on{display:flex}
+.win div{background:#fff;border-radius:24px;padding:40px 60px;text-align:center;font-family:var(--serif);font-size:54px;font-weight:700;color:var(--navy)}
+.win small{display:block;font-family:var(--sans);font-size:22px;font-weight:400;color:var(--muted);margin-top:10px}
+</style>
+</head>
+<body>
+<div id="viewport"><div class="stage" id="stage">
+  <svg id="road" width="1600" height="900"></svg>
+  <div class="title">Routine Race<small>Spin · land · get a card</small></div>
+  <div id="nodes"></div>
+  <div class="finish"><span>FINISH</span></div>
+  <div id="toks"></div>
+  <button class="mute" id="mute" title="Sound on/off">🔊</button>
+
+  <div class="panel">
+    <div class="teams" id="teams"></div>
+    <div class="turn" id="turn">Team 1's turn</div>
+    <div class="wheelbox">
+      <div class="wheelwrap"><svg id="wheel" viewBox="0 0 200 200"></svg><div class="pointer" id="pointer"></div></div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:8px">
+        <button class="btn spinbtn" id="roll">SPIN!</button>
+        <div class="small">or pick a color:</div>
+      </div>
+    </div>
+    <div class="types" id="types"></div>
+    <div class="card" id="card">
+      <div class="ct" id="ct">Spin to start</div><div class="ch" id="ch">&nbsp;</div>
+      <div class="cp" id="cp">🎡</div>
+      <div class="tries" id="tries"></div>
+    </div>
+    <div class="judge"><button class="btn ok" id="ok" disabled>✓ Correct</button><button class="btn no" id="no" disabled>✗ Try again</button></div>
+    <div class="foot"><span><button data-n="2">2 teams</button> <button data-n="3">3 teams</button> <button data-n="4">4 teams</button></span><span><button id="newcard">New card</button> <button id="full">Full screen</button></span></div>
+  </div>
+  <div class="win" id="win"><div id="wintext">Team 1 finished!<small>Keep playing until every team finishes.</small></div></div>
+</div></div>
+
+<script>
+const TRACK = [{"start": 1}, {"t": "change", "p": "Ali drives to work."}, {"t": "answer", "p": "Do you work on Saturday?"}, {"t": "tell", "p": "2 things about <b>Ali</b>"}, {"t": "ask", "p": "<b>your friend</b> / play soccer"}, {"t": "say", "p": "<b>she</b> / cook dinner"}, {"t": "answer", "p": "Does Maria cook dinner?"}, {"t": "say", "p": "<b>they</b> / walk to school"}, {"t": "change", "p": "They take the bus."}, {"t": "ask", "p": "<b>you</b> / drink tea"}, {"t": "tell", "p": "2 things about <b>your morning</b>"}, {"t": "answer", "p": "Do you speak English at home?"}, {"t": "tell", "p": "2 things about <b>Amina</b>"}, {"t": "change", "p": "My friend plays soccer."}, {"t": "say", "p": "<b>my neighbor</b> / work on Saturday"}, {"t": "ask", "p": "<b>Ali and Maria</b> / walk in the park"}, {"t": "change", "p": "Amina has lunch at 12:30."}, {"t": "say", "p": "<b>Ali</b> / play soccer"}, {"t": "ask", "p": "<b>your neighbors</b> / take the bus"}, {"t": "tell", "p": "2 things you do on <b>Saturday</b>"}, {"t": "answer", "p": "Do your friends drink coffee?"}, {"t": "tell", "p": "2 things about <b>Maria</b>"}, {"t": "answer", "p": "Does Ali take the bus?"}, {"t": "say", "p": "<b>my neighbors</b> / work on Saturday"}, {"t": "change", "p": "My friends play soccer."}, {"t": "ask", "p": "<b>your friends</b> / play soccer"}, {"t": "change", "p": "We do homework."}, {"t": "ask", "p": "<b>Ali</b> / drive to work"}, {"t": "say", "p": "<b>Maria</b> / take the kids to school"}, {"t": "answer", "p": "Do you walk in the park?"}, {"t": "tell", "p": "2 things about <b>your partner</b>"}, {"t": "say", "p": "<b>our teacher</b> / drink coffee"}, {"t": "ask", "p": "<b>your teacher</b> / watch TV"}, {"t": "answer", "p": "Do you do housework?"}, {"t": "change", "p": "Maria walks in the park."}, {"t": "tell", "p": "2 things about <b>English class</b>"}];
+const TYPES = ["say","ask","answer","change","tell"];
+const INFO = {
+  say:{label:"SAY",hint:"Make a sentence.",nums:"1–2"},
+  ask:{label:"ASK",hint:"Ask the teacher.",nums:"3–4"},
+  answer:{label:"ANSWER",hint:"Another team asks you.",nums:"5–6"},
+  change:{label:"CHANGE",hint:"Make it a question.",nums:"7–8"},
+  tell:{label:"TELL",hint:"Tell 2 things.",nums:"9–10"},
+};
+const ICON = {
+  say:'<svg viewBox="0 0 24 24"><path d="M4 4h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H9l-5 4v-4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/></svg>',
+  ask:'<svg viewBox="0 0 24 24"><path d="M11 18h2v-2h-2v2zm1-16C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-2.21 0-4 1.79-4 4h2c0-1.1.9-2 2-2s2 .9 2 2c0 2-3 1.75-3 5h2c0-2.25 3-2.5 3-5 0-2.21-1.79-4-4-4z"/></svg>',
+  answer:'<svg viewBox="0 0 24 24"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>',
+  change:'<svg viewBox="0 0 24 24"><path d="M6.99 11L3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z"/></svg>',
+  tell:'<svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>',
+};
+const DECKS = {"say": ["<b>she</b> / cook dinner", "<b>they</b> / walk to school", "<b>my neighbor</b> / work on Saturday", "<b>my neighbors</b> / work on Saturday", "<b>Ali</b> / play soccer", "<b>Maria</b> / take the kids to school", "<b>our teacher</b> / drink coffee", "<b>we</b> / speak English", "<b>he</b> / wash the dishes", "<b>my friend</b> / take the bus", "<b>my friends</b> / take the bus", "<b>Amina</b> / watch TV"], "ask": ["<b>your friend</b> / play soccer", "<b>your friends</b> / play soccer", "<b>you</b> / drink tea", "<b>Ali and Maria</b> / walk in the park", "<b>your neighbor</b> / take the bus", "<b>your neighbors</b> / take the bus", "<b>Ali</b> / drive to work", "<b>your teacher</b> / watch TV", "<b>Amina</b> / drink coffee", "<b>you</b> / do housework", "<b>people in your country</b> / eat breakfast", "<b>Maria</b> / cook dinner"], "answer": ["Do you work on Saturday?", "Does Maria cook dinner?", "Do you speak English at home?", "Do your friends drink coffee?", "Does Ali take the bus?", "Do you walk in the park?", "Do you do housework?", "Does your neighbor drive to work?", "Do you eat breakfast?", "Does Amina watch TV?", "Do you take the bus?", "Does our teacher drink coffee?"], "change": ["Ali drives to work.", "They take the bus.", "My friend plays soccer.", "My friends play soccer.", "Amina has lunch at 12:30.", "We do homework.", "Maria walks in the park.", "She watches TV.", "He washes the dishes.", "My neighbor works on Saturday.", "My neighbors work on Saturday.", "You speak English."], "tell": ["2 things about <b>Ali</b>", "2 things about <b>Amina</b>", "2 things about <b>Maria</b>", "2 things about <b>your morning</b>", "2 things about <b>your evening</b>", "2 things about <b>your partner</b>", "2 things about <b>English class</b>", "2 things you do on <b>Saturday</b>", "2 things about <b>a friend</b>", "2 things about <b>your teacher</b>", "2 things about <b>your home</b>", "2 things you do <b>after dinner</b>"]};
+const piles={}; let curCard='';
+function draw(t){ if(!piles[t]||!piles[t].length){ const a=DECKS[t].slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]];} piles[t]=a; } curCard=(t==='tell'?'Tell ':'')+piles[t].pop(); }
+// ---------- sounds (made in the browser, no files) ----------
+let AC=null, muted=false;
+function ac(){ if(!AC){ AC=new (window.AudioContext||window.webkitAudioContext)(); } if(AC.state==='suspended') AC.resume(); return AC; }
+function noiseBuf(sec){ const a=ac(), b=a.createBuffer(1, Math.floor(a.sampleRate*sec), a.sampleRate), d=b.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1; return b; }
+function tick(){ if(muted) return; const a=ac(), t=a.currentTime, o=a.createOscillator(), g=a.createGain();
+  o.type='square'; o.frequency.setValueAtTime(1700,t); o.frequency.exponentialRampToValueAtTime(900,t+.03);
+  g.gain.setValueAtTime(.12,t); g.gain.exponentialRampToValueAtTime(.001,t+.04); o.connect(g).connect(a.destination); o.start(t); o.stop(t+.05); }
+function tap(){ if(muted) return; const a=ac(), t=a.currentTime, o=a.createOscillator(), g=a.createGain();
+  o.type='triangle'; o.frequency.setValueAtTime(420,t); o.frequency.exponentialRampToValueAtTime(180,t+.09);
+  g.gain.setValueAtTime(.45,t); g.gain.exponentialRampToValueAtTime(.001,t+.12); o.connect(g).connect(a.destination); o.start(t); o.stop(t+.13); }
+function voices(n, f0, f1, glide, dur, formants, vol, delay=0){
+  const a=ac(), t=a.currentTime+delay, out=a.createGain(); out.gain.value=vol;
+  const fs=formants.map(([f,q])=>{const b=a.createBiquadFilter(); b.type='bandpass'; b.frequency.value=f; b.Q.value=q; b.connect(out); return b;});
+  out.connect(a.destination);
+  for(let i=0;i<n;i++){ const o=a.createOscillator(), g=a.createGain(), lfo=a.createOscillator(), lg=a.createGain();
+    const base=f0*(0.85+Math.random()*0.35), st=t+Math.random()*0.18;
+    o.type='sawtooth'; o.frequency.setValueAtTime(base,st); o.frequency.exponentialRampToValueAtTime(base*f1,st+glide);
+    lfo.frequency.value=5+Math.random()*2; lg.gain.value=base*0.02; lfo.connect(lg).connect(o.frequency);
+    g.gain.setValueAtTime(0,st); g.gain.linearRampToValueAtTime(1,st+.12); g.gain.setValueAtTime(1,st+dur*.55); g.gain.exponentialRampToValueAtTime(.001,st+dur);
+    o.connect(g); fs.forEach(f=>g.connect(f)); o.start(st); lfo.start(st); o.stop(st+dur+.05); lfo.stop(st+dur+.05); }
+}
+function applause(dur, vol){ const a=ac(), t0=a.currentTime, buf=noiseBuf(0.04);
+  for(let i=0;i<Math.floor(dur*70);i++){ const t=t0+Math.random()*dur, s=a.createBufferSource(), f=a.createBiquadFilter(), g=a.createGain();
+    s.buffer=buf; f.type='bandpass'; f.frequency.value=1200+Math.random()*1800; f.Q.value=0.9;
+    const env=Math.sin(Math.PI*Math.min(1,(t-t0)/dur)); g.gain.setValueAtTime(vol*(0.4+0.6*env)*(0.5+Math.random()*0.5),t); g.gain.exponentialRampToValueAtTime(.001,t+.035);
+    s.connect(f).connect(g).connect(a.destination); s.start(t); } }
+function chime(notes, gap, vol){ const a=ac(); notes.forEach((f,i)=>{ const t=a.currentTime+i*gap, o=a.createOscillator(), g=a.createGain();
+  o.type='triangle'; o.frequency.value=f; g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(.001,t+.5); o.connect(g).connect(a.destination); o.start(t); o.stop(t+.55); }); }
+function cheer(){ if(muted) return; chime([523,659,784,1047],.09,.18); applause(1.8,.5); voices(7,300,1.5,.35,1.3,[[800,4],[1800,6]],.06,.05); }
+function aww(){ if(muted) return; voices(8,260,0.66,1.1,1.5,[[600,5],[1000,7]],.09); }
+function fanfare(){ if(muted) return; chime([392,523,659,784,659,784,1047],.13,.2); applause(3,.6); voices(9,320,1.6,.4,2,[[800,4],[1800,6]],.07,.2); }
+
+const TEAMC = ["#F2A541","#2E86AB","#5B3E96","#C8553D"];
+
+// ---- layout: 4 rows x 9 ----
+const X0=170, DX=112, ROWY=[150,335,520,705];
+const pos = TRACK.map((_,i)=>{const r=Math.floor(i/9), k=i%9; const x = r%2===0 ? X0+k*DX : X0+(8-k)*DX; return {x, y:ROWY[r]};});
+
+// road
+(function road(){
+  let d=`M ${pos[0].x} ${pos[0].y}`;
+  for(let i=1;i<pos.length;i++){
+    const a=pos[i-1], b=pos[i];
+    if(a.y!==b.y){ const right = a.x>800; const bulge = right? a.x+95 : a.x-95;
+      d+=` C ${bulge} ${a.y}, ${bulge} ${b.y}, ${b.x} ${b.y}`; }
+    else d+=` L ${b.x} ${b.y}`;
+  }
+  const last=pos[pos.length-1]; d+=` L 70 ${last.y}`;
+  document.getElementById('road').innerHTML =
+    `<path d="${d}" fill="none" stroke="#C9A66B" stroke-width="64" stroke-linecap="round" stroke-linejoin="round"/>
+     <path d="${d}" fill="none" stroke="#F4DFB4" stroke-width="54" stroke-linecap="round" stroke-linejoin="round"/>
+     <path d="${d}" fill="none" stroke="#fff" stroke-width="4" stroke-dasharray="14 16" stroke-linecap="round"/>`;
+})();
+
+// nodes
+const nodesEl=document.getElementById('nodes');
+TRACK.forEach((c,i)=>{
+  const n=document.createElement('div'); n.className='node'+(c.start?' start':'')+(i>=31?' fin':''); n.id='n'+i;
+  n.style.left=pos[i].x+'px'; n.style.top=(pos[i].y-48)+'px';
+  if(c.start){ n.innerHTML=`<div class="circ"><div class="t">START</div></div>`; }
+  else n.innerHTML=`<div class="circ" style="background:var(--${c.t})">${ICON[c.t]}<div class="t">${INFO[c.t].label}</div><div class="n">${i}</div></div>`;
+  nodesEl.appendChild(n);
+});
+// finish-lane label
+const lab=document.createElement('div'); lab.className='lanelabel'; lab.textContent='FINISH LANE: one of each, in order';
+lab.style.left=(pos[35].x-20)+'px'; lab.style.top=(ROWY[3]+100)+'px'; document.getElementById('stage').appendChild(lab);
+
+// ---------- color wheel ----------
+const WCOL={say:'#F2A541',ask:'#2E86AB',answer:'#5B3E96',change:'#C8553D',tell:'#2F9E62'};
+(function drawWheel(){
+  let h=''; const R=94, C=100;
+  TYPES.forEach((t,i)=>{ const a0=(i*72-90)*Math.PI/180, a1=((i+1)*72-90)*Math.PI/180;
+    h+=`<path d="M${C} ${C} L${C+R*Math.cos(a0)} ${C+R*Math.sin(a0)} A${R} ${R} 0 0 1 ${C+R*Math.cos(a1)} ${C+R*Math.sin(a1)}Z" fill="${WCOL[t]}" stroke="#fff" stroke-width="3"/>`;
+    const am=i*72+36; h+=`<text transform="rotate(${am} ${C} ${C}) translate(${C} ${C-58})" text-anchor="middle" font-family="Calibri,Segoe UI,Arial" font-weight="700" font-size="${t==='answer'||t==='change'?13:16}" fill="#fff">${INFO[t].label}</text>`; });
+  for(let k=0;k<20;k++){ const a=(k*18-90)*Math.PI/180; h+=`<circle cx="${C+88*Math.cos(a)}" cy="${C+88*Math.sin(a)}" r="3" fill="#fff" stroke="#1F2A44" stroke-width="1"/>`; }
+  h+=`<circle cx="${C}" cy="${C}" r="16" fill="#1F2A44" stroke="#fff" stroke-width="4"/>`;
+  document.getElementById('wheel').innerHTML=`<circle cx="100" cy="100" r="98" fill="#1F2A44"/><g id="wg">${h}</g>`;
+})();
+let wrot=0;
+function spin(){
+  if(busy) return; busy=true; setDisabled(true); ac();
+  const seg=Math.floor(Math.random()*5), a=seg*72+10+Math.random()*52;          // where the pointer lands, in wheel degrees
+  const delta=((-a-wrot)%360+360)%360, start=wrot, end=wrot+360*5+delta, dur=4200, t0=performance.now();
+  let lastPeg=Math.floor(start/18), ptr=document.getElementById('pointer'), wg=document.getElementById('wg');
+  (function frame(now){ const k=Math.min(1,(now-t0)/dur), e=1-Math.pow(1-k,4), r=start+(end-start)*e;
+    wg.setAttribute('transform',`rotate(${r} 100 100)`);
+    const peg=Math.floor(r/18); if(peg!==lastPeg){ lastPeg=peg; tick(); ptr.classList.remove('flick'); void ptr.offsetWidth; ptr.classList.add('flick'); }
+    if(k<1) requestAnimationFrame(frame); else { wrot=end%360; busy=false; chooseType(TYPES[seg],true); }
+  })(t0);
+}
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+async function moveTo(team, to){
+  const tk=document.getElementById('tk'+team);
+  while(at[team]<to){ at[team]++; placeTok(team); tk.classList.remove('hop'); void tk.offsetWidth; tk.classList.add('hop'); tap(); await sleep(300); }
+}
+const PAWN=c=>`<svg viewBox="0 0 40 54"><path d="M20 3a8.5 8.5 0 0 1 5.2 15.2c2.9 1.4 4.6 3.6 4.6 6.3h-3.4c.2 4.6 2.2 9.4 5.6 13.5H8c3.4-4.1 5.4-8.9 5.6-13.5h-3.4c0-2.7 1.7-4.9 4.6-6.3A8.5 8.5 0 0 1 20 3z" fill="${c}" stroke="#1F2A44" stroke-width="2.4" stroke-linejoin="round"/><rect x="4" y="39" width="32" height="10" rx="4" fill="${c}" stroke="#1F2A44" stroke-width="2.4"/></svg>`;
+
+// type buttons
+const typesEl=document.getElementById('types');
+TYPES.forEach(t=>{const b=document.createElement('button'); b.style.background=`var(--${t})`; b.textContent=INFO[t].label; b.onclick=()=>{ac(); chooseType(t);}; typesEl.appendChild(b);});
+
+// ---- game state ----
+let nTeams=2, at=[], turnI=0, target=null, tries=0, finished=[], busy=false;
+function newGame(n){
+  nTeams=n; at=Array(n).fill(0); turnI=0; target=null; tries=0; finished=[]; busy=false;
+  document.getElementById('teams').innerHTML = at.map((_,i)=>`<div class="team" id="tm${i}" style="background:${TEAMC[i]}">Team ${i+1}<div class="pos" id="tp${i}">START</div></div>`).join('');
+  document.getElementById('toks').innerHTML = at.map((_,i)=>`<div class="tok" id="tk${i}">${PAWN(TEAMC[i])}</div>`).join('');
+  document.getElementById('win').classList.remove('on');
+  render(); prompt();
+}
+const OFF=[[-36,-56],[36,-56],[-64,-8],[64,-8]];
+function placeTok(i){ const t=document.getElementById('tk'+i), p=at[i]; t.style.left=(pos[p].x+OFF[i][0]-22)+'px'; t.style.top=(pos[p].y+OFF[i][1]-29)+'px'; const tp=document.getElementById('tp'+i); if(tp) tp.textContent = finished.includes(i)?'FINISHED':(p===0?'START':'space '+p); }
+function render(){
+  at.forEach((p,i)=>{ placeTok(i); document.getElementById('tm'+i).classList.toggle('on', i===turnI); });
+  document.querySelectorAll('.node').forEach(n=>n.classList.remove('target'));
+  if(target!==null) document.getElementById('n'+target).classList.add('target');
+}
+function setCard(t, txt, hint){
+  const card=document.getElementById('card');
+  card.style.background = t? `var(--${t})` : '#ccd3e0';
+  document.getElementById('ct').textContent = t? INFO[t].label : txt;
+  document.getElementById('ch').innerHTML = hint || '&nbsp;';
+  document.getElementById('cp').innerHTML = t? '<span>'+curCard+'</span>' : '🎡';
+}
+function inLane(){ return at[turnI]>=31 || at[turnI]===30 && false; }
+function prompt(){
+  // next playable team
+  if(finished.length===nTeams){ document.getElementById('wintext').innerHTML='Everyone finished!<small>Great job, all teams!</small>'; document.getElementById('win').classList.add('on'); return; }
+  while(finished.includes(turnI)) turnI=(turnI+1)%nTeams;
+  target=null; tries=0;
+  document.getElementById('turn').textContent=`Team ${turnI+1}'s turn`;
+  document.getElementById('tries').textContent='';
+  const p=at[turnI];
+  if(p>=31 || p===30){ // finish lane: no rolling; at 30 the next space is 31
+    target=p+1; setDisabled(true);
+    draw(TRACK[target].t); setCard(TRACK[target].t,null,INFO[TRACK[target].t].hint+' (finish lane: no spin)');
+    judgeOn(true);
+  } else {
+    setDisabled(false); judgeOn(false);
+    setCard(null,'Spin the wheel',null);
+  }
+  render();
+}
+function setDisabled(d){ document.getElementById('roll').disabled=d; typesEl.querySelectorAll('button').forEach(b=>b.disabled=d); }
+function judgeOn(on){ document.getElementById('ok').disabled=!on; document.getElementById('no').disabled=!on; }
+function chooseType(t, num){
+  if(busy) return;
+  const p=at[turnI]; let j=p+1; while(j<=30 && TRACK[j].t!==t) j++;
+  target = j<=30 ? j : 31;
+  setDisabled(true); judgeOn(true);
+  const note = j<=30 ? '' : ' → no more on the track: go to 31';
+  draw(TRACK[target].t); setCard(TRACK[target].t, null, INFO[TRACK[target].t].hint + note);
+  render();
+}
+document.getElementById('roll').onclick=spin;
+document.getElementById('ok').onclick=async()=>{
+  if(busy) return; busy=true; judgeOn(false); ac();
+  const tgt=target, team=turnI;
+  if(tgt===35) fanfare(); else cheer();
+  await sleep(350); await moveTo(team, tgt); await sleep(250); busy=false;
+  if(tgt===35){ finished.push(turnI); render();
+    document.getElementById('wintext').innerHTML=`Team ${turnI+1} finished! 🎉<small>${finished.length===1?'First place!':'Place '+finished.length+'.'} Click to keep playing.</small>`;
+    document.getElementById('win').classList.add('on'); }
+  turnI=(turnI+1)%nTeams; target=null; prompt();
+};
+document.getElementById('no').onclick=()=>{
+  if(busy) return; ac(); aww(); tries++;
+  if(tries>=2){ document.getElementById('tries').textContent='Wrong 2 times: stay.'; judgeOn(false);
+    setTimeout(()=>{turnI=(turnI+1)%nTeams; target=null; prompt();},1600); }
+  else document.getElementById('tries').textContent='Try one more time.';
+};
+document.getElementById('win').onclick=()=>{document.getElementById('win').classList.remove('on'); if(finished.length===nTeams) newGame(nTeams);};
+document.querySelectorAll('.foot [data-n]').forEach(b=>b.onclick=()=>newGame(+b.dataset.n));
+document.getElementById('newcard').onclick=()=>{ if(target===null) return; draw(TRACK[target].t); setCard(TRACK[target].t,null,document.getElementById('ch').innerHTML); };
+document.getElementById('mute').onclick=()=>{ muted=!muted; document.getElementById('mute').textContent=muted?'🔇':'🔊'; };
+document.getElementById('full').onclick=()=>{ if(!document.fullscreenElement) document.documentElement.requestFullscreen?.(); else document.exitFullscreen?.(); };
+function fit(){const k=Math.min(innerWidth/1600, innerHeight/900); document.getElementById('stage').style.transform=`scale(${k})`;}
+addEventListener('resize',fit); fit();
+newGame(2);
+</script>
+</body>
+</html>
